@@ -19,6 +19,10 @@
       </div>
     </div>
     <div class="header-right">
+      <div class="guild-toggle">
+        <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Deaths Edge</button>
+        <button class="guild-toggle-btn" data-slug="riot-act" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
+      </div>
       <span id="last-updated" class="last-updated"></span>
       <button class="btn-refresh" onclick="loadGuild(true)">↻ Refresh</button>
     </div>

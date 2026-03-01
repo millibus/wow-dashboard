@@ -106,7 +106,7 @@ async function fetchCharacter(realm, name) {
       achievementPoints: p.achievement_points || 0,
       avatarUrl,
       mainRawUrl,
-      averageIlvl: calcAvgIlvl(items),
+      averageIlvl: calcAvgIlvl(items) || p.equipped_item_level || p.average_item_level || 0,
       equipment: items,
       stats: {
         health: st.health || 0,
@@ -143,28 +143,39 @@ async function limit(arr, concurrency, fn) {
 
 // --- Routes ---
 
-// GET /api/guild
+// Supported guilds config
+const GUILDS = {
+  'deaths-edge': { slug: 'deaths-edge', realm: 'onyxia', faction: 'horde' },
+  'riot-act':    { slug: 'riot-act',    realm: 'onyxia', faction: 'alliance' },
+};
+
+// GET /api/guild?slug=deaths-edge  (defaults to deaths-edge)
 app.get('/api/guild', async (req, res) => {
   try {
-    const cacheKey = 'guild:deaths-edge';
+    const slug = req.query.slug || 'deaths-edge';
+    const guildConfig = GUILDS[slug];
+    if (!guildConfig) return res.status(404).json({ error: 'Unknown guild' });
+
+    const cacheKey = `guild:${slug}`;
     const cached = guildCache.get(cacheKey);
     if (cached) return res.json(cached);
 
-    const rosterData = await bnet('/data/wow/guild/onyxia/deaths-edge/roster?namespace=profile-us');
+    const rosterData = await bnet(`/data/wow/guild/${guildConfig.realm}/${slug}/roster?namespace=profile-us`);
     const members = (rosterData.members || []).filter(m => (m.character?.level || 0) >= 10);
 
     const chars = await limit(members, 5, async (m) => {
       const char = m.character;
       const name = char.name;
-      const realm = 'onyxia';
+      const realm = guildConfig.realm;
       const full = await fetchCharacter(realm, name);
       if (!full) return null;
       return { ...full, rank: m.rank };
     });
 
     const result = {
-      guild: rosterData.guild?.name || 'Deaths Edge',
+      guild: rosterData.guild?.name || slug,
       realm: 'Onyxia',
+      faction: guildConfig.faction,
       members: chars.filter(Boolean),
       lastUpdated: new Date().toISOString()
     };
