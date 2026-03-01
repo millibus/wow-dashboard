@@ -11,10 +11,12 @@ const OWNER_MAP = {
   // 'Charactername': 'potac',
 
   // Viral's characters:
-  // 'Charactername': 'Viral',
+  'Apocalypsic': 'Viral',
 
-  // Revan's characters:
-  // 'Charactername': 'Revan',
+  // Revan's characters (from #wow channel):
+  'Hollyballs': 'Revan',
+  'Darthfurball': 'Revan',
+  'Revän': 'Revan',
 };
 
 const OWNERS = ['potac', 'Viral', 'Revan'];
