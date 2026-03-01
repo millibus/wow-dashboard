@@ -7,13 +7,24 @@ const API_BASE = '';
 // Map character names (exact, case-sensitive) to their owner
 // ============================
 const OWNER_MAP = {
-  // potac's characters — add yours here:
-  // 'Charactername': 'potac',
+  // potac's characters (from #wow thread, Feb 27):
+  'Sanicon': 'potac',
+  'Hemahroid': 'potac',
+  'Decillin': 'potac',
+  'Colonic': 'potac',
+  'Trashey': 'potac',
+  'Gorgis': 'potac',
+  'Babbang': 'potac',
+  'Flachewlance': 'potac',
+  'Thuun': 'potac',
+  'Chargar': 'potac',
+  'Asdan': 'potac',
+  'Wetseamen': 'potac',
 
   // Viral's characters:
   'Apocalypsic': 'Viral',
 
-  // Revan's characters (from #wow channel):
+  // Revan's characters:
   'Hollyballs': 'Revan',
   'Darthfurball': 'Revan',
   'Revän': 'Revan',
