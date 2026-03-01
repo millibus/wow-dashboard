@@ -8,6 +8,7 @@
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
   <div class="header-inner">
     <div class="header-title">
@@ -25,7 +26,49 @@
   <div class="guild-stats" id="guild-stats"></div>
 </header>
 
-<!-- Compare bar -->
+<!-- FILTER BAR -->
+<div class="filter-bar" id="filter-bar">
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Search</div>
+    <input type="text" id="search" class="filter-search" placeholder="Name, class, race..." oninput="onSearch(this.value)">
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Owner</div>
+    <div class="filter-bar-pills" id="filter-owners"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Class</div>
+    <div class="filter-bar-pills" id="filter-classes"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Race</div>
+    <div class="filter-bar-pills" id="filter-races"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Level</div>
+    <div class="filter-bar-pills">
+      <button class="level-btn active" onclick="onLevelFilter('0', this)">All</button>
+      <button class="level-btn" onclick="onLevelFilter('70', this)">70+</button>
+      <button class="level-btn" onclick="onLevelFilter('80', this)">80+</button>
+    </div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Sort by</div>
+    <select id="sort-select" class="sort-select" onchange="onSortChange(this.value)">
+      <option value="ilvl">Item Level ↓</option>
+      <option value="level">Level ↓</option>
+      <option value="name">Name A–Z</option>
+      <option value="class">Class</option>
+      <option value="race">Race</option>
+      <option value="owner">Owner</option>
+    </select>
+  </div>
+  <div class="filter-bar-section" style="justify-content:flex-end;margin-left:auto;align-self:flex-end">
+    <button class="btn-compare-mode" id="btn-compare-mode" onclick="toggleCompareMode()">⚔ Compare</button>
+  </div>
+</div>
+
+<!-- COMPARE BAR -->
 <div id="compare-bar" class="compare-bar hidden">
   <div class="compare-bar-inner">
     <span id="compare-char1" class="compare-name">— Pick a character</span>
@@ -36,62 +79,12 @@
   </div>
 </div>
 
-<div class="layout">
+<!-- RESULTS / CHIPS -->
+<div class="results-bar" id="active-chips"></div>
 
-  <!-- Sidebar Filter Panel -->
-  <aside class="filter-panel">
-    <div class="filter-section">
-      <label class="filter-label">🔍 Search</label>
-      <input type="text" id="search" class="search-input" placeholder="Name, class, spec, race..." oninput="onSearch(this.value)">
-    </div>
-
-    <div class="filter-section">
-      <label class="filter-label">👤 Owner</label>
-      <div class="pill-group" id="filter-owners"></div>
-    </div>
-
-    <div class="filter-section">
-      <label class="filter-label">⚔️ Class</label>
-      <div class="pill-group" id="filter-classes"></div>
-    </div>
-
-    <div class="filter-section">
-      <label class="filter-label">🧬 Race</label>
-      <div class="pill-group" id="filter-races"></div>
-    </div>
-
-    <div class="filter-section">
-      <label class="filter-label">📊 Level</label>
-      <div class="pill-group">
-        <button class="level-btn active" onclick="onLevelFilter('0', this)">All</button>
-        <button class="level-btn" onclick="onLevelFilter('70', this)">70+</button>
-        <button class="level-btn" onclick="onLevelFilter('80', this)">80+</button>
-      </div>
-    </div>
-
-    <div class="filter-section">
-      <label class="filter-label">↕️ Sort by</label>
-      <select id="sort-select" class="sort-select" onchange="onSortChange(this.value)">
-        <option value="ilvl">Item Level ↓</option>
-        <option value="level">Character Level ↓</option>
-        <option value="name">Name A–Z</option>
-        <option value="class">Class A–Z</option>
-        <option value="race">Race A–Z</option>
-        <option value="owner">Owner</option>
-      </select>
-    </div>
-
-    <div class="filter-section">
-      <button class="btn-compare-mode" id="btn-compare-mode" onclick="toggleCompareMode()">⚔ Compare Mode</button>
-    </div>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="content-area">
-    <div id="active-chips" class="active-chips"></div>
-    <div id="character-grid" class="character-grid"></div>
-  </main>
-
+<!-- MAIN GRID -->
+<div class="main-content">
+  <div id="character-grid" class="character-grid"></div>
 </div>
 
 <!-- Character Detail Modal -->
@@ -104,7 +97,7 @@
 
 <!-- Compare Modal -->
 <div id="compare-modal" class="modal hidden" onclick="closeCompareModal(event)">
-  <div class="modal-content modal-wide" id="compare-content">
+  <div class="modal-content modal-wide">
     <button class="modal-close" onclick="closeCompareModal()">✕</button>
     <div id="compare-body"></div>
   </div>
