@@ -7,13 +7,24 @@ const API_BASE = '';
 // Map character names (exact, case-sensitive) to their owner
 // ============================
 const OWNER_MAP = {
-  // user1's characters — add yours here:
-  // 'Charactername': 'user1',
+  // user1's characters (from #wow thread, Feb 27):
+  'Sanicon': 'user1',
+  'Hemahroid': 'user1',
+  'Decillin': 'user1',
+  'Colonic': 'user1',
+  'Trashey': 'user1',
+  'Gorgis': 'user1',
+  'Babbang': 'user1',
+  'Flachewlance': 'user1',
+  'Thuun': 'user1',
+  'Chargar': 'user1',
+  'Asdan': 'user1',
+  'Wetseamen': 'user1',
 
   // user2's characters:
   'Apocalypsic': 'user2',
 
-  // user3's characters (from #wow channel):
+  // user3's characters:
   'Hollyballs': 'user3',
   'Darthfurball': 'user3',
   'Revän': 'user3',
