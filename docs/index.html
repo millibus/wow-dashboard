@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚔️ Deaths Edge — Guild Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title">
+        <span class="sword">⚔️</span>
+        <div>
+          <h1>Deaths Edge</h1>
+          <p class="subtitle">Guild Dashboard — Onyxia-US</p>
+        </div>
+      </div>
+      <div class="header-controls">
+        <span id="last-updated" class="last-updated"></span>
+        <button class="btn-refresh" onclick="loadGuild(true)">↻ Refresh</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Compare Banner (hidden until compare mode) -->
+  <div id="compare-bar" class="compare-bar hidden">
+    <div class="compare-bar-inner">
+      <span>Comparing:</span>
+      <span id="compare-char1" class="compare-name">— Pick a character</span>
+      <span class="vs">VS</span>
+      <span id="compare-char2" class="compare-name">— Pick a character</span>
+      <button class="btn-compare-go" id="btn-compare-go" onclick="doCompare()" disabled>Compare ▶</button>
+      <button class="btn-cancel" onclick="cancelCompare()">✕ Cancel</button>
+    </div>
+  </div>
+
+  <main>
+    <!-- Controls -->
+    <div class="controls">
+      <input type="text" id="search" placeholder="🔍 Search name, class, spec..." oninput="filterAndRender()">
+      <div class="sort-buttons">
+        <span>Sort:</span>
+        <button class="sort-btn active" data-sort="ilvl" onclick="setSort('ilvl', this)">ilvl ↓</button>
+        <button class="sort-btn" data-sort="level" onclick="setSort('level', this)">Level</button>
+        <button class="sort-btn" data-sort="name" onclick="setSort('name', this)">Name</button>
+        <button class="sort-btn" data-sort="class" onclick="setSort('class', this)">Class</button>
+      </div>
+      <div class="filter-buttons">
+        <span>Show:</span>
+        <button class="filter-btn active" data-min="0" onclick="setMinLevel(0, this)">All</button>
+        <button class="filter-btn" data-min="70" onclick="setMinLevel(70, this)">70+</button>
+        <button class="filter-btn" data-min="80" onclick="setMinLevel(80, this)">80+</button>
+      </div>
+      <button class="btn-compare-mode" id="btn-compare-mode" onclick="toggleCompareMode()">⚔ Compare</button>
+    </div>
+
+    <!-- Stats bar -->
+    <div class="guild-stats" id="guild-stats"></div>
+
+    <!-- Character grid -->
+    <div id="character-grid" class="character-grid">
+      <div class="loading-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Character Detail Modal -->
+  <div id="modal" class="modal hidden" onclick="closeModal(event)">
+    <div class="modal-content" id="modal-content">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Compare Modal -->
+  <div id="compare-modal" class="modal hidden" onclick="closeCompareModal(event)">
+    <div class="modal-content modal-wide" id="compare-content">
+      <button class="modal-close" onclick="closeCompareModal()">✕</button>
+      <div id="compare-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

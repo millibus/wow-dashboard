@@ -1,0 +1,200 @@
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+const cors = require('cors');
+const NodeCache = require('node-cache');
+
+const app = express();
+const cache = new NodeCache({ stdTTL: 300 }); // 5 min default
+const guildCache = new NodeCache({ stdTTL: 900 }); // 15 min for guild roster
+
+app.use(cors());
+app.use(express.json());
+
+const CLIENT_ID = process.env.BLIZZARD_CLIENT_ID;
+const CLIENT_SECRET = process.env.BLIZZARD_CLIENT_SECRET;
+const BASE = 'https://us.api.blizzard.com';
+
+// --- Auth ---
+let tokenData = null;
+async function getToken() {
+  if (tokenData && tokenData.expires > Date.now()) return tokenData.token;
+  const res = await axios.post(
+    'https://oauth.battle.net/token',
+    new URLSearchParams({ grant_type: 'client_credentials' }),
+    { auth: { username: CLIENT_ID, password: CLIENT_SECRET } }
+  );
+  tokenData = {
+    token: res.data.access_token,
+    expires: Date.now() + (res.data.expires_in - 60) * 1000
+  };
+  return tokenData.token;
+}
+
+async function bnet(path) {
+  const token = await getToken();
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}locale=en_US`;
+  const res = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+}
+
+// --- Character helpers ---
+function calcAvgIlvl(items) {
+  const ilvls = items
+    .map(i => i.level?.value || 0)
+    .filter(v => v > 0);
+  if (!ilvls.length) return 0;
+  return Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length);
+}
+
+async function fetchCharacter(realm, name) {
+  const key = `char:${realm}:${name}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const encoded = encodeURIComponent(name.toLowerCase());
+  const realmSlug = realm.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
+
+  try {
+    const [profile, equipment, stats] = await Promise.allSettled([
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}?namespace=profile-us`),
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/equipment?namespace=profile-us`),
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/statistics?namespace=profile-us`)
+    ]);
+
+    if (profile.status === 'rejected') {
+      return null;
+    }
+
+    const p = profile.value;
+    const eq = equipment.status === 'fulfilled' ? equipment.value : {};
+    const st = stats.status === 'fulfilled' ? stats.value : {};
+
+    const items = (eq.equipped_items || []).map(item => ({
+      slot: item.slot?.name || '?',
+      name: item.name || '?',
+      ilvl: item.level?.value || 0,
+      quality: item.quality?.name || 'Common',
+      hasEmptySocket: (item.sockets || []).some(s => !s.item),
+      enchantCount: (item.enchantments || []).length,
+      stats: (item.stats || []).slice(0, 4).map(s => ({
+        name: s.type?.name || '?',
+        value: s.value || 0
+      }))
+    }));
+
+    const result = {
+      name: p.name || name,
+      realm: p.realm?.name || realm,
+      level: p.level || 0,
+      race: p.race?.name || '?',
+      className: p.character_class?.name || '?',
+      spec: p.active_spec?.name || '?',
+      faction: p.faction?.name || '?',
+      guild: p.guild?.name || '',
+      title: p.active_title?.display_string?.replace('{name}', p.name) || '',
+      achievementPoints: p.achievement_points || 0,
+      averageIlvl: calcAvgIlvl(items),
+      equipment: items,
+      stats: {
+        health: st.health || 0,
+        strength: st.strength?.effective || 0,
+        agility: st.agility?.effective || 0,
+        intellect: st.intellect?.effective || 0,
+        stamina: st.stamina?.effective || 0,
+        crit: parseFloat((st.melee_crit?.value || 0).toFixed(1)),
+        haste: parseFloat((st.melee_haste?.value || 0).toFixed(1)),
+        mastery: parseFloat((st.mastery?.value || 0).toFixed(1)),
+        vers: parseFloat((st.versatility_damage_done_bonus || 0).toFixed(1)),
+        armor: st.armor?.effective || 0
+      }
+    };
+
+    cache.set(key, result);
+    return result;
+  } catch (err) {
+    console.error(`Error fetching ${name}: ${err.message}`);
+    return null;
+  }
+}
+
+// Concurrency limiter
+async function limit(arr, concurrency, fn) {
+  const results = [];
+  for (let i = 0; i < arr.length; i += concurrency) {
+    const batch = arr.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(fn));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
+// --- Routes ---
+
+// GET /api/guild
+app.get('/api/guild', async (req, res) => {
+  try {
+    const cacheKey = 'guild:deaths-edge';
+    const cached = guildCache.get(cacheKey);
+    if (cached) return res.json(cached);
+
+    const rosterData = await bnet('/data/wow/guild/onyxia/deaths-edge/roster?namespace=profile-us');
+    const members = (rosterData.members || []).filter(m => (m.character?.level || 0) >= 10);
+
+    const chars = await limit(members, 5, async (m) => {
+      const char = m.character;
+      const name = char.name;
+      const realm = 'onyxia';
+      const full = await fetchCharacter(realm, name);
+      if (!full) return null;
+      return { ...full, rank: m.rank };
+    });
+
+    const result = {
+      guild: rosterData.guild?.name || 'Deaths Edge',
+      realm: 'Onyxia',
+      members: chars.filter(Boolean),
+      lastUpdated: new Date().toISOString()
+    };
+
+    guildCache.set(cacheKey, result);
+    res.json(result);
+  } catch (err) {
+    console.error('Guild error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/character/:realm/:name
+app.get('/api/character/:realm/:name', async (req, res) => {
+  try {
+    const { realm, name } = req.params;
+    const char = await fetchCharacter(realm, name);
+    if (!char) return res.status(404).json({ error: 'Character not found' });
+    res.json(char);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/compare/:realm1/:name1/:realm2/:name2
+app.get('/api/compare/:realm1/:name1/:realm2/:name2', async (req, res) => {
+  try {
+    const { realm1, name1, realm2, name2 } = req.params;
+    const [char1, char2] = await Promise.all([
+      fetchCharacter(realm1, name1),
+      fetchCharacter(realm2, name2)
+    ]);
+    res.json({ char1, char2 });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Health check
+app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
+
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, () => console.log(`WoW Dashboard API running on port ${PORT}`));
