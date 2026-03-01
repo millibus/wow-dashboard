@@ -9,6 +9,13 @@ const API_BASE = '';
 const OWNER_MAP = {
   // potac's characters (from #wow thread, Feb 27):
   'Sanicon': 'potac',
+  'Harclive': 'potac',
+  'Phenis': 'potac',
+  'Blajarm': 'potac',
+  'Potac': 'potac',
+  'Wicken': 'potac',
+  'Llisp': 'potac',
+  'Quu': 'potac',
   'Hemahroid': 'potac',
   'Decillin': 'potac',
   'Colonic': 'potac',
@@ -23,11 +30,35 @@ const OWNER_MAP = {
 
   // Viral's characters:
   'Apocalypsic': 'Viral',
+  'Oathos': 'Viral',
+  'Incantation': 'Viral',
+  'Religious': 'Viral',
+  'Zeison': 'Viral',
+  'Stray': 'Viral',
 
   // Revan's characters:
   'Hollyballs': 'Revan',
   'Darthfurball': 'Revan',
   'Revän': 'Revan',
+  'Caedus': 'Revan',
+  'Jacobyy': 'Revan',
+  'Bbaronsamedi': 'Revan',
+  'Holyrevan': 'Revan',
+  'Krang': 'Revan',
+  'Necronomican': 'Revan',
+  'Pizo': 'Revan',
+  'Jeetkundo': 'Revan',
+  'Demonik': 'Revan',
+  'Alduen': 'Revan',
+  // potac's Alliance characters (Riot Act):
+  'Huejanus': 'potac',
+  'Lumian': 'potac',
+  // Revan's Alliance characters (Riot Act):
+  'Krisis': 'Revan',
+  'Grrumpy': 'Revan',
+  'Jacoby': 'Revan',
+  'Wolfsbane': 'Revan',
+  'Mechaminime': 'Revan',
 };
 
 const OWNERS = ['potac', 'Viral', 'Revan'];
@@ -65,9 +96,34 @@ let minLevel = 0;
 let searchQuery = '';
 let compareMode = false;
 let compareSelection = [null, null];
+let currentGuildSlug = 'deaths-edge';
 
 // === Init ===
 window.addEventListener('DOMContentLoaded', () => loadGuild(false));
+
+function switchGuild(slug) {
+  if (slug === currentGuildSlug) return;
+  currentGuildSlug = slug;
+  // Update toggle buttons
+  document.querySelectorAll('.guild-toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.slug === slug);
+  });
+  // Update header title
+  const titles = { 'deaths-edge': 'Deaths Edge', 'riot-act': 'Riot Act' };
+  const subtitles = { 'deaths-edge': '🔴 Horde — Onyxia-US', 'riot-act': '🔵 Alliance — Onyxia-US' };
+  const h1 = document.querySelector('h1');
+  const sub = document.querySelector('.subtitle');
+  if (h1) h1.textContent = titles[slug] || slug;
+  if (sub) sub.textContent = subtitles[slug] || 'Onyxia-US';
+  // Reset filters
+  filterOwners = new Set();
+  filterClasses = new Set();
+  filterRaces = new Set();
+  searchQuery = '';
+  const searchEl = document.getElementById('search');
+  if (searchEl) searchEl.value = '';
+  loadGuild(false);
+}
 
 function getOwner(name) {
   return OWNER_MAP[name] || null;
@@ -81,7 +137,7 @@ async function loadGuild(forceRefresh) {
       </div>`;
     document.getElementById('guild-stats').innerHTML = '';
 
-    const url = `${API_BASE}/api/guild${forceRefresh ? '?nocache=1' : ''}`;
+    const url = `${API_BASE}/api/guild?slug=${currentGuildSlug}${forceRefresh ? '&nocache=1' : ''}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const data = await res.json();
@@ -328,10 +384,12 @@ function renderCard(m) {
     ? `<img src="${m.avatarUrl}" alt="${m.name}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'card-portrait-placeholder\\'>⚔</div>'">`
     : `<div class="card-portrait-placeholder">⚔</div>`;
 
+  const fullBodyAttr = m.mainRawUrl ? `data-fullbody="${m.mainRawUrl}"` : '';
+
   const textColor = ['#FFFFFF', '#AAD372', '#FFF468'].includes(color) ? '#111' : '#fff';
 
   return `
-    <div class="char-card ${selectedClass}" style="--class-color:${color}" ${clickAction}>
+    <div class="char-card ${selectedClass}" style="--class-color:${color}" ${clickAction} ${fullBodyAttr} onmouseenter="showFullBody(this)" onmouseleave="hideFullBody()">
       <div class="card-body">
         <div class="card-portrait">${portraitHtml}</div>
         <div class="card-info">
@@ -352,6 +410,38 @@ function renderCard(m) {
       </div>
       <div class="card-stats">${barsHtml}</div>
     </div>`;
+}
+
+// === Full Body Hover ===
+let hoverTimeout;
+function showFullBody(card) {
+  const url = card.getAttribute('data-fullbody');
+  if (!url) return;
+  clearTimeout(hoverTimeout);
+  hoverTimeout = setTimeout(() => {
+    let tip = document.getElementById('fullbody-tip');
+    if (!tip) {
+      tip = document.createElement('div');
+      tip.id = 'fullbody-tip';
+      tip.className = 'fullbody-tip';
+      document.body.appendChild(tip);
+    }
+    tip.innerHTML = `<img src="${url}" alt="Full render" onerror="this.parentNode.style.display='none'">`;
+    tip.style.display = 'block';
+
+    const rect = card.getBoundingClientRect();
+    const tipW = 200;
+    let left = rect.right + 10;
+    if (left + tipW > window.innerWidth) left = rect.left - tipW - 10;
+    tip.style.left = `${left + window.scrollX}px`;
+    tip.style.top = `${rect.top + window.scrollY}px`;
+  }, 300);
+}
+
+function hideFullBody() {
+  clearTimeout(hoverTimeout);
+  const tip = document.getElementById('fullbody-tip');
+  if (tip) tip.style.display = 'none';
 }
 
 // === Detail Modal ===
