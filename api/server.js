@@ -3,6 +3,7 @@ const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
 const NodeCache = require('node-cache');
+const path = require('path');
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 300 }); // 5 min default
@@ -10,6 +11,9 @@ const guildCache = new NodeCache({ stdTTL: 900 }); // 15 min for guild roster
 
 app.use(cors());
 app.use(express.json());
+
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, '..', 'docs')));
 
 const CLIENT_ID = process.env.BLIZZARD_CLIENT_ID;
 const CLIENT_SECRET = process.env.BLIZZARD_CLIENT_SECRET;
@@ -58,10 +62,11 @@ async function fetchCharacter(realm, name) {
   const realmSlug = realm.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
 
   try {
-    const [profile, equipment, stats] = await Promise.allSettled([
+    const [profile, equipment, stats, media] = await Promise.allSettled([
       bnet(`/profile/wow/character/${realmSlug}/${encoded}?namespace=profile-us`),
       bnet(`/profile/wow/character/${realmSlug}/${encoded}/equipment?namespace=profile-us`),
-      bnet(`/profile/wow/character/${realmSlug}/${encoded}/statistics?namespace=profile-us`)
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/statistics?namespace=profile-us`),
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/character-media?namespace=profile-us`)
     ]);
 
     if (profile.status === 'rejected') {
@@ -71,6 +76,9 @@ async function fetchCharacter(realm, name) {
     const p = profile.value;
     const eq = equipment.status === 'fulfilled' ? equipment.value : {};
     const st = stats.status === 'fulfilled' ? stats.value : {};
+    const mediaAssets = media.status === 'fulfilled' ? (media.value.assets || []) : [];
+    const avatarUrl = mediaAssets.find(a => a.key === 'avatar')?.value || null;
+    const mainRawUrl = mediaAssets.find(a => a.key === 'main-raw')?.value || null;
 
     const items = (eq.equipped_items || []).map(item => ({
       slot: item.slot?.name || '?',
@@ -96,6 +104,8 @@ async function fetchCharacter(realm, name) {
       guild: p.guild?.name || '',
       title: p.active_title?.display_string?.replace('{name}', p.name) || '',
       achievementPoints: p.achievement_points || 0,
+      avatarUrl,
+      mainRawUrl,
       averageIlvl: calcAvgIlvl(items),
       equipment: items,
       stats: {

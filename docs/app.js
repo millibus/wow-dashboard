@@ -288,7 +288,6 @@ function filterAndRender() {
   });
 
   renderActiveChips(filtered.length, allMembers.length);
-
   const grid = document.getElementById('character-grid');
   if (!filtered.length) {
     grid.innerHTML = '<div class="empty-state">No characters match your filters.<br><small><a href="#" onclick="clearFilters();return false">Clear filters</a></small></div>';
@@ -325,26 +324,33 @@ function renderCard(m) {
     ? `onclick="selectForCompare('${m.name}', '${m.realm}')"`
     : `onclick="openDetail('${m.name}', '${m.realm}')"`;
 
+  const portraitHtml = m.avatarUrl
+    ? `<img src="${m.avatarUrl}" alt="${m.name}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'card-portrait-placeholder\\'>⚔</div>'">`
+    : `<div class="card-portrait-placeholder">⚔</div>`;
+
+  const textColor = ['#FFFFFF', '#AAD372', '#FFF468'].includes(color) ? '#111' : '#fff';
+
   return `
     <div class="char-card ${selectedClass}" style="--class-color:${color}" ${clickAction}>
-      <div class="char-card-header">
-        <div>
+      <div class="card-body">
+        <div class="card-portrait">${portraitHtml}</div>
+        <div class="card-info">
           <div class="char-name">${m.name}</div>
-          ${m.title ? `<div style="font-size:0.7rem;color:var(--gold-light);font-style:italic">${m.title}</div>` : ''}
-        </div>
-        <div style="text-align:right">
-          <div class="char-ilvl">${m.averageIlvl || '—'}</div>
-          <div class="char-ilvl-label">avg ilvl</div>
+          ${m.title ? `<div class="char-title-text">${m.title}</div>` : ''}
+          <div class="card-badges">
+            <span class="badge badge-level">L${m.level}</span>
+            <span class="badge badge-class" style="background:${color};color:${textColor}">${m.className}</span>
+            ${m.spec ? `<span class="badge badge-spec">${m.spec}</span>` : ''}
+          </div>
+          ${m.race ? `<div style="font-size:0.62rem;color:var(--text-dim);margin-top:1px">${m.race}</div>` : ''}
+          ${owner ? `<div class="char-owner" style="color:${ownerColor}">● ${owner}</div>` : ''}
+          <div class="card-ilvl-block" style="margin-top:auto">
+            <span class="char-ilvl">${m.averageIlvl || '—'}</span>
+            <span class="char-ilvl-label">avg ilvl</span>
+          </div>
         </div>
       </div>
-      <div class="char-meta">
-        <span class="badge badge-level">L${m.level}</span>
-        <span class="badge badge-class" style="background:${color};color:${color === '#FFFFFF' ? '#111' : '#000'}">${m.className}</span>
-        ${m.spec ? `<span class="badge badge-spec">${m.spec}</span>` : ''}
-        ${m.race ? `<span class="badge badge-race">${m.race}</span>` : ''}
-      </div>
-      ${owner ? `<div class="char-owner" style="color:${ownerColor}">👤 ${owner}</div>` : ''}
-      <div class="stat-bars">${barsHtml}</div>
+      <div class="card-stats">${barsHtml}</div>
     </div>`;
 }
 
