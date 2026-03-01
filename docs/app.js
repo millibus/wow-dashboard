@@ -412,6 +412,124 @@ function renderCard(m) {
     </div>`;
 }
 
+// === View Switching ===
+let currentView = 'roster';
+let lbOwnerFilter = '';
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('view-roster').classList.toggle('hidden', view !== 'roster');
+  document.getElementById('view-leaderboard').classList.toggle('hidden', view !== 'leaderboard');
+  document.getElementById('active-chips').classList.toggle('hidden', view !== 'roster');
+  document.getElementById('tab-roster').classList.toggle('active', view === 'roster');
+  document.getElementById('tab-leaderboard').classList.toggle('active', view === 'leaderboard');
+  if (view === 'leaderboard') {
+    buildLbOwnerFilter();
+    renderLeaderboard();
+  }
+}
+
+function buildLbOwnerFilter() {
+  const el = document.getElementById('lb-owner-filter');
+  if (!el || el.childNodes.length > 0) return;
+  const btns = [['', 'All'], ...OWNERS.map(o => [o, o])];
+  el.innerHTML = btns.map(([val, label]) => {
+    const col = val ? `style="--pill-color:${OWNER_COLORS[val]}"` : '';
+    const active = lbOwnerFilter === val ? 'active' : '';
+    return `<button class="filter-pill ${active}" ${col} onclick="setLbOwner('${val}', this)">${label}</button>`;
+  }).join('');
+}
+
+function setLbOwner(val, btn) {
+  lbOwnerFilter = val;
+  document.querySelectorAll('#lb-owner-filter .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const cat = document.getElementById('lb-category')?.value || 'ilvl';
+  let members = [...allMembers];
+  if (lbOwnerFilter) members = members.filter(m => m.owner === lbOwnerFilter);
+
+  const getValue = (m) => {
+    const s = m.stats || {};
+    switch(cat) {
+      case 'ilvl': return m.averageIlvl || 0;
+      case 'level': return m.level || 0;
+      case 'health': return s.health || 0;
+      case 'crit': return s.crit || 0;
+      case 'haste': return s.haste || 0;
+      case 'mastery': return s.mastery || 0;
+      case 'vers': return s.vers || 0;
+      case 'armor': return s.armor || 0;
+      case 'achievement': return m.achievementPoints || 0;
+      default: return 0;
+    }
+  };
+
+  const formatVal = (m) => {
+    const v = getValue(m);
+    if (['crit','haste','mastery','vers'].includes(cat)) return `${v}%`;
+    if (cat === 'health' || cat === 'armor') return v.toLocaleString();
+    return v || '—';
+  };
+
+  members.sort((a, b) => getValue(b) - getValue(a));
+
+  const categoryLabels = {
+    ilvl: '⚔ Avg ilvl', level: '📊 Level', health: '❤️ Health',
+    crit: '🎯 Crit', haste: '⚡ Haste', mastery: '🔵 Mastery',
+    vers: '🛡 Vers', armor: '🪖 Armor', achievement: '🏅 Achievements'
+  };
+
+  const maxVal = Math.max(...members.map(m => getValue(m))) || 1;
+
+  const rows = members.map((m, i) => {
+    const color = CLASS_COLORS[m.className] || '#c8a84b';
+    const owner = m.owner;
+    const ownerColor = owner ? OWNER_COLORS[owner] : null;
+    const val = getValue(m);
+    const pct = Math.round((val / maxVal) * 100);
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+    const portraitHtml = m.avatarUrl
+      ? `<img src="${m.avatarUrl}" alt="" class="lb-avatar" loading="lazy">`
+      : `<div class="lb-avatar-placeholder" style="color:${color}">⚔</div>`;
+
+    return `
+      <tr class="lb-row" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+        <td class="lb-rank">${medal}</td>
+        <td class="lb-char">
+          ${portraitHtml}
+          <div>
+            <div class="lb-name" style="color:${color}">${m.name}</div>
+            <div class="lb-sub">${m.spec || ''} ${m.className}</div>
+          </div>
+        </td>
+        <td class="lb-owner-cell">${owner ? `<span style="color:${ownerColor};font-weight:700">● ${owner}</span>` : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="lb-val-cell">
+          <div class="lb-bar-row">
+            <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span class="lb-val">${formatVal(m)}</span>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('leaderboard-table').innerHTML = `
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th class="lb-rank-hd">#</th>
+          <th>Character</th>
+          <th>Owner</th>
+          <th>${categoryLabels[cat]}</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-dim)">No characters found</td></tr>'}</tbody>
+    </table>`;
+}
+
 // === Full Body Hover ===
 let hoverTimeout;
 function showFullBody(card) {

@@ -62,11 +62,12 @@ async function fetchCharacter(realm, name) {
   const realmSlug = realm.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
 
   try {
-    const [profile, equipment, stats, media] = await Promise.allSettled([
+    const [profile, equipment, stats, media, achStats] = await Promise.allSettled([
       bnet(`/profile/wow/character/${realmSlug}/${encoded}?namespace=profile-us`),
       bnet(`/profile/wow/character/${realmSlug}/${encoded}/equipment?namespace=profile-us`),
       bnet(`/profile/wow/character/${realmSlug}/${encoded}/statistics?namespace=profile-us`),
-      bnet(`/profile/wow/character/${realmSlug}/${encoded}/character-media?namespace=profile-us`)
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/character-media?namespace=profile-us`),
+      bnet(`/profile/wow/character/${realmSlug}/${encoded}/achievements/statistics?namespace=profile-us`)
     ]);
 
     if (profile.status === 'rejected') {
@@ -79,6 +80,19 @@ async function fetchCharacter(realm, name) {
     const mediaAssets = media.status === 'fulfilled' ? (media.value.assets || []) : [];
     const avatarUrl = mediaAssets.find(a => a.key === 'avatar')?.value || null;
     const mainRawUrl = mediaAssets.find(a => a.key === 'main-raw')?.value || null;
+
+    // Parse achievement statistics
+    const achData = achStats.status === 'fulfilled' ? achStats.value : {};
+    const achMap = {};
+    function extractAchStats(categories) {
+      for (const cat of (categories || [])) {
+        for (const stat of (cat.statistics || [])) {
+          if (stat.quantity > 0) achMap[stat.name] = stat.quantity;
+        }
+        extractAchStats(cat.sub_categories || []);
+      }
+    }
+    extractAchStats(achData.categories || []);
 
     const items = (eq.equipped_items || []).map(item => ({
       slot: item.slot?.name || '?',
@@ -119,6 +133,21 @@ async function fetchCharacter(realm, name) {
         mastery: parseFloat((st.mastery?.value || 0).toFixed(1)),
         vers: parseFloat((st.versatility_damage_done_bonus || 0).toFixed(1)),
         armor: st.armor?.effective || 0
+      },
+      lifeStats: {
+        totalDeaths: achMap['Total deaths'] || 0,
+        deathsFromFalling: achMap['Deaths from falling'] || 0,
+        deathsFromPlayers: achMap['Total deaths from other players'] || 0,
+        deathsInDungeons: achMap['Total deaths in dungeons'] || 0,
+        deathsInRaids: achMap['Total deaths in raids'] || 0,
+        killingBlows: achMap['Total Killing Blows'] || 0,
+        creaturesKilled: achMap['Creatures killed'] || 0,
+        crittersKilled: achMap['Critters killed'] || 0,
+        questsCompleted: achMap['Quests completed'] || 0,
+        questsAbandoned: achMap['Quests abandoned'] || 0,
+        flightPaths: achMap['Flight paths taken'] || 0,
+        timesHearthed: achMap['Number of times hearthed'] || 0,
+        honorableKills: achMap['Total Honorable Kills'] || 0,
       }
     };
 

@@ -83,12 +83,43 @@
   </div>
 </div>
 
-<!-- RESULTS / CHIPS -->
+<!-- VIEW TABS -->
+<div class="view-tabs">
+  <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
+  <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
+</div>
+
+<!-- RESULTS / CHIPS (roster only) -->
 <div class="results-bar" id="active-chips"></div>
 
 <!-- MAIN GRID -->
-<div class="main-content">
+<div class="main-content" id="view-roster">
   <div id="character-grid" class="character-grid"></div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="main-content hidden" id="view-leaderboard">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Category</label>
+      <select id="lb-category" class="sort-select" onchange="renderLeaderboard()">
+        <option value="ilvl">⚔ Avg Item Level</option>
+        <option value="level">📊 Character Level</option>
+        <option value="health">❤️ Health Pool</option>
+        <option value="crit">🎯 Crit %</option>
+        <option value="haste">⚡ Haste %</option>
+        <option value="mastery">🔵 Mastery %</option>
+        <option value="vers">🛡 Versatility %</option>
+        <option value="armor">🪖 Armor</option>
+        <option value="achievement">🏅 Achievement Points</option>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="lb-owner-filter"></div>
+    </div>
+  </div>
+  <div id="leaderboard-table"></div>
 </div>
 
 <!-- Character Detail Modal -->
