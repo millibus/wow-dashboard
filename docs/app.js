@@ -1,5 +1,29 @@
 // === Config ===
-const API_BASE = 'http://76.13.116.249:3002';
+// Same-origin when served from the Express server; change to full URL if using GitHub Pages + separate API
+const API_BASE = '';
+
+// ============================
+// OWNER MAP — edit this!
+// Map character names (exact, case-sensitive) to their owner
+// ============================
+const OWNER_MAP = {
+  // potac's characters — add yours here:
+  // 'Charactername': 'potac',
+
+  // Viral's characters:
+  // 'Charactername': 'Viral',
+
+  // Revan's characters:
+  // 'Charactername': 'Revan',
+};
+
+const OWNERS = ['potac', 'Viral', 'Revan'];
+
+const OWNER_COLORS = {
+  potac: '#a78bfa',
+  Viral: '#34d399',
+  Revan: '#f59e0b',
+};
 
 // WoW class colors
 const CLASS_COLORS = {
@@ -18,15 +42,23 @@ const CLASS_COLORS = {
   'Warrior': '#C69B3A',
 };
 
-// === State ===
+// === Filter State ===
 let allMembers = [];
 let sortBy = 'ilvl';
+let filterOwners = new Set(); // empty = all
+let filterClasses = new Set();
+let filterRaces = new Set();
 let minLevel = 0;
+let searchQuery = '';
 let compareMode = false;
 let compareSelection = [null, null];
 
 // === Init ===
 window.addEventListener('DOMContentLoaded', () => loadGuild(false));
+
+function getOwner(name) {
+  return OWNER_MAP[name] || null;
+}
 
 async function loadGuild(forceRefresh) {
   try {
@@ -41,15 +73,18 @@ async function loadGuild(forceRefresh) {
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const data = await res.json();
 
-    allMembers = data.members || [];
+    allMembers = (data.members || []).map(m => ({
+      ...m,
+      owner: getOwner(m.name),
+    }));
 
-    // Update last updated
     if (data.lastUpdated) {
       const d = new Date(data.lastUpdated);
       document.getElementById('last-updated').textContent =
         `Updated ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     }
 
+    buildFilterOptions();
     renderGuildStats(data);
     filterAndRender();
   } catch (err) {
@@ -58,6 +93,109 @@ async function loadGuild(forceRefresh) {
        <button class="btn-refresh" onclick="loadGuild(true)">Retry</button></div>`;
     console.error(err);
   }
+}
+
+function buildFilterOptions() {
+  // Owner tabs
+  const ownerEl = document.getElementById('filter-owners');
+  ownerEl.innerHTML = `<button class="filter-pill active" data-group="owner" data-val="" onclick="toggleFilter('owner','',this)">All</button>` +
+    OWNERS.map(o => {
+      const count = allMembers.filter(m => m.owner === o).length;
+      if (count === 0) return '';
+      return `<button class="filter-pill" data-group="owner" data-val="${o}" style="--pill-color:${OWNER_COLORS[o]}" onclick="toggleFilter('owner','${o}',this)">${o} <span class="pill-count">${count}</span></button>`;
+    }).join('');
+
+  // Class pills
+  const classes = [...new Set(allMembers.map(m => m.className))].sort();
+  const classEl = document.getElementById('filter-classes');
+  classEl.innerHTML = classes.map(c => {
+    const col = CLASS_COLORS[c] || '#c8a84b';
+    const count = allMembers.filter(m => m.className === c).length;
+    return `<button class="filter-pill" data-group="class" data-val="${c}" style="--pill-color:${col}" onclick="toggleFilter('class','${c}',this)">${c} <span class="pill-count">${count}</span></button>`;
+  }).join('');
+
+  // Race pills
+  const races = [...new Set(allMembers.map(m => m.race).filter(Boolean))].sort();
+  const raceEl = document.getElementById('filter-races');
+  raceEl.innerHTML = races.map(r => {
+    const count = allMembers.filter(m => m.race === r).length;
+    return `<button class="filter-pill" data-group="race" data-val="${r}" onclick="toggleFilter('race','${r}',this)">${r} <span class="pill-count">${count}</span></button>`;
+  }).join('');
+
+  // Sort select
+  const sortEl = document.getElementById('sort-select');
+  sortEl.value = sortBy;
+}
+
+function toggleFilter(group, val, btn) {
+  if (group === 'owner') {
+    if (val === '') {
+      filterOwners.clear();
+      document.querySelectorAll('[data-group="owner"]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    } else {
+      document.querySelector('[data-group="owner"][data-val=""]').classList.remove('active');
+      if (filterOwners.has(val)) {
+        filterOwners.delete(val);
+        btn.classList.remove('active');
+        if (filterOwners.size === 0) document.querySelector('[data-group="owner"][data-val=""]').classList.add('active');
+      } else {
+        filterOwners.add(val);
+        btn.classList.add('active');
+      }
+    }
+  } else if (group === 'class') {
+    if (filterClasses.has(val)) {
+      filterClasses.delete(val);
+      btn.classList.remove('active');
+    } else {
+      filterClasses.add(val);
+      btn.classList.add('active');
+    }
+  } else if (group === 'race') {
+    if (filterRaces.has(val)) {
+      filterRaces.delete(val);
+      btn.classList.remove('active');
+    } else {
+      filterRaces.add(val);
+      btn.classList.add('active');
+    }
+  }
+  filterAndRender();
+}
+
+function clearFilters() {
+  filterOwners.clear();
+  filterClasses.clear();
+  filterRaces.clear();
+  minLevel = 0;
+  searchQuery = '';
+  document.getElementById('search').value = '';
+  document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+  const allOwnerBtn = document.querySelector('[data-group="owner"][data-val=""]');
+  if (allOwnerBtn) allOwnerBtn.classList.add('active');
+  filterAndRender();
+}
+
+let searchDebounce;
+function onSearch(val) {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    searchQuery = val.toLowerCase();
+    filterAndRender();
+  }, 200);
+}
+
+function onSortChange(val) {
+  sortBy = val;
+  filterAndRender();
+}
+
+function onLevelFilter(val, btn) {
+  minLevel = parseInt(val);
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterAndRender();
 }
 
 function renderGuildStats(data) {
@@ -78,16 +216,52 @@ function renderGuildStats(data) {
   `;
 }
 
+function renderActiveChips(filtered, total) {
+  const chips = [];
+
+  if (filterOwners.size > 0) {
+    filterOwners.forEach(o => chips.push(`<span class="chip" style="--chip-color:${OWNER_COLORS[o]}">${o} <span onclick="toggleFilter('owner','${o}', document.querySelector('[data-group=owner][data-val=${o}]'))" class="chip-x">×</span></span>`));
+  }
+  if (filterClasses.size > 0) {
+    filterClasses.forEach(c => {
+      const col = CLASS_COLORS[c] || '#c8a84b';
+      chips.push(`<span class="chip" style="--chip-color:${col}">${c} <span class="chip-x" onclick="filterClasses.delete('${c}');document.querySelector('[data-group=class][data-val=\\\"${c}\\\"]').classList.remove('active');filterAndRender()">×</span></span>`);
+    });
+  }
+  if (filterRaces.size > 0) {
+    filterRaces.forEach(r => chips.push(`<span class="chip">${r} <span class="chip-x" onclick="filterRaces.delete('${r}');document.querySelector('[data-group=race][data-val=\\\"${r}\\\"]').classList.remove('active');filterAndRender()">×</span></span>`));
+  }
+  if (searchQuery) {
+    chips.push(`<span class="chip">🔍 "${searchQuery}" <span class="chip-x" onclick="searchQuery='';document.getElementById('search').value='';filterAndRender()">×</span></span>`);
+  }
+  if (minLevel > 0) {
+    chips.push(`<span class="chip">Level ${minLevel}+ <span class="chip-x" onclick="minLevel=0;document.querySelectorAll('.level-btn').forEach(b=>b.classList.remove('active'));document.querySelector('.level-btn').classList.add('active');filterAndRender()">×</span></span>`);
+  }
+
+  const hasFilters = chips.length > 0;
+  document.getElementById('active-chips').innerHTML = `
+    <span class="result-count">${filtered} of ${total} characters</span>
+    ${chips.join('')}
+    ${hasFilters ? `<button class="clear-all-btn" onclick="clearFilters()">Clear all</button>` : ''}
+  `;
+}
+
 function filterAndRender() {
-  const q = document.getElementById('search').value.toLowerCase();
   let filtered = allMembers.filter(m => {
     if (m.level < minLevel) return false;
-    if (!q) return true;
-    return (
-      m.name.toLowerCase().includes(q) ||
-      m.className.toLowerCase().includes(q) ||
-      m.spec.toLowerCase().includes(q)
-    );
+    if (filterOwners.size > 0 && !filterOwners.has(m.owner)) return false;
+    if (filterClasses.size > 0 && !filterClasses.has(m.className)) return false;
+    if (filterRaces.size > 0 && !filterRaces.has(m.race)) return false;
+    if (searchQuery) {
+      const q = searchQuery;
+      if (
+        !m.name.toLowerCase().includes(q) &&
+        !(m.className||'').toLowerCase().includes(q) &&
+        !(m.spec||'').toLowerCase().includes(q) &&
+        !(m.race||'').toLowerCase().includes(q)
+      ) return false;
+    }
+    return true;
   });
 
   filtered.sort((a, b) => {
@@ -95,12 +269,16 @@ function filterAndRender() {
     if (sortBy === 'level') return (b.level || 0) - (a.level || 0);
     if (sortBy === 'name') return a.name.localeCompare(b.name);
     if (sortBy === 'class') return (a.className || '').localeCompare(b.className || '');
+    if (sortBy === 'race') return (a.race || '').localeCompare(b.race || '');
+    if (sortBy === 'owner') return (a.owner || 'zzz').localeCompare(b.owner || 'zzz');
     return 0;
   });
 
+  renderActiveChips(filtered.length, allMembers.length);
+
   const grid = document.getElementById('character-grid');
   if (!filtered.length) {
-    grid.innerHTML = '<div class="empty-state">No characters found.</div>';
+    grid.innerHTML = '<div class="empty-state">No characters match your filters.<br><small><a href="#" onclick="clearFilters();return false">Clear filters</a></small></div>';
     return;
   }
   grid.innerHTML = filtered.map(m => renderCard(m)).join('');
@@ -111,6 +289,8 @@ function renderCard(m) {
   const isSelected = compareSelection.includes(m.name);
   const selectedClass = isSelected ? 'compare-selected' : '';
   const stats = m.stats || {};
+  const owner = m.owner;
+  const ownerColor = owner ? OWNER_COLORS[owner] : null;
 
   const statBars = [
     { label: 'Crit', val: stats.crit || 0, cls: 'bar-crit', max: 40 },
@@ -139,17 +319,18 @@ function renderCard(m) {
           <div class="char-name">${m.name}</div>
           ${m.title ? `<div style="font-size:0.7rem;color:var(--gold-light);font-style:italic">${m.title}</div>` : ''}
         </div>
-        <div>
+        <div style="text-align:right">
           <div class="char-ilvl">${m.averageIlvl || '—'}</div>
           <div class="char-ilvl-label">avg ilvl</div>
         </div>
       </div>
       <div class="char-meta">
         <span class="badge badge-level">L${m.level}</span>
-        <span class="badge badge-class" style="background:${color};color:${color === '#FFFFFF' ? '#000' : '#000'}">${m.className}</span>
+        <span class="badge badge-class" style="background:${color};color:${color === '#FFFFFF' ? '#111' : '#000'}">${m.className}</span>
         ${m.spec ? `<span class="badge badge-spec">${m.spec}</span>` : ''}
+        ${m.race ? `<span class="badge badge-race">${m.race}</span>` : ''}
       </div>
-      ${m.guild ? `<div class="char-guild">🛡 ${m.guild}${m.rank !== undefined ? ` · Rank ${m.rank}` : ''}</div>` : ''}
+      ${owner ? `<div class="char-owner" style="color:${ownerColor}">👤 ${owner}</div>` : ''}
       <div class="stat-bars">${barsHtml}</div>
     </div>`;
 }
@@ -165,6 +346,7 @@ async function openDetail(name, realm) {
     const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}`);
     if (!res.ok) throw new Error(`${res.status}`);
     const c = await res.json();
+    c.owner = getOwner(c.name);
     body.innerHTML = renderDetail(c);
   } catch (err) {
     body.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c">Failed to load character: ${err.message}</div>`;
@@ -174,6 +356,8 @@ async function openDetail(name, realm) {
 function renderDetail(c) {
   const color = CLASS_COLORS[c.className] || '#c8a84b';
   const s = c.stats || {};
+  const owner = c.owner;
+  const ownerColor = owner ? OWNER_COLORS[owner] : null;
 
   const gearRows = (c.equipment || []).map(item => {
     const qClass = `q-${item.quality.replace(' ', '')}`;
@@ -197,6 +381,7 @@ function renderDetail(c) {
           ${c.spec ? `<span class="badge badge-spec">${c.spec}</span>` : ''}
           <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-dim)">${c.race}</span>
           <span class="badge" style="background:rgba(255,255,255,0.05);color:var(--text-dim)">${c.faction}</span>
+          ${owner ? `<span class="badge" style="background:rgba(255,255,255,0.05);color:${ownerColor}">👤 ${owner}</span>` : ''}
         </div>
         ${c.achievementPoints ? `<div style="font-size:0.7rem;color:var(--text-dim);margin-top:6px">🏆 ${c.achievementPoints.toLocaleString()} achievement points</div>` : ''}
       </div>
@@ -262,7 +447,6 @@ function selectForCompare(name, realm) {
   } else if (!compareSelection[1]) {
     compareSelection[1] = name;
   } else {
-    // Replace first
     compareSelection[0] = compareSelection[1];
     compareSelection[1] = name;
   }
@@ -381,19 +565,4 @@ function closeCompareModal(event) {
   if (!event || event.target === document.getElementById('compare-modal')) {
     document.getElementById('compare-modal').classList.add('hidden');
   }
-}
-
-// === Sort / Filter helpers ===
-function setSort(key, btn) {
-  sortBy = key;
-  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filterAndRender();
-}
-
-function setMinLevel(lvl, btn) {
-  minLevel = lvl;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  filterAndRender();
 }

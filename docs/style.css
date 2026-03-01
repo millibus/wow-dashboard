@@ -416,3 +416,220 @@ main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
   h1 { font-size: 1.2rem; }
   .gear-table { font-size: 0.72rem; }
 }
+
+/* === Layout (Sidebar + Main) === */
+.layout {
+  display: flex;
+  gap: 0;
+  min-height: calc(100vh - 140px);
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.filter-panel {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 20px 16px;
+  position: sticky;
+  top: 65px;
+  height: calc(100vh - 65px);
+  overflow-y: auto;
+}
+
+.content-area {
+  flex: 1;
+  padding: 20px 24px;
+  min-width: 0;
+}
+
+.filter-section {
+  margin-bottom: 20px;
+}
+
+.filter-label {
+  display: block;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  outline: none;
+  box-sizing: border-box;
+}
+.search-input:focus { border-color: var(--gold); }
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.filter-pill {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-pill:hover {
+  border-color: var(--pill-color, var(--gold));
+  color: var(--pill-color, var(--gold));
+}
+.filter-pill.active {
+  background: var(--pill-color, var(--gold));
+  border-color: var(--pill-color, var(--gold));
+  color: #000;
+  font-weight: 700;
+}
+.filter-pill.active .pill-count {
+  opacity: 0.7;
+}
+.pill-count {
+  font-size: 0.65rem;
+  opacity: 0.6;
+  margin-left: 2px;
+}
+
+.level-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.15s;
+}
+.level-btn:hover { border-color: var(--gold); color: var(--gold); }
+.level-btn.active { background: var(--gold); border-color: var(--gold); color: #000; font-weight: 700; }
+
+.sort-select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text-bright);
+  padding: 7px 10px;
+  border-radius: var(--radius);
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+.sort-select:focus { border-color: var(--gold); }
+
+/* === Active Filter Chips === */
+.active-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  min-height: 28px;
+  font-size: 0.78rem;
+}
+
+.result-count {
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  margin-right: 4px;
+}
+
+.chip {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--chip-color, var(--border));
+  color: var(--chip-color, var(--text-bright));
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chip-x {
+  cursor: pointer;
+  opacity: 0.6;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+.chip-x:hover { opacity: 1; }
+
+.clear-all-btn {
+  background: transparent;
+  border: 1px solid var(--text-dim);
+  color: var(--text-dim);
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.15s;
+}
+.clear-all-btn:hover { border-color: var(--text-bright); color: var(--text-bright); }
+
+/* === Owner badge on cards === */
+.char-owner {
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.badge-race {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-dim);
+  font-size: 0.65rem;
+}
+
+/* === Header right === */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Guild stats inside header */
+header .guild-stats {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 10px 0 14px;
+  border: none;
+  background: transparent;
+}
+
+/* === Sidebar compare button === */
+.filter-panel .btn-compare-mode {
+  width: 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  padding: 8px 14px;
+}
+
+/* === Mobile responsive === */
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+  .filter-panel {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .pill-group { flex-direction: row; }
+}
