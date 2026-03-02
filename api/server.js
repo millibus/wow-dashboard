@@ -110,6 +110,7 @@ async function fetchCharacter(realm, name) {
     const result = {
       name: p.name || name,
       realm: p.realm?.name || realm,
+      lastLogin: p.last_login_timestamp || null,
       level: p.level || 0,
       race: p.race?.name || '?',
       className: p.character_class?.name || '?',
@@ -148,6 +149,13 @@ async function fetchCharacter(realm, name) {
         flightPaths: achMap['Flight paths taken'] || 0,
         timesHearthed: achMap['Number of times hearthed'] || 0,
         honorableKills: achMap['Total Honorable Kills'] || 0,
+        // Content cleared
+        dungeonsEntered: achMap['Total 5-player dungeons entered'] || 0,
+        delvesCompleted: achMap['Total delves completed'] || 0,
+        raidsEntered: (achMap['Total 10-player raids entered'] || 0) + (achMap['Total 25-player raids entered'] || 0),
+        bossesDefeated: Object.entries(achMap)
+          .filter(([k]) => /bosses defeated/i.test(k) && /player/i.test(k))
+          .reduce((sum, [,v]) => sum + v, 0),
       }
     };
 
@@ -224,6 +232,78 @@ app.get('/api/character/:realm/:name', async (req, res) => {
     const char = await fetchCharacter(realm, name);
     if (!char) return res.status(404).json({ error: 'Character not found' });
     res.json(char);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/character/:realm/:name/pets
+app.get('/api/character/:realm/:name/pets', async (req, res) => {
+  try {
+    const { realm, name } = req.params;
+    const key = `pets:${realm}:${name}`;
+    const cached = cache.get(key);
+    if (cached) return res.json(cached);
+
+    const encoded = encodeURIComponent(name.toLowerCase());
+    const realmSlug = realm.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
+    const data = await bnet(`/profile/wow/character/${realmSlug}/${encoded}/collections/pets?namespace=profile-us`);
+
+    const pets = (data.pets || []).map(p => ({
+      name: p.species?.name || '?',
+      quality: p.quality?.name || 'Common',
+      level: p.level || 1,
+      isFavorite: p.is_favorite || false,
+      speciesId: p.species?.id || 0,
+    }));
+
+    // Deduplicate by name+quality — keep highest level per unique pet
+    const seen = {};
+    const unique = [];
+    for (const p of pets) {
+      const key = `${p.name}|${p.quality}`;
+      if (!seen[key] || seen[key].level < p.level) {
+        seen[key] = p;
+      }
+    }
+    for (const p of Object.values(seen)) unique.push(p);
+    unique.sort((a, b) => {
+      const rOrder = { Epic: 0, Rare: 1, Uncommon: 2, Common: 3, Poor: 4 };
+      const ra = rOrder[a.quality] ?? 5, rb = rOrder[b.quality] ?? 5;
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name);
+    });
+
+    const result = { total: pets.length, unique: unique.length, pets: unique };
+    cache.set(key, result);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/character/:realm/:name/mounts
+app.get('/api/character/:realm/:name/mounts', async (req, res) => {
+  try {
+    const { realm, name } = req.params;
+    const key = `mounts:${realm}:${name}`;
+    const cached = cache.get(key);
+    if (cached) return res.json(cached);
+
+    const encoded = encodeURIComponent(name.toLowerCase());
+    const realmSlug = realm.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
+    const data = await bnet(`/profile/wow/character/${realmSlug}/${encoded}/collections/mounts?namespace=profile-us`);
+
+    const mounts = (data.mounts || []).map(m => ({
+      name: m.mount?.name || '?',
+      mountId: m.mount?.id || 0,
+      isUsable: m.is_usable !== false,
+      isFavorite: m.is_favorite || false,
+    })).sort((a, b) => a.name.localeCompare(b.name));
+
+    const result = { total: mounts.length, mounts };
+    cache.set(key, result);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

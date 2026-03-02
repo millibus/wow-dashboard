@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>⚔️ Deaths Edge — Guild Dashboard</title>
+  <title>⚔️ Death's Edge — Guild Dashboard</title>
+  <meta name="description" content="Death's Edge guild dashboard — character roster, ilvl leaderboard, pets and mounts for Onyxia-US.">
+  <meta property="og:title" content="⚔️ Death's Edge — Guild Dashboard">
+  <meta property="og:description" content="Character roster, ilvl leaderboard, stats, pets and mounts for Death's Edge on Onyxia-US.">
+  <meta property="og:image" content="https://wow.nwpremier.net/og-preview.jpg">
+  <meta property="og:url" content="https://wow.nwpremier.net">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,13 +22,13 @@
     <div class="header-title">
       <span class="sword">⚔️</span>
       <div>
-        <h1>Deaths Edge</h1>
+        <h1>Death's Edge</h1>
         <p class="subtitle">Guild Dashboard — Onyxia-US</p>
       </div>
     </div>
     <div class="header-right">
       <div class="guild-toggle">
-        <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Deaths Edge</button>
+        <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Death's Edge</button>
         <button class="guild-toggle-btn" data-slug="riot-act" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
       </div>
       <span id="last-updated" class="last-updated"></span>
@@ -87,6 +95,8 @@
 <div class="view-tabs">
   <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
   <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
+  <button class="view-tab" id="tab-pets" onclick="switchView('pets')">🐾 Pets</button>
+  <button class="view-tab" id="tab-mounts" onclick="switchView('mounts')">🐎 Mounts</button>
 </div>
 
 <!-- RESULTS / CHIPS (roster only) -->
@@ -103,15 +113,33 @@
     <div class="lb-control-group">
       <label class="filter-bar-label">Category</label>
       <select id="lb-category" class="sort-select" onchange="renderLeaderboard()">
-        <option value="ilvl">⚔ Avg Item Level</option>
-        <option value="level">📊 Character Level</option>
-        <option value="health">❤️ Health Pool</option>
-        <option value="crit">🎯 Crit %</option>
-        <option value="haste">⚡ Haste %</option>
-        <option value="mastery">🔵 Mastery %</option>
-        <option value="vers">🛡 Versatility %</option>
-        <option value="armor">🪖 Armor</option>
-        <option value="achievement">🏅 Achievement Points</option>
+        <optgroup label="⚔ Gear">
+          <option value="ilvl">⚔ Avg Item Level</option>
+          <option value="level">📊 Character Level</option>
+          <option value="achievement">🏅 Achievement Points</option>
+        </optgroup>
+        <optgroup label="📊 Combat Stats">
+          <option value="health">❤️ Health Pool</option>
+          <option value="crit">🎯 Crit %</option>
+          <option value="haste">⚡ Haste %</option>
+          <option value="mastery">🔵 Mastery %</option>
+          <option value="vers">🛡 Versatility %</option>
+          <option value="armor">🪖 Armor</option>
+        </optgroup>
+        <optgroup label="⚔️ Content Cleared">
+          <option value="content">📊 Content Cleared (Dungeons + Raids + Delves)</option>
+        </optgroup>
+        <optgroup label="💀 Life Stats (click character to load)">
+          <option value="totalDeaths">💀 Total Deaths</option>
+          <option value="killingBlows">⚔️ Killing Blows</option>
+          <option value="creaturesKilled">🗡️ Creatures Killed</option>
+          <option value="crittersKilled">🐿️ Critters Killed</option>
+          <option value="questsAbandoned">📜 Quests Abandoned</option>
+          <option value="questsCompleted">✅ Quests Completed</option>
+          <option value="honorableKills">🏹 Honorable Kills</option>
+          <option value="deathsFromFalling">🪂 Deaths from Falling</option>
+          <option value="flightPaths">✈️ Flight Paths Taken</option>
+        </optgroup>
       </select>
     </div>
     <div class="lb-control-group">
@@ -120,6 +148,61 @@
     </div>
   </div>
   <div id="leaderboard-table"></div>
+</div>
+
+<!-- PETS VIEW -->
+<div class="main-content hidden" id="view-pets">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Character</label>
+      <select id="pets-char-select" class="sort-select" onchange="loadPets()">
+        <option value="">Select a character...</option>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Filter</label>
+      <div class="filter-bar-pills" id="pets-rarity-filter">
+        <button class="filter-pill active" onclick="setPetsRarity('',this)">All</button>
+        <button class="filter-pill" style="--pill-color:#a335ee" onclick="setPetsRarity('Epic',this)">Epic</button>
+        <button class="filter-pill" style="--pill-color:#0070dd" onclick="setPetsRarity('Rare',this)">Rare</button>
+        <button class="filter-pill" style="--pill-color:#1eff00" onclick="setPetsRarity('Uncommon',this)">Uncommon</button>
+        <button class="filter-pill" onclick="setPetsRarity('Common',this)">Common</button>
+        <button class="filter-pill" id="pets-fav-btn" onclick="togglePetsFav(this)">⭐ Faves only</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Search</label>
+      <input type="text" class="filter-search" id="pets-search" placeholder="Pet name..." oninput="renderPets()" style="width:180px">
+    </div>
+  </div>
+  <div id="pets-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="pets-grid" class="pets-grid"></div>
+</div>
+
+<!-- MOUNTS VIEW -->
+<div class="main-content hidden" id="view-mounts">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Character</label>
+      <select id="mounts-char-select" class="sort-select" onchange="loadMounts()">
+        <option value="">Select a character...</option>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Filter</label>
+      <div class="filter-bar-pills" id="mounts-filter-pills">
+        <button class="filter-pill active" onclick="setMountsFilter('all',this)">All</button>
+        <button class="filter-pill" onclick="setMountsFilter('fav',this)">⭐ Faves</button>
+        <button class="filter-pill" onclick="setMountsFilter('unusable',this)">🚫 Can't use</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Search</label>
+      <input type="text" class="filter-search" id="mounts-search" placeholder="Mount name..." oninput="renderMounts()" style="width:180px">
+    </div>
+  </div>
+  <div id="mounts-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="mounts-grid" class="pets-grid"></div>
 </div>
 
 <!-- Character Detail Modal -->
