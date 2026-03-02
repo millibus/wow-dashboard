@@ -1063,3 +1063,113 @@ h1 {
 }
 
 .hidden { display: none !important; }
+
+.content-cell {
+  text-align: right;
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-bright);
+}
+
+.content-total {
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+   Pets Tab
+   ============================================================ */
+.pets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+  padding: 16px 20px 40px;
+}
+
+.pet-card {
+  background: var(--card-bg);
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s, box-shadow 0.15s;
+  cursor: default;
+}
+
+.pet-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.pet-quality-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  opacity: 0.8;
+}
+
+.pet-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.pet-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pet-fav {
+  font-size: 0.7rem;
+}
+
+.pet-maxed {
+  font-size: 0.62rem;
+  background: var(--gold);
+  color: #000;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.pet-level {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.06);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.pet-rarity {
+  font-size: 0.62rem;
+  opacity: 0.8;
+  margin-left: auto;
+}
+
+/* === Back to top button === */
+#back-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg2);
+  border: 1px solid var(--border-bright);
+  color: var(--gold);
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, background 0.15s;
+  z-index: 200;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+#back-to-top:hover { background: var(--bg3); }

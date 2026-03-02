@@ -50,6 +50,7 @@ const OWNER_MAP = {
   'Jeetkundo': 'Revan',
   'Demonik': 'Revan',
   'Alduen': 'Revan',
+  'Dendis': 'Revan',
   // potac's Alliance characters (Riot Act):
   'Huejanus': 'potac',
   'Lumian': 'potac',
@@ -99,7 +100,29 @@ let compareSelection = [null, null];
 let currentGuildSlug = 'deaths-edge';
 
 // === Init ===
-window.addEventListener('DOMContentLoaded', () => loadGuild(false));
+window.addEventListener('DOMContentLoaded', () => {
+  loadGuild(false);
+
+  // ESC closes any open modal
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      document.getElementById('modal')?.classList.add('hidden');
+      document.getElementById('compare-modal')?.classList.add('hidden');
+    }
+  });
+
+  // Back-to-top button
+  const btn = document.createElement('button');
+  btn.id = 'back-to-top';
+  btn.innerHTML = '↑';
+  btn.title = 'Back to top';
+  btn.onclick = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.body.appendChild(btn);
+  window.addEventListener('scroll', () => {
+    btn.style.opacity = window.scrollY > 400 ? '1' : '0';
+    btn.style.pointerEvents = window.scrollY > 400 ? 'auto' : 'none';
+  });
+});
 
 function switchGuild(slug) {
   if (slug === currentGuildSlug) return;
@@ -109,7 +132,7 @@ function switchGuild(slug) {
     btn.classList.toggle('active', btn.dataset.slug === slug);
   });
   // Update header title
-  const titles = { 'deaths-edge': 'Deaths Edge', 'riot-act': 'Riot Act' };
+  const titles = { 'deaths-edge': "Death's Edge", 'riot-act': 'Riot Act' };
   const subtitles = { 'deaths-edge': '🔴 Horde — Onyxia-US', 'riot-act': '🔵 Alliance — Onyxia-US' };
   const h1 = document.querySelector('h1');
   const sub = document.querySelector('.subtitle');
@@ -420,13 +443,19 @@ function switchView(view) {
   currentView = view;
   document.getElementById('view-roster').classList.toggle('hidden', view !== 'roster');
   document.getElementById('view-leaderboard').classList.toggle('hidden', view !== 'leaderboard');
+  document.getElementById('view-pets').classList.toggle('hidden', view !== 'pets');
+  document.getElementById('view-mounts').classList.toggle('hidden', view !== 'mounts');
   document.getElementById('active-chips').classList.toggle('hidden', view !== 'roster');
+  // Hide roster filter bar on non-roster tabs
+  const filterBar = document.getElementById('filter-bar');
+  if (filterBar) filterBar.classList.toggle('hidden', view !== 'roster');
   document.getElementById('tab-roster').classList.toggle('active', view === 'roster');
   document.getElementById('tab-leaderboard').classList.toggle('active', view === 'leaderboard');
-  if (view === 'leaderboard') {
-    buildLbOwnerFilter();
-    renderLeaderboard();
-  }
+  document.getElementById('tab-pets').classList.toggle('active', view === 'pets');
+  document.getElementById('tab-mounts').classList.toggle('active', view === 'mounts');
+  if (view === 'leaderboard') { buildLbOwnerFilter(); renderLeaderboard(); }
+  if (view === 'pets') { buildPetsCharSelect(); }
+  if (view === 'mounts') { buildMountsCharSelect(); }
 }
 
 function buildLbOwnerFilter() {
@@ -447,13 +476,74 @@ function setLbOwner(val, btn) {
   renderLeaderboard();
 }
 
+function renderContentLeaderboard(members) {
+  const sorted = [...members].map(m => {
+    const ls = m.lifeStats || {};
+    const dungeons = ls.dungeonsEntered || 0;
+    const bosses = ls.bossesDefeated || 0;
+    const delves = ls.delvesCompleted || 0;
+    const raids = ls.raidsEntered || 0;
+    return { ...m, dungeons, bosses, delves, raids, total: dungeons + delves };
+  }).sort((a, b) => b.total - a.total);
+
+  const rows = sorted.map((m, i) => {
+    const color = CLASS_COLORS[m.className] || '#c8a84b';
+    const owner = m.owner;
+    const ownerColor = owner ? OWNER_COLORS[owner] : null;
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+    const portrait = m.avatarUrl
+      ? `<img src="${m.avatarUrl}" alt="" class="lb-avatar" loading="lazy">`
+      : `<div class="lb-avatar-placeholder" style="color:${color}">⚔</div>`;
+    return `
+      <tr class="lb-row" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+        <td class="lb-rank">${medal}</td>
+        <td class="lb-char">
+          ${portrait}
+          <div>
+            <div class="lb-name" style="color:${color}">${m.name}</div>
+            <div class="lb-sub">${m.spec || ''} ${m.className}</div>
+          </div>
+        </td>
+        <td class="lb-owner-cell">${owner ? `<span style="color:${ownerColor};font-weight:700">● ${owner}</span>` : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="content-cell">${m.dungeons > 0 ? m.dungeons.toLocaleString() : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="content-cell">${m.bosses > 0 ? m.bosses.toLocaleString() : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="content-cell">${m.raids > 0 ? m.raids.toLocaleString() : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="content-cell">${m.delves > 0 ? m.delves.toLocaleString() : '<span style="color:var(--text-dim)">—</span>'}</td>
+        <td class="content-cell content-total" style="color:${color}">${m.total > 0 ? m.total.toLocaleString() : '—'}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('leaderboard-table').innerHTML = `
+    <table class="lb-table">
+      <thead>
+        <tr>
+          <th class="lb-rank-hd">#</th>
+          <th>Character</th>
+          <th>Owner</th>
+          <th>Dungeons</th>
+          <th>Boss Kills</th>
+          <th>Raids</th>
+          <th>Delves</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-dim)">No data</td></tr>'}</tbody>
+    </table>`;
+}
+
 function renderLeaderboard() {
   const cat = document.getElementById('lb-category')?.value || 'ilvl';
   let members = [...allMembers];
   if (lbOwnerFilter) members = members.filter(m => m.owner === lbOwnerFilter);
 
+  if (cat === 'content') { renderContentLeaderboard(members); return; }
+
+  const LIFESTATS_CATS = ['totalDeaths','killingBlows','creaturesKilled','crittersKilled',
+    'questsAbandoned','questsCompleted','honorableKills','deathsFromFalling','flightPaths'];
+
   const getValue = (m) => {
     const s = m.stats || {};
+    const ls = m.lifeStats || {};
     switch(cat) {
       case 'ilvl': return m.averageIlvl || 0;
       case 'level': return m.level || 0;
@@ -464,15 +554,16 @@ function renderLeaderboard() {
       case 'vers': return s.vers || 0;
       case 'armor': return s.armor || 0;
       case 'achievement': return m.achievementPoints || 0;
-      default: return 0;
+      default: return ls[cat] || 0;
     }
   };
 
   const formatVal = (m) => {
     const v = getValue(m);
     if (['crit','haste','mastery','vers'].includes(cat)) return `${v}%`;
-    if (cat === 'health' || cat === 'armor') return v.toLocaleString();
-    return v || '—';
+    if (['health','armor'].includes(cat)) return v.toLocaleString();
+    if (LIFESTATS_CATS.includes(cat) && v === 0) return '—';
+    return v ? v.toLocaleString() : '—';
   };
 
   members.sort((a, b) => getValue(b) - getValue(a));
@@ -480,7 +571,12 @@ function renderLeaderboard() {
   const categoryLabels = {
     ilvl: '⚔ Avg ilvl', level: '📊 Level', health: '❤️ Health',
     crit: '🎯 Crit', haste: '⚡ Haste', mastery: '🔵 Mastery',
-    vers: '🛡 Vers', armor: '🪖 Armor', achievement: '🏅 Achievements'
+    vers: '🛡 Vers', armor: '🪖 Armor', achievement: '🏅 Achievements',
+    totalDeaths: '💀 Total Deaths', killingBlows: '⚔️ Killing Blows',
+    creaturesKilled: '🗡️ Creatures Killed', crittersKilled: '🐿️ Critters Killed',
+    questsAbandoned: '📜 Quests Abandoned', questsCompleted: '✅ Quests Completed',
+    honorableKills: '🏹 Honorable Kills', deathsFromFalling: '🪂 Deaths from Falling',
+    flightPaths: '✈️ Flight Paths'
   };
 
   const maxVal = Math.max(...members.map(m => getValue(m))) || 1;
@@ -611,6 +707,7 @@ function renderDetail(c) {
           ${owner ? `<span class="badge" style="background:rgba(255,255,255,0.05);color:${ownerColor}">👤 ${owner}</span>` : ''}
         </div>
         ${c.achievementPoints ? `<div style="font-size:0.7rem;color:var(--text-dim);margin-top:6px">🏆 ${c.achievementPoints.toLocaleString()} achievement points</div>` : ''}
+        <a href="https://worldofwarcraft.blizzard.com/en-us/character/us/${encodeURIComponent((c.realm||'onyxia').toLowerCase())}/${encodeURIComponent(c.name.toLowerCase())}" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:0.72rem;color:var(--gold);text-decoration:none;border:1px solid var(--gold);padding:2px 10px;border-radius:4px;opacity:0.8" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'">⚔ View on Armory ↗</a>
       </div>
       <div style="text-align:right">
         <div class="detail-ilvl">${c.averageIlvl || '—'}</div>
@@ -637,6 +734,36 @@ function renderDetail(c) {
       <tbody>${gearRows}</tbody>
     </table>
     ${(c.equipment || []).some(i => i.hasEmptySocket) ? '<div style="margin-top:10px;font-size:0.75rem;color:#ffeb3b">⚠ Empty gem sockets detected — free stat gains available!</div>' : ''}
+
+    ${renderLifeStats(c.lifeStats)}
+  `;
+}
+
+function renderLifeStats(ls) {
+  if (!ls) return '';
+  const stats = [
+    { label: '💀 Total Deaths', val: ls.totalDeaths, note: ls.deathsFromFalling ? `(${ls.deathsFromFalling} from falling 🪂)` : '' },
+    { label: '⚔️ Killing Blows', val: ls.killingBlows },
+    { label: '🗡️ Creatures Killed', val: ls.creaturesKilled },
+    { label: '🐿️ Critters Killed', val: ls.crittersKilled },
+    { label: '✅ Quests Completed', val: ls.questsCompleted },
+    { label: '📜 Quests Abandoned', val: ls.questsAbandoned },
+    { label: '🏹 Honorable Kills', val: ls.honorableKills },
+    { label: '✈️ Flight Paths', val: ls.flightPaths },
+    { label: '🏠 Times Hearthed', val: ls.timesHearthed },
+  ].filter(s => s.val > 0);
+  if (!stats.length) return '';
+
+  return `
+    <div class="section-title">Life Stats</div>
+    <div class="stats-grid">
+      ${stats.map(s => `
+        <div class="stat-box">
+          <div class="stat-box-label">${s.label}</div>
+          <div class="stat-box-value">${s.val.toLocaleString()} ${s.note ? `<span style="font-size:0.7rem;color:var(--text-dim)">${s.note}</span>` : ''}</div>
+        </div>`).join('')}
+    </div>
+    ${ls.questsAbandoned > ls.questsCompleted ? '<div style="margin-top:6px;font-size:0.72rem;color:#f39c12">⚠ More quests abandoned than completed. No comment.</div>' : ''}
   `;
 }
 
@@ -792,4 +919,192 @@ function closeCompareModal(event) {
   if (!event || event.target === document.getElementById('compare-modal')) {
     document.getElementById('compare-modal').classList.add('hidden');
   }
+}
+
+// === Mounts Tab ===
+let mountsData = null;
+let mountsFilter = 'all';
+
+function buildMountsCharSelect() {
+  const sel = document.getElementById('mounts-char-select');
+  const grid = document.getElementById('mounts-grid');
+  if (grid && !grid.innerHTML.trim()) {
+    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐎 Select a character above to view their mount collection</div>';
+  }
+  if (sel.options.length > 1) return;
+  const sorted = [...allMembers].sort((a, b) => {
+    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
+    if (oa !== ob) return oa.localeCompare(ob);
+    return (b.averageIlvl||0) - (a.averageIlvl||0);
+  });
+  for (const m of sorted) {
+    const opt = document.createElement('option');
+    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
+    const owner = m.owner ? `[${m.owner}] ` : '';
+    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
+    sel.appendChild(opt);
+  }
+}
+
+async function loadMounts() {
+  const sel = document.getElementById('mounts-char-select');
+  const val = sel.value;
+  if (!val) return;
+  const [realm, name] = val.split('|');
+  const grid = document.getElementById('mounts-grid');
+  const summary = document.getElementById('mounts-summary');
+  grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading mount collection...</div>';
+  summary.textContent = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}/mounts`);
+    if (!res.ok) throw new Error(`${res.status}`);
+    mountsData = await res.json();
+    renderMounts();
+  } catch (err) {
+    grid.innerHTML = `<div style="padding:40px;text-align:center;color:#e74c3c">Failed to load mounts: ${err.message}</div>`;
+  }
+}
+
+function setMountsFilter(filter, btn) {
+  mountsFilter = filter;
+  document.querySelectorAll('#mounts-filter-pills .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderMounts();
+}
+
+function renderMounts() {
+  if (!mountsData) return;
+  const searchVal = (document.getElementById('mounts-search')?.value || '').toLowerCase();
+  let mounts = mountsData.mounts || [];
+
+  if (mountsFilter === 'fav') mounts = mounts.filter(m => m.isFavorite);
+  if (mountsFilter === 'unusable') mounts = mounts.filter(m => !m.isUsable);
+  if (searchVal) mounts = mounts.filter(m => m.name.toLowerCase().includes(searchVal));
+
+  const favCount = mountsData.mounts.filter(m => m.isFavorite).length;
+  document.getElementById('mounts-summary').textContent =
+    `${mountsData.total} mounts collected · ${favCount} favorited · showing ${mounts.length}`;
+
+  const grid = document.getElementById('mounts-grid');
+  if (!mounts.length) {
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">No mounts match filters</div>';
+    return;
+  }
+
+  grid.innerHTML = mounts.map(m => {
+    const fav = m.isFavorite ? '<span class="pet-fav">⭐</span>' : '';
+    const unusable = !m.isUsable ? '<span style="font-size:0.62rem;color:#e74c3c">🚫 Can\'t use</span>' : '';
+    const color = m.isFavorite ? 'var(--gold)' : 'var(--text-bright)';
+    return `
+      <div class="pet-card" style="border-color:${m.isFavorite ? 'var(--gold)' : '#333'}33">
+        <div class="pet-quality-bar" style="background:${m.isFavorite ? 'var(--gold)' : '#555'}"></div>
+        <div class="pet-name" style="color:${color}">🐎 ${m.name}</div>
+        <div class="pet-meta">${fav}${unusable}</div>
+      </div>`;
+  }).join('');
+}
+
+// === Pets Tab ===
+let petsData = null;
+let petsRarityFilter = '';
+let petsFavOnly = false;
+
+const QUALITY_COLORS = {
+  Epic: '#a335ee', Rare: '#0070dd', Uncommon: '#1eff00', Common: '#ffffff', Poor: '#9d9d9d'
+};
+
+function buildPetsCharSelect() {
+  const sel = document.getElementById('pets-char-select');
+  // Show guidance when no character selected
+  const grid = document.getElementById('pets-grid');
+  if (grid && !grid.innerHTML.trim()) {
+    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐾 Select a character above to view their pet collection</div>';
+  }
+  if (sel.options.length > 1) return; // already built
+  const sorted = [...allMembers].sort((a, b) => {
+    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
+    if (oa !== ob) return oa.localeCompare(ob);
+    return (b.averageIlvl||0) - (a.averageIlvl||0);
+  });
+  for (const m of sorted) {
+    const opt = document.createElement('option');
+    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
+    const owner = m.owner ? `[${m.owner}] ` : '';
+    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
+    sel.appendChild(opt);
+  }
+}
+
+async function loadPets() {
+  const sel = document.getElementById('pets-char-select');
+  const val = sel.value;
+  if (!val) return;
+  const [realm, name] = val.split('|');
+  const grid = document.getElementById('pets-grid');
+  const summary = document.getElementById('pets-summary');
+  grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading pet collection...</div>';
+  summary.textContent = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}/pets`);
+    if (!res.ok) throw new Error(`${res.status}`);
+    petsData = await res.json();
+    renderPets();
+  } catch (err) {
+    grid.innerHTML = `<div style="padding:40px;text-align:center;color:#e74c3c">Failed to load pets: ${err.message}</div>`;
+  }
+}
+
+function setPetsRarity(rarity, btn) {
+  petsRarityFilter = rarity;
+  document.querySelectorAll('#pets-rarity-filter .filter-pill').forEach(b => {
+    if (b.id !== 'pets-fav-btn') b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderPets();
+}
+
+function togglePetsFav(btn) {
+  petsFavOnly = !petsFavOnly;
+  btn.classList.toggle('active', petsFavOnly);
+  renderPets();
+}
+
+function renderPets() {
+  if (!petsData) return;
+  const searchVal = (document.getElementById('pets-search')?.value || '').toLowerCase();
+  let pets = petsData.pets || [];
+
+  if (petsFavOnly) pets = pets.filter(p => p.isFavorite);
+  if (petsRarityFilter) pets = pets.filter(p => p.quality === petsRarityFilter);
+  if (searchVal) pets = pets.filter(p => p.name.toLowerCase().includes(searchVal));
+
+  const byRarity = {};
+  for (const p of petsData.pets) {
+    byRarity[p.quality] = (byRarity[p.quality] || 0) + 1;
+  }
+  const rarityStr = Object.entries(byRarity)
+    .sort((a,b) => ['Epic','Rare','Uncommon','Common','Poor'].indexOf(a[0]) - ['Epic','Rare','Uncommon','Common','Poor'].indexOf(b[0]))
+    .map(([q,c]) => `<span style="color:${QUALITY_COLORS[q]||'#fff'}">${c} ${q}</span>`)
+    .join(' · ');
+
+  document.getElementById('pets-summary').innerHTML =
+    `${petsData.total} total collected · ${petsData.unique} unique · ${rarityStr} · showing ${pets.length}`;
+
+  const grid = document.getElementById('pets-grid');
+  if (!pets.length) {
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">No pets match filters</div>';
+    return;
+  }
+
+  grid.innerHTML = pets.map(p => {
+    const color = QUALITY_COLORS[p.quality] || '#fff';
+    const fav = p.isFavorite ? '<span class="pet-fav">⭐</span>' : '';
+    const maxed = p.level >= 25 ? '<span class="pet-maxed">MAX</span>' : `<span class="pet-level">L${p.level}</span>`;
+    return `
+      <div class="pet-card" style="border-color:${color}22">
+        <div class="pet-quality-bar" style="background:${color}"></div>
+        <div class="pet-name" style="color:${color}">${p.name}</div>
+        <div class="pet-meta">${fav}${maxed}<span class="pet-rarity" style="color:${color}">${p.quality}</span></div>
+      </div>`;
+  }).join('');
 }
