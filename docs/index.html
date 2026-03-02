@@ -95,6 +95,7 @@
 <div class="view-tabs">
   <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
   <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
+  <button class="view-tab" id="tab-raids" onclick="switchView('raids')">⚔ Raids</button>
   <button class="view-tab" id="tab-pets" onclick="switchView('pets')">🐾 Pets</button>
   <button class="view-tab" id="tab-mounts" onclick="switchView('mounts')">🐎 Mounts</button>
 </div>
@@ -203,6 +204,30 @@
   </div>
   <div id="mounts-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
   <div id="mounts-grid" class="pets-grid"></div>
+</div>
+
+<!-- Raids View -->
+<div class="main-content hidden" id="view-raids">
+  <div class="leaderboard-controls" style="flex-wrap:wrap;gap:12px">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Tier</label>
+      <div class="filter-bar-pills" id="raid-tier-pills"></div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Difficulty</label>
+      <div class="filter-bar-pills" id="raid-diff-pills">
+        <button class="filter-pill active" onclick="setRaidDiff('normal',this)">Normal</button>
+        <button class="filter-pill" onclick="setRaidDiff('heroic',this)">Heroic</button>
+        <button class="filter-pill" onclick="setRaidDiff('mythic',this)">Mythic</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="raid-owner-pills"></div>
+    </div>
+  </div>
+  <div id="raid-loading" style="padding:60px;text-align:center;color:var(--text-dim)">⚔ Loading raid data...</div>
+  <div id="raid-content" style="padding:16px 24px"></div>
 </div>
 
 <!-- Character Detail Modal -->
