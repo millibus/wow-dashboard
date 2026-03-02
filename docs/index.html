@@ -59,9 +59,9 @@
   <div class="filter-bar-section">
     <div class="filter-bar-label">Level</div>
     <div class="filter-bar-pills">
-      <button class="level-btn active" onclick="onLevelFilter('0', this)">All</button>
-      <button class="level-btn" onclick="onLevelFilter('70', this)">70+</button>
-      <button class="level-btn" onclick="onLevelFilter('80', this)">80+</button>
+      <button class="level-btn active" data-val="0" onclick="onLevelFilter('0', this)">All</button>
+      <button class="level-btn" data-val="70" onclick="onLevelFilter('70', this)">70+</button>
+      <button class="level-btn" data-val="80" onclick="onLevelFilter('80', this)">80+</button>
     </div>
   </div>
   <div class="filter-bar-section">
@@ -112,7 +112,7 @@
   <div class="leaderboard-controls">
     <div class="lb-control-group">
       <label class="filter-bar-label">Category</label>
-      <select id="lb-category" class="sort-select" onchange="renderLeaderboard()">
+      <select id="lb-category" class="sort-select" onchange="renderLeaderboard();updateURL()">
         <optgroup label="⚔ Gear">
           <option value="ilvl">⚔ Avg Item Level</option>
           <option value="level">📊 Character Level</option>
