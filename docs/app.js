@@ -471,6 +471,7 @@ function switchView(view) {
   currentView = view;
   document.getElementById('view-roster').classList.toggle('hidden', view !== 'roster');
   document.getElementById('view-leaderboard').classList.toggle('hidden', view !== 'leaderboard');
+  document.getElementById('view-raids').classList.toggle('hidden', view !== 'raids');
   document.getElementById('view-pets').classList.toggle('hidden', view !== 'pets');
   document.getElementById('view-mounts').classList.toggle('hidden', view !== 'mounts');
   document.getElementById('active-chips').classList.toggle('hidden', view !== 'roster');
@@ -479,9 +480,11 @@ function switchView(view) {
   if (filterBar) filterBar.classList.toggle('hidden', view !== 'roster');
   document.getElementById('tab-roster').classList.toggle('active', view === 'roster');
   document.getElementById('tab-leaderboard').classList.toggle('active', view === 'leaderboard');
+  document.getElementById('tab-raids').classList.toggle('active', view === 'raids');
   document.getElementById('tab-pets').classList.toggle('active', view === 'pets');
   document.getElementById('tab-mounts').classList.toggle('active', view === 'mounts');
   if (view === 'leaderboard') { buildLbOwnerFilter(); renderLeaderboard(); }
+  if (view === 'raids') { initRaids(); }
   if (view === 'pets') { buildPetsCharSelect(); }
   if (view === 'mounts') { buildMountsCharSelect(); }
   updateURL();
@@ -1181,4 +1184,167 @@ function applyURLTab() {
     const el = document.getElementById('lb-category');
     if (el) el.value = lbCat;
   }
+}
+
+// ============================================================
+// Raid Progress Tab
+// ============================================================
+let raidData = null;
+let raidLoaded = false;
+let raidDiff = 'normal';
+let raidTierIdx = 0;
+let raidOwnerFilter = '';
+
+async function initRaids() {
+  if (raidLoaded) { renderRaids(); return; }
+  document.getElementById('raid-loading').style.display = 'block';
+  document.getElementById('raid-content').innerHTML = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/guild/raid-progress?slug=${currentGuildSlug}`);
+    if (!res.ok) throw new Error(`${res.status}`);
+    raidData = await res.json();
+    raidLoaded = true;
+    buildRaidTierPills();
+    buildRaidOwnerPills();
+    document.getElementById('raid-loading').style.display = 'none';
+    renderRaids();
+  } catch (err) {
+    document.getElementById('raid-loading').innerHTML =
+      `<div style="color:#e74c3c">⚠️ Failed to load raid data: ${err.message}</div>`;
+  }
+}
+
+function buildRaidTierPills() {
+  const el = document.getElementById('raid-tier-pills');
+  if (!el || !raidData?.tiers?.length) return;
+  el.innerHTML = raidData.tiers.map((t, i) =>
+    `<button class="filter-pill${i === raidTierIdx ? ' active' : ''}" onclick="setRaidTier(${i},this)">${t.season}: ${t.short}</button>`
+  ).join('');
+}
+
+function buildRaidOwnerPills() {
+  const el = document.getElementById('raid-owner-pills');
+  if (!el) return;
+  const pills = [['', 'All'], ...OWNERS.map(o => [o, o])];
+  el.innerHTML = pills.map(([val, label]) => {
+    const col = val ? `style="--pill-color:${OWNER_COLORS[val]}"` : '';
+    const active = raidOwnerFilter === val ? 'active' : '';
+    return `<button class="filter-pill ${active}" ${col} onclick="setRaidOwner('${val}',this)">${label}</button>`;
+  }).join('');
+}
+
+function setRaidTier(idx, btn) {
+  raidTierIdx = idx;
+  document.querySelectorAll('#raid-tier-pills .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRaids();
+}
+
+function setRaidDiff(diff, btn) {
+  raidDiff = diff;
+  document.querySelectorAll('#raid-diff-pills .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRaids();
+}
+
+function setRaidOwner(val, btn) {
+  raidOwnerFilter = val;
+  document.querySelectorAll('#raid-owner-pills .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRaids();
+}
+
+function renderRaids() {
+  if (!raidData) return;
+  const el = document.getElementById('raid-content');
+  const tierDef = raidData.tiers?.[raidTierIdx];
+  if (!tierDef) {
+    el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center">No raid tiers available</div>';
+    return;
+  }
+
+  const bossList = tierDef.bosses || [];
+  const bossCount = bossList.length;
+
+  // Filter + sort members
+  let members = (raidData.members || []).filter(m => {
+    if (raidOwnerFilter && getOwner(m.name) !== raidOwnerFilter) return false;
+    return true;
+  });
+  // Sort by kills desc in selected diff/tier
+  members = members.sort((a, b) => {
+    const ta = a.tiers?.find(t => t.id === tierDef.id);
+    const tb = b.tiers?.find(t => t.id === tierDef.id);
+    const ka = ta ? ta.bosses.filter(boss => (boss.kills[raidDiff] || 0) > 0).length : 0;
+    const kb = tb ? tb.bosses.filter(boss => (boss.kills[raidDiff] || 0) > 0).length : 0;
+    if (kb !== ka) return kb - ka;
+    return a.name.localeCompare(b.name);
+  });
+
+  // Summary bar
+  const totalKills = members.filter(m => {
+    const t = m.tiers?.find(t => t.id === tierDef.id);
+    return t && t.bosses.some(b => (b.kills[raidDiff] || 0) > 0);
+  }).length;
+
+  const diffLabel = raidDiff.charAt(0).toUpperCase() + raidDiff.slice(1);
+
+  // Boss header row
+  const bossHeaders = bossList.map(b =>
+    `<div class="raid-boss-header" title="${b.name}">${b.short || b.name.split(' ')[0]}</div>`
+  ).join('');
+
+  // Member rows
+  const rows = members.map(m => {
+    const owner = getOwner(m.name);
+    const ownerColor = owner ? OWNER_COLORS[owner] : 'var(--text-dim)';
+    const tier = m.tiers?.find(t => t.id === tierDef.id);
+    const kills = tier ? tier.bosses : bossList.map(b => ({ ...b, kills: {} }));
+    const killCount = kills.filter(b => (b.kills[raidDiff] || 0) > 0).length;
+    const pct = Math.round((killCount / bossCount) * 100);
+
+    const bossCells = bossList.map(bossDef => {
+      const bossKill = kills.find(b => b.id === bossDef.id);
+      const count = bossKill ? (bossKill.kills[raidDiff] || 0) : 0;
+      if (count > 0) {
+        return `<div class="raid-cell raid-kill" title="${bossDef.name}: ${count} kill${count>1?'s':''}">${count > 1 ? count : '✓'}</div>`;
+      }
+      return `<div class="raid-cell raid-miss" title="${bossDef.name}: not killed">—</div>`;
+    }).join('');
+
+    return `
+      <div class="raid-row">
+        <div class="raid-char-name" onclick="openDetail('${m.name}','onyxia')" style="cursor:pointer" title="View character">
+          <span style="color:${ownerColor};font-size:0.7rem;margin-right:4px">${owner ? `[${owner}]` : ''}</span>
+          ${m.name}
+          <span class="raid-progress-text">${killCount}/${bossCount}</span>
+        </div>
+        <div class="raid-progress-bar-wrap">
+          <div class="raid-progress-bar" style="width:${pct}%;background:${pct===100?'var(--gold)':pct>50?'#27ae60':'#2980b9'}"></div>
+        </div>
+        <div class="raid-boss-cells">${bossCells}</div>
+      </div>`;
+  }).join('');
+
+  const noData = members.every(m => !m.tiers?.find(t => t.id === tierDef.id));
+
+  el.innerHTML = `
+    <div class="raid-header-bar">
+      <div style="font-size:1rem;font-weight:700;color:var(--gold)">${tierDef.name}</div>
+      <div style="font-size:0.75rem;color:var(--text-dim)">${diffLabel} — ${totalKills} of ${members.length} members have started</div>
+    </div>
+    ${noData ? `<div class="empty-state" style="padding:60px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:12px">⚔️</div>
+      <div style="color:var(--text-dim)">No guild members have entered <strong style="color:var(--text-bright)">${tierDef.name}</strong> on ${diffLabel} yet.</div>
+      <div style="font-size:0.75rem;color:var(--text-dim);margin-top:8px">Data updates as members complete encounters.</div>
+    </div>` : `
+    <div class="raid-table">
+      <div class="raid-table-header">
+        <div class="raid-char-name-header">Character</div>
+        <div class="raid-progress-header">Progress</div>
+        <div class="raid-boss-cells-header">${bossHeaders}</div>
+      </div>
+      ${rows}
+    </div>`}
+  `;
 }

@@ -324,6 +324,140 @@ app.get('/api/compare/:realm1/:name1/:realm2/:name2', async (req, res) => {
 });
 
 // Health check
+// --- Raid Progress ---
+const RAID_TIERS = [
+  {
+    name: 'Liberation of Undermine',
+    short: 'LoU',
+    season: 'TWW S2',
+    id: 1296,
+    bosses: [
+      { name: 'Vexie and the Geargrinders', id: 2639, short: 'Vexie' },
+      { name: 'Cauldron of Carnage', id: 2640, short: 'Cauldron' },
+      { name: 'Rik Reverb', id: 2641, short: 'Rik' },
+      { name: 'Stix Bunkjunker', id: 2642, short: 'Stix' },
+      { name: 'Sprocketmonger Lockenstock', id: 2653, short: 'Sprocket' },
+      { name: 'The One-Armed Bandit', id: 2644, short: 'Bandit' },
+      { name: "Mug'Zee, Heads of Security", id: 2645, short: "Mug'Zee" },
+      { name: 'Chrome King Gallywix', id: 2646, short: 'Gallywix' },
+    ]
+  },
+  {
+    name: 'Nerub-ar Palace',
+    short: 'NaP',
+    season: 'TWW S1',
+    id: 1273,
+    bosses: [
+      { name: 'Ulgrax the Devourer', id: 2607, short: 'Ulgrax' },
+      { name: 'The Bloodbound Horror', id: 2611, short: 'Bloodbound' },
+      { name: 'Sikran, Captain of the Sureki', id: 2599, short: 'Sikran' },
+      { name: "Rasha'nan", id: 2609, short: "Rasha'nan" },
+      { name: "Broodtwister Ovi'nax", id: 2612, short: "Ovi'nax" },
+      { name: "Nexus-Princess Ky'veza", id: 2601, short: "Ky'veza" },
+      { name: 'The Silken Court', id: 2608, short: 'Silken' },
+      { name: 'Queen Ansurek', id: 2602, short: 'Ansurek' },
+    ]
+  }
+];
+const CURRENT_TIER = RAID_TIERS[0];
+
+const raidCache = new NodeCache({ stdTTL: 1800 }); // 30 min — raid data changes slowly
+
+async function fetchRaidProgress(realm, name) {
+  const realmSlug = realm.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+  const encoded = encodeURIComponent(name.toLowerCase());
+  const key = `raid:${realm}:${name}`;
+  const cached = raidCache.get(key);
+  if (cached) return cached;
+
+  try {
+    const data = await bnet(`/profile/wow/character/${realmSlug}/${encoded}/encounters/raids?namespace=profile-us`);
+    const expansions = data.expansions || [];
+
+    // Find TWW (The War Within) expansion
+    const tierIds = new Set(RAID_TIERS.map(t => t.id));
+    const result = { name, realm, tiers: [] };
+
+    for (const exp of expansions) {
+      for (const inst of (exp.instances || [])) {
+        const tierDef = RAID_TIERS.find(t => t.id === inst.instance?.id);
+        if (!tierDef) continue;
+        const tierResult = {
+          id: tierDef.id,
+          name: tierDef.name,
+          short: tierDef.short,
+          season: tierDef.season,
+          bosses: tierDef.bosses.map(b => ({ name: b.name, short: b.short, id: b.id, kills: {} }))
+        };
+        for (const mode of (inst.modes || [])) {
+          const diff = mode.difficulty?.type?.toLowerCase();
+          if (!['normal', 'heroic', 'mythic'].includes(diff)) continue;
+          for (const enc of (mode.progress?.encounters || [])) {
+            const boss = tierResult.bosses.find(b => b.id === enc.encounter?.id);
+            if (boss) boss.kills[diff] = enc.completed_count || 0;
+          }
+        }
+        result.tiers.push(tierResult);
+      }
+    }
+
+    raidCache.set(key, result);
+    return result;
+  } catch (err) {
+    return { name, realm, tiers: [], error: err.message };
+  }
+}
+
+app.get('/api/guild/raid-progress', async (req, res) => {
+  try {
+    const slug = req.query.slug || 'deaths-edge';
+    const guildKey = `raid-progress-guild:${slug}`;
+    const cached = raidCache.get(guildKey);
+    if (cached) return res.json(cached);
+
+    // Get guild roster first
+    const guildData = await (async () => {
+      const gCached = guildCache.get(`guild:${slug}`);
+      if (gCached) return gCached;
+      const [roster] = await Promise.all([
+        bnet(`/data/wow/guild/onyxia/${slug}/roster?namespace=profile-us`)
+      ]);
+      return roster;
+    })();
+
+    const members = (guildData.members || [])
+      .filter(m => m.character?.level >= 80)
+      .slice(0, 35); // cap to avoid hammering API
+
+    // Fetch raid progress in parallel batches of 5
+    const results = [];
+    for (let i = 0; i < members.length; i += 5) {
+      const batch = members.slice(i, i + 5);
+      const batchResults = await Promise.all(
+        batch.map(m => fetchRaidProgress(m.character.realm?.slug || 'onyxia', m.character.name))
+      );
+      results.push(...batchResults);
+      if (i + 5 < members.length) await new Promise(r => setTimeout(r, 200)); // rate limit courtesy
+    }
+
+    const payload = { tiers: RAID_TIERS, members: results };
+    raidCache.set(guildKey, payload);
+    res.json(payload);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/character/:realm/:name/raids', async (req, res) => {
+  try {
+    const { realm, name } = req.params;
+    const data = await fetchRaidProgress(realm, name);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
 const PORT = process.env.PORT || 3002;

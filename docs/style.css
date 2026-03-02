@@ -1281,3 +1281,118 @@ h1 {
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 #back-to-top:hover { background: var(--bg3); }
+
+/* === Raid Progress Tab === */
+.raid-header-bar {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 4px 0 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.raid-table { width: 100%; }
+
+.raid-table-header, .raid-row {
+  display: grid;
+  grid-template-columns: 220px 120px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.raid-table-header {
+  font-size: 0.65rem;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.raid-row:hover { background: rgba(255,255,255,0.02); border-radius: 6px; }
+
+.raid-char-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.raid-progress-text {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+.raid-progress-bar-wrap {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.raid-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.raid-boss-cells, .raid-boss-cells-header {
+  display: flex;
+  gap: 3px;
+}
+
+.raid-boss-header {
+  flex: 1;
+  min-width: 32px;
+  font-size: 0.58rem;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 2px;
+  color: var(--text-dim);
+}
+
+.raid-cell {
+  flex: 1;
+  min-width: 32px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.raid-kill {
+  background: rgba(39,174,96,0.25);
+  color: #27ae60;
+  border: 1px solid rgba(39,174,96,0.3);
+}
+
+.raid-miss {
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+@media (max-width: 768px) {
+  .raid-table-header, .raid-row {
+    grid-template-columns: 140px 80px 1fr;
+    gap: 8px;
+  }
+  .raid-boss-header { min-width: 22px; font-size: 0.5rem; }
+  .raid-cell { min-width: 22px; font-size: 0.6rem; height: 20px; }
+}
