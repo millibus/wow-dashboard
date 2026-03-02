@@ -101,6 +101,7 @@ let currentGuildSlug = 'deaths-edge';
 
 // === Init ===
 window.addEventListener('DOMContentLoaded', () => {
+  loadFromURL();
   loadGuild(false);
 
   // ESC closes any open modal
@@ -145,6 +146,7 @@ function switchGuild(slug) {
   searchQuery = '';
   const searchEl = document.getElementById('search');
   if (searchEl) searchEl.value = '';
+  updateURL();
   loadGuild(false);
 }
 
@@ -179,6 +181,7 @@ async function loadGuild(forceRefresh) {
     buildFilterOptions();
     renderGuildStats(data);
     filterAndRender();
+    applyURLTab();
   } catch (err) {
     document.getElementById('character-grid').innerHTML =
       `<div class="empty-state">⚠️ Failed to load guild data.<br><small>${err.message}</small><br><br>
@@ -217,6 +220,26 @@ function buildFilterOptions() {
   // Sort select
   const sortEl = document.getElementById('sort-select');
   sortEl.value = sortBy;
+
+  // Restore active pill states from URL-loaded filter sets
+  filterOwners.forEach(v => {
+    const btn = document.querySelector(`[data-group="owner"][data-val="${v}"]`);
+    if (btn) { btn.classList.add('active'); document.querySelector('[data-group="owner"][data-val=""]')?.classList.remove('active'); }
+  });
+  filterClasses.forEach(v => {
+    document.querySelector(`[data-group="class"][data-val="${v}"]`)?.classList.add('active');
+  });
+  filterRaces.forEach(v => {
+    document.querySelector(`[data-group="race"][data-val="${v}"]`)?.classList.add('active');
+  });
+  if (searchQuery) {
+    const searchEl = document.getElementById('search');
+    if (searchEl) searchEl.value = searchQuery;
+  }
+  if (minLevel > 0) {
+    document.querySelector(`.level-btn[data-val="${minLevel}"]`)?.classList.add('active');
+    document.querySelector('.level-btn[data-val="0"]')?.classList.remove('active');
+  }
 }
 
 function toggleFilter(group, val, btn) {
@@ -254,6 +277,7 @@ function toggleFilter(group, val, btn) {
     }
   }
   filterAndRender();
+  updateURL();
 }
 
 function clearFilters() {
@@ -267,6 +291,7 @@ function clearFilters() {
   const allOwnerBtn = document.querySelector('[data-group="owner"][data-val=""]');
   if (allOwnerBtn) allOwnerBtn.classList.add('active');
   filterAndRender();
+  updateURL();
 }
 
 let searchDebounce;
@@ -275,12 +300,14 @@ function onSearch(val) {
   searchDebounce = setTimeout(() => {
     searchQuery = val.toLowerCase();
     filterAndRender();
-  }, 200);
+    updateURL();
+  }, 400);
 }
 
 function onSortChange(val) {
   sortBy = val;
   filterAndRender();
+  updateURL();
 }
 
 function onLevelFilter(val, btn) {
@@ -288,6 +315,7 @@ function onLevelFilter(val, btn) {
   document.querySelectorAll('.level-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   filterAndRender();
+  updateURL();
 }
 
 function renderGuildStats(data) {
@@ -456,6 +484,7 @@ function switchView(view) {
   if (view === 'leaderboard') { buildLbOwnerFilter(); renderLeaderboard(); }
   if (view === 'pets') { buildPetsCharSelect(); }
   if (view === 'mounts') { buildMountsCharSelect(); }
+  updateURL();
 }
 
 function buildLbOwnerFilter() {
@@ -474,6 +503,7 @@ function setLbOwner(val, btn) {
   document.querySelectorAll('#lb-owner-filter .filter-pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderLeaderboard();
+  updateURL();
 }
 
 function renderContentLeaderboard(members) {
@@ -1107,4 +1137,48 @@ function renderPets() {
         <div class="pet-meta">${fav}${maxed}<span class="pet-rarity" style="color:${color}">${p.quality}</span></div>
       </div>`;
   }).join('');
+}
+
+// ============================================================
+// URL-based routing — shareable, bookmarkable dashboard state
+// ============================================================
+function updateURL() {
+  const params = new URLSearchParams();
+  if (currentGuildSlug !== 'deaths-edge') params.set('guild', currentGuildSlug);
+  if (currentView !== 'roster') params.set('tab', currentView);
+  if (sortBy !== 'ilvl') params.set('sort', sortBy);
+  if (searchQuery) params.set('q', searchQuery);
+  if (minLevel > 0) params.set('level', minLevel);
+  if (filterOwners.size) params.set('owners', [...filterOwners].join(','));
+  if (filterClasses.size) params.set('classes', [...filterClasses].join(','));
+  if (filterRaces.size) params.set('races', [...filterRaces].join(','));
+  if (lbOwnerFilter) params.set('lbowner', lbOwnerFilter);
+  const lbCat = document.getElementById('lb-category')?.value;
+  if (lbCat && lbCat !== 'ilvl') params.set('lbcat', lbCat);
+  const str = params.toString();
+  history.replaceState(null, '', str ? `?${str}` : location.pathname);
+}
+
+function loadFromURL() {
+  const params = new URLSearchParams(location.search);
+  if (params.has('guild')) currentGuildSlug = params.get('guild');
+  if (params.has('sort')) sortBy = params.get('sort');
+  if (params.has('q')) searchQuery = params.get('q');
+  if (params.has('level')) minLevel = parseInt(params.get('level')) || 0;
+  if (params.has('owners')) params.get('owners').split(',').filter(Boolean).forEach(v => filterOwners.add(v));
+  if (params.has('classes')) params.get('classes').split(',').filter(Boolean).forEach(v => filterClasses.add(v));
+  if (params.has('races')) params.get('races').split(',').filter(Boolean).forEach(v => filterRaces.add(v));
+  if (params.has('lbowner')) lbOwnerFilter = params.get('lbowner');
+  // tab is applied after guild data loads (see applyURLTab)
+}
+
+function applyURLTab() {
+  const params = new URLSearchParams(location.search);
+  const tab = params.get('tab');
+  if (tab && tab !== 'roster') switchView(tab);
+  const lbCat = params.get('lbcat');
+  if (lbCat) {
+    const el = document.getElementById('lb-category');
+    if (el) el.value = lbCat;
+  }
 }
