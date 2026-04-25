@@ -128,6 +128,8 @@ window.addEventListener('DOMContentLoaded', () => {
 function switchGuild(slug) {
   if (slug === currentGuildSlug) return;
   currentGuildSlug = slug;
+  raidLoaded = false;
+  raidData = null;
   // Update toggle buttons
   document.querySelectorAll('.guild-toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.slug === slug);
@@ -466,10 +468,139 @@ function renderCard(m) {
 // === View Switching ===
 let currentView = 'roster';
 let lbOwnerFilter = '';
+let readinessOwnerFilter = '';
+let readinessRiskFilter = '';
+
+// === Readiness Radar ===
+function buildReadinessOwnerFilter() {
+  const el = document.getElementById('readiness-owner-filter');
+  if (!el) return;
+  const btns = [['', 'All'], ...OWNERS.map(o => [o, o])];
+  el.innerHTML = btns.map(([val, label]) => {
+    const col = val ? `style="--pill-color:${OWNER_COLORS[val]}"` : '';
+    const active = readinessOwnerFilter === val ? 'active' : '';
+    return `<button class="filter-pill ${active}" ${col} onclick="setReadinessOwner('${val}', this)">${label}</button>`;
+  }).join('');
+}
+
+function setReadinessOwner(val, btn) {
+  readinessOwnerFilter = val;
+  document.querySelectorAll('#readiness-owner-filter .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReadiness();
+  updateURL();
+}
+
+function setReadinessRisk(val, btn) {
+  readinessRiskFilter = val;
+  document.querySelectorAll('#readiness-risk-filter .filter-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReadiness();
+  updateURL();
+}
+
+function getReadiness(member) {
+  const equipment = member.equipment || [];
+  const lifeStats = member.lifeStats || {};
+  const emptySockets = equipment.filter(i => i.hasEmptySocket).length;
+  const enchanted = equipment.filter(i => i.enchantCount > 0).length;
+  const enchantRatio = equipment.length ? enchanted / equipment.length : 0;
+  const ilvl = member.averageIlvl || 0;
+  const content = (lifeStats.dungeonsEntered || 0) + (lifeStats.raidsEntered || 0) + (lifeStats.delvesCompleted || 0);
+  const bossKills = lifeStats.bossesDefeated || 0;
+
+  const ilvlScore = Math.min(45, Math.max(0, (ilvl - 520) / 3));
+  const prepScore = Math.max(0, 25 - (emptySockets * 8)) + Math.round(enchantRatio * 10);
+  const activityScore = Math.min(20, Math.round(content / 40) + Math.round(bossKills / 15));
+  const levelPenalty = member.level >= 80 ? 0 : 25;
+  const score = Math.max(0, Math.min(100, Math.round(ilvlScore + prepScore + activityScore - levelPenalty)));
+
+  let risk = 'risk';
+  if (score >= 80) risk = 'ready';
+  else if (score >= 60) risk = 'watch';
+
+  const actions = [];
+  if (member.level < 80) actions.push(`Level to 80 first (${member.level || 0}/80)`);
+  if (ilvl && ilvl < 610) actions.push(`Gear up: avg ilvl ${ilvl}`);
+  if (emptySockets) actions.push(`${emptySockets} empty socket${emptySockets > 1 ? 's' : ''}`);
+  if (equipment.length && enchantRatio < 0.25) actions.push('Check missing enchants');
+  if (!content) actions.push('No recent dungeon/raid/delve signal');
+  if (!actions.length) actions.push('Ready enough — review raid gaps next');
+
+  return { score, risk, emptySockets, enchantRatio, content, bossKills, actions };
+}
+
+function renderReadiness() {
+  const grid = document.getElementById('readiness-grid');
+  const summary = document.getElementById('readiness-summary');
+  if (!grid || !summary) return;
+
+  document.querySelectorAll('#readiness-risk-filter .filter-pill').forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    const matches = readinessRiskFilter ? onclick.includes(`'${readinessRiskFilter}'`) : onclick.includes("''");
+    btn.classList.toggle('active', matches);
+  });
+
+  let rows = allMembers.map(m => ({ ...m, readiness: getReadiness(m) }));
+  if (readinessOwnerFilter) rows = rows.filter(m => m.owner === readinessOwnerFilter);
+  if (readinessRiskFilter) rows = rows.filter(m => m.readiness.risk === readinessRiskFilter);
+  rows.sort((a, b) => b.readiness.score - a.readiness.score || (b.averageIlvl || 0) - (a.averageIlvl || 0));
+
+  const allScores = allMembers.map(m => getReadiness(m));
+  const ready = allScores.filter(r => r.risk === 'ready').length;
+  const watch = allScores.filter(r => r.risk === 'watch').length;
+  const risk = allScores.filter(r => r.risk === 'risk').length;
+  const avg = allScores.length ? Math.round(allScores.reduce((s, r) => s + r.score, 0) / allScores.length) : 0;
+  summary.innerHTML = `
+    <div><span>${avg}</span><small>avg score</small></div>
+    <div><span>${ready}</span><small>ready</small></div>
+    <div><span>${watch}</span><small>watch</small></div>
+    <div><span>${risk}</span><small>at risk</small></div>`;
+
+  if (!rows.length) {
+    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">No characters match the readiness filters.</div>';
+    return;
+  }
+
+  grid.innerHTML = rows.map(m => {
+    const r = m.readiness;
+    const color = CLASS_COLORS[m.className] || '#c8a84b';
+    const owner = m.owner;
+    const ownerColor = owner ? OWNER_COLORS[owner] : 'var(--text-dim)';
+    const riskLabel = r.risk === 'ready' ? 'Ready' : r.risk === 'watch' ? 'Watch' : 'At risk';
+    const riskIcon = r.risk === 'ready' ? '✅' : r.risk === 'watch' ? '⚠️' : '🚨';
+    const actions = r.actions.slice(0, 3).map(a => `<li>${a}</li>`).join('');
+    return `
+      <div class="readiness-card readiness-${r.risk}" style="--class-color:${color}" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+        <div class="readiness-score-ring"><span>${r.score}</span><small>/100</small></div>
+        <div class="readiness-card-main">
+          <div class="readiness-card-top">
+            <div>
+              <div class="readiness-name" style="color:${color}">${m.name}</div>
+              <div class="readiness-meta">L${m.level} ${m.spec || ''} ${m.className} · ilvl ${m.averageIlvl || '—'}</div>
+            </div>
+            <div class="readiness-status">${riskIcon} ${riskLabel}</div>
+          </div>
+          <div class="readiness-bars">
+            <div><label>Gear</label><span><i style="width:${Math.min(100, ((m.averageIlvl || 0) - 520) / 1.2)}%"></i></span></div>
+            <div><label>Prep</label><span><i style="width:${Math.max(0, Math.min(100, 100 - r.emptySockets * 25))}%"></i></span></div>
+            <div><label>Activity</label><span><i style="width:${Math.min(100, r.content / 5)}%"></i></span></div>
+          </div>
+          <div class="readiness-foot">
+            <span style="color:${ownerColor}">${owner ? `● ${owner}` : '● unassigned'}</span>
+            <span>${r.emptySockets} empty sockets</span>
+            <span>${r.bossKills.toLocaleString()} boss kills</span>
+          </div>
+          <ul class="readiness-actions">${actions}</ul>
+        </div>
+      </div>`;
+  }).join('');
+}
 
 function switchView(view) {
   currentView = view;
   document.getElementById('view-roster').classList.toggle('hidden', view !== 'roster');
+  document.getElementById('view-readiness').classList.toggle('hidden', view !== 'readiness');
   document.getElementById('view-leaderboard').classList.toggle('hidden', view !== 'leaderboard');
   document.getElementById('view-raids').classList.toggle('hidden', view !== 'raids');
   document.getElementById('view-pets').classList.toggle('hidden', view !== 'pets');
@@ -479,10 +610,12 @@ function switchView(view) {
   const filterBar = document.getElementById('filter-bar');
   if (filterBar) filterBar.classList.toggle('hidden', view !== 'roster');
   document.getElementById('tab-roster').classList.toggle('active', view === 'roster');
+  document.getElementById('tab-readiness').classList.toggle('active', view === 'readiness');
   document.getElementById('tab-leaderboard').classList.toggle('active', view === 'leaderboard');
   document.getElementById('tab-raids').classList.toggle('active', view === 'raids');
   document.getElementById('tab-pets').classList.toggle('active', view === 'pets');
   document.getElementById('tab-mounts').classList.toggle('active', view === 'mounts');
+  if (view === 'readiness') { buildReadinessOwnerFilter(); renderReadiness(); }
   if (view === 'leaderboard') { buildLbOwnerFilter(); renderLeaderboard(); }
   if (view === 'raids') { initRaids(); }
   if (view === 'pets') { buildPetsCharSelect(); }
@@ -516,7 +649,7 @@ function renderContentLeaderboard(members) {
     const bosses = ls.bossesDefeated || 0;
     const delves = ls.delvesCompleted || 0;
     const raids = ls.raidsEntered || 0;
-    return { ...m, dungeons, bosses, delves, raids, total: dungeons + delves };
+    return { ...m, dungeons, bosses, delves, raids, total: dungeons + delves + raids };
   }).sort((a, b) => b.total - a.total);
 
   const rows = sorted.map((m, i) => {
@@ -1156,6 +1289,8 @@ function updateURL() {
   if (filterClasses.size) params.set('classes', [...filterClasses].join(','));
   if (filterRaces.size) params.set('races', [...filterRaces].join(','));
   if (lbOwnerFilter) params.set('lbowner', lbOwnerFilter);
+  if (readinessOwnerFilter) params.set('readyowner', readinessOwnerFilter);
+  if (readinessRiskFilter) params.set('readiness', readinessRiskFilter);
   const lbCat = document.getElementById('lb-category')?.value;
   if (lbCat && lbCat !== 'ilvl') params.set('lbcat', lbCat);
   const str = params.toString();
@@ -1172,18 +1307,20 @@ function loadFromURL() {
   if (params.has('classes')) params.get('classes').split(',').filter(Boolean).forEach(v => filterClasses.add(v));
   if (params.has('races')) params.get('races').split(',').filter(Boolean).forEach(v => filterRaces.add(v));
   if (params.has('lbowner')) lbOwnerFilter = params.get('lbowner');
+  if (params.has('readyowner')) readinessOwnerFilter = params.get('readyowner');
+  if (params.has('readiness')) readinessRiskFilter = params.get('readiness');
   // tab is applied after guild data loads (see applyURLTab)
 }
 
 function applyURLTab() {
   const params = new URLSearchParams(location.search);
   const tab = params.get('tab');
-  if (tab && tab !== 'roster') switchView(tab);
   const lbCat = params.get('lbcat');
   if (lbCat) {
     const el = document.getElementById('lb-category');
     if (el) el.value = lbCat;
   }
+  if (tab && tab !== 'roster') switchView(tab);
 }
 
 // ============================================================
