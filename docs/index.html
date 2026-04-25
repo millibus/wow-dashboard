@@ -94,6 +94,7 @@
 <!-- VIEW TABS -->
 <div class="view-tabs">
   <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
+  <button class="view-tab" id="tab-readiness" onclick="switchView('readiness')">🎯 Readiness</button>
   <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
   <button class="view-tab" id="tab-raids" onclick="switchView('raids')">⚔ Raids</button>
   <button class="view-tab" id="tab-pets" onclick="switchView('pets')">🐾 Pets</button>
@@ -106,6 +107,34 @@
 <!-- MAIN GRID -->
 <div class="main-content" id="view-roster">
   <div id="character-grid" class="character-grid"></div>
+</div>
+
+<!-- READINESS VIEW -->
+<div class="main-content hidden" id="view-readiness">
+  <div class="readiness-hero">
+    <div>
+      <div class="readiness-kicker">Raid Night Prep</div>
+      <h2>Readiness Radar</h2>
+      <p>Ranks guild members by gear, gems/enchants, raid activity, and quick-fix opportunities.</p>
+    </div>
+    <div id="readiness-summary" class="readiness-summary"></div>
+  </div>
+  <div class="leaderboard-controls readiness-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="readiness-owner-filter"></div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Risk</label>
+      <div class="filter-bar-pills" id="readiness-risk-filter">
+        <button class="filter-pill active" onclick="setReadinessRisk('',this)">All</button>
+        <button class="filter-pill" style="--pill-color:#34d399" onclick="setReadinessRisk('ready',this)">Ready</button>
+        <button class="filter-pill" style="--pill-color:#f59e0b" onclick="setReadinessRisk('watch',this)">Watch</button>
+        <button class="filter-pill" style="--pill-color:#e74c3c" onclick="setReadinessRisk('risk',this)">At risk</button>
+      </div>
+    </div>
+  </div>
+  <div id="readiness-grid" class="readiness-grid"></div>
 </div>
 
 <!-- LEADERBOARD -->
