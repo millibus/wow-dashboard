@@ -1,6 +1,43 @@
 // === Config ===
-// Same-origin when served from the Express server; change to full URL if using GitHub Pages + separate API
+// Data source: hourly JSON snapshots in `data/` (built by scripts/build-snapshot.js).
+// API_BASE is an optional live-API fallback for local dev when serving via the
+// Express server (api/server.js). Leave '' on the public Pages site — snapshots
+// are the source of truth there.
 const API_BASE = '';
+
+// Fetch a static snapshot first; fall back to the live API if available and
+// the snapshot is missing (e.g. serving via Express before any snapshot exists).
+async function fetchData(staticPath, apiPath) {
+  try {
+    const res = await fetch(`data/${staticPath}`, { cache: 'no-cache' });
+    if (res.ok) return res.json();
+    if (!API_BASE && apiPath) throw new Error(`snapshot missing: ${staticPath} (${res.status})`);
+  } catch (err) {
+    if (!API_BASE || !apiPath) throw err;
+  }
+  const res = await fetch(`${API_BASE}${apiPath}`);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
+
+function setSnapshotTimestamp() {
+  fetch('data/generated-at.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      if (!d?.ts) return;
+      const el = document.getElementById('last-updated');
+      if (!el) return;
+      const ageMs = Date.now() - new Date(d.ts).getTime();
+      const mins = Math.round(ageMs / 60000);
+      const label = mins < 1 ? 'just now'
+        : mins < 60 ? `${mins}m ago`
+        : mins < 1440 ? `${Math.round(mins / 60)}h ago`
+        : `${Math.round(mins / 1440)}d ago`;
+      el.textContent = `Snapshot ${label}`;
+      el.title = new Date(d.ts).toLocaleString();
+    })
+    .catch(() => {});
+}
 
 // ============================
 // OWNER MAP — edit this!
@@ -164,21 +201,17 @@ async function loadGuild(forceRefresh) {
       </div>`;
     document.getElementById('guild-stats').innerHTML = '';
 
-    const url = `${API_BASE}/api/guild?slug=${currentGuildSlug}${forceRefresh ? '&nocache=1' : ''}`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
+    const data = await fetchData(
+      `guild-${currentGuildSlug}.json`,
+      `/api/guild?slug=${currentGuildSlug}${forceRefresh ? '&nocache=1' : ''}`,
+    );
 
     allMembers = (data.members || []).map(m => ({
       ...m,
       owner: getOwner(m.name),
     }));
 
-    if (data.lastUpdated) {
-      const d = new Date(data.lastUpdated);
-      document.getElementById('last-updated').textContent =
-        `Updated ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
+    setSnapshotTimestamp();
 
     buildFilterOptions();
     renderGuildStats(data);
@@ -832,9 +865,15 @@ async function openDetail(name, realm) {
   body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim)">Loading...</div>';
 
   try {
-    const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    const c = await res.json();
+    let c = allMembers.find(m =>
+      m.name === name && (m.realm || 'Onyxia').toLowerCase() === (realm || 'onyxia').toLowerCase(),
+    );
+    if (!c && API_BASE) {
+      const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}`);
+      if (!res.ok) throw new Error(`${res.status}`);
+      c = await res.json();
+    }
+    if (!c) throw new Error('character not found in snapshot');
     c.owner = getOwner(c.name);
     body.innerHTML = renderDetail(c);
   } catch (err) {
@@ -995,10 +1034,19 @@ async function doCompare() {
     const realm1 = m1?.realm || 'onyxia';
     const realm2 = m2?.realm || 'onyxia';
 
-    const res = await fetch(`${API_BASE}/api/compare/${encodeURIComponent(realm1)}/${encodeURIComponent(compareSelection[0])}/${encodeURIComponent(realm2)}/${encodeURIComponent(compareSelection[1])}`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    const data = await res.json();
-    body.innerHTML = renderCompare(data.char1, data.char2);
+    const char1 = m1;
+    const char2 = m2;
+    if (!char1 || !char2) {
+      if (API_BASE) {
+        const res = await fetch(`${API_BASE}/api/compare/${encodeURIComponent(realm1)}/${encodeURIComponent(compareSelection[0])}/${encodeURIComponent(realm2)}/${encodeURIComponent(compareSelection[1])}`);
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data = await res.json();
+        body.innerHTML = renderCompare(data.char1, data.char2);
+        return;
+      }
+      throw new Error('character missing from snapshot');
+    }
+    body.innerHTML = renderCompare(char1, char2);
   } catch (err) {
     body.innerHTML = `<div style="text-align:center;padding:40px;color:#e74c3c">Compare failed: ${err.message}</div>`;
   }
@@ -1122,13 +1170,29 @@ async function loadMounts() {
   grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading mount collection...</div>';
   summary.textContent = '';
   try {
-    const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}/mounts`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    mountsData = await res.json();
+    mountsData = await loadCollection('mounts', name, realm);
     renderMounts();
   } catch (err) {
     grid.innerHTML = `<div style="padding:40px;text-align:center;color:#e74c3c">Failed to load mounts: ${err.message}</div>`;
   }
+}
+
+let collectionsCache = null;
+async function loadCollection(kind, name, realm) {
+  if (!collectionsCache || collectionsCache.slug !== currentGuildSlug) {
+    try {
+      const data = await fetch(`data/collections-${currentGuildSlug}.json`, { cache: 'no-cache' });
+      if (data.ok) {
+        collectionsCache = { slug: currentGuildSlug, data: await data.json() };
+      }
+    } catch (_) {}
+  }
+  const fromSnapshot = collectionsCache?.data?.[name]?.[kind];
+  if (fromSnapshot) return fromSnapshot;
+  if (!API_BASE) throw new Error(`${kind} missing from snapshot`);
+  const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}/${kind}`);
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
 }
 
 function setMountsFilter(filter, btn) {
@@ -1211,9 +1275,7 @@ async function loadPets() {
   grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">Loading pet collection...</div>';
   summary.textContent = '';
   try {
-    const res = await fetch(`${API_BASE}/api/character/${encodeURIComponent(realm)}/${encodeURIComponent(name)}/pets`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    petsData = await res.json();
+    petsData = await loadCollection('pets', name, realm);
     renderPets();
   } catch (err) {
     grid.innerHTML = `<div style="padding:40px;text-align:center;color:#e74c3c">Failed to load pets: ${err.message}</div>`;
@@ -1337,9 +1399,10 @@ async function initRaids() {
   document.getElementById('raid-loading').style.display = 'block';
   document.getElementById('raid-content').innerHTML = '';
   try {
-    const res = await fetch(`${API_BASE}/api/guild/raid-progress?slug=${currentGuildSlug}`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    raidData = await res.json();
+    raidData = await fetchData(
+      `raid-${currentGuildSlug}.json`,
+      `/api/guild/raid-progress?slug=${currentGuildSlug}`,
+    );
     raidLoaded = true;
     buildRaidTierPills();
     buildRaidOwnerPills();
