@@ -41,70 +41,72 @@ function setSnapshotTimestamp() {
 
 // ============================
 // OWNER MAP — edit this!
-// Map character names (exact, case-sensitive) to their owner
+// Map character names (exact, case-sensitive) to their owner.
+// Owner labels are intentionally anonymized (user1/user2/user3) on the
+// public dashboard. Edit privately if you want personalized labels.
 // ============================
 const OWNER_MAP = {
-  // potac's characters (from #wow thread, Feb 27):
-  'Sanicon': 'potac',
-  'Harclive': 'potac',
-  'Phenis': 'potac',
-  'Blajarm': 'potac',
-  'Potac': 'potac',
-  'Wicken': 'potac',
-  'Llisp': 'potac',
-  'Quu': 'potac',
-  'Hemahroid': 'potac',
-  'Decillin': 'potac',
-  'Colonic': 'potac',
-  'Trashey': 'potac',
-  'Gorgis': 'potac',
-  'Babbang': 'potac',
-  'Flachewlance': 'potac',
-  'Thuun': 'potac',
-  'Chargar': 'potac',
-  'Asdan': 'potac',
-  'Wetseamen': 'potac',
+  // user1's characters:
+  'Sanicon': 'user1',
+  'Harclive': 'user1',
+  'Phenis': 'user1',
+  'Blajarm': 'user1',
+  'Potac': 'user1',
+  'Wicken': 'user1',
+  'Llisp': 'user1',
+  'Quu': 'user1',
+  'Hemahroid': 'user1',
+  'Decillin': 'user1',
+  'Colonic': 'user1',
+  'Trashey': 'user1',
+  'Gorgis': 'user1',
+  'Babbang': 'user1',
+  'Flachewlance': 'user1',
+  'Thuun': 'user1',
+  'Chargar': 'user1',
+  'Asdan': 'user1',
+  'Wetseamen': 'user1',
 
-  // Viral's characters:
-  'Apocalypsic': 'Viral',
-  'Oathos': 'Viral',
-  'Incantation': 'Viral',
-  'Religious': 'Viral',
-  'Zeison': 'Viral',
-  'Stray': 'Viral',
+  // user2's characters:
+  'Apocalypsic': 'user2',
+  'Oathos': 'user2',
+  'Incantation': 'user2',
+  'Religious': 'user2',
+  'Zeison': 'user2',
+  'Stray': 'user2',
 
-  // Revan's characters:
-  'Hollyballs': 'Revan',
-  'Darthfurball': 'Revan',
-  'Revän': 'Revan',
-  'Caedus': 'Revan',
-  'Jacobyy': 'Revan',
-  'Bbaronsamedi': 'Revan',
-  'Holyrevan': 'Revan',
-  'Krang': 'Revan',
-  'Necronomican': 'Revan',
-  'Pizo': 'Revan',
-  'Jeetkundo': 'Revan',
-  'Demonik': 'Revan',
-  'Alduen': 'Revan',
-  'Dendis': 'Revan',
-  // potac's Alliance characters (Riot Act):
-  'Huejanus': 'potac',
-  'Lumian': 'potac',
-  // Revan's Alliance characters (Riot Act):
-  'Krisis': 'Revan',
-  'Grrumpy': 'Revan',
-  'Jacoby': 'Revan',
-  'Wolfsbane': 'Revan',
-  'Mechaminime': 'Revan',
+  // user3's characters:
+  'Hollyballs': 'user3',
+  'Darthfurball': 'user3',
+  'Revän': 'user3',
+  'Caedus': 'user3',
+  'Jacobyy': 'user3',
+  'Bbaronsamedi': 'user3',
+  'Holyrevan': 'user3',
+  'Krang': 'user3',
+  'Necronomican': 'user3',
+  'Pizo': 'user3',
+  'Jeetkundo': 'user3',
+  'Demonik': 'user3',
+  'Alduen': 'user3',
+  'Dendis': 'user3',
+  // user1's Alliance characters (Riot Act):
+  'Huejanus': 'user1',
+  'Lumian': 'user1',
+  // user3's Alliance characters (Riot Act):
+  'Krisis': 'user3',
+  'Grrumpy': 'user3',
+  'Jacoby': 'user3',
+  'Wolfsbane': 'user3',
+  'Mechaminime': 'user3',
 };
 
-const OWNERS = ['potac', 'Viral', 'Revan'];
+const OWNERS = ['user1', 'user2', 'user3'];
 
 const OWNER_COLORS = {
-  potac: '#a78bfa',
-  Viral: '#34d399',
-  Revan: '#f59e0b',
+  user1: '#a78bfa',
+  user2: '#34d399',
+  user3: '#f59e0b',
 };
 
 // WoW class colors
