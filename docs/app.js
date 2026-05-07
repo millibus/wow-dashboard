@@ -41,10 +41,12 @@ function setSnapshotTimestamp() {
 
 // ============================
 // OWNER MAP — edit this!
-// Map character names (exact, case-sensitive) to their owner
+// Map character names (exact, case-sensitive) to their owner.
+// Owner labels are intentionally anonymized (user1/user2/user3) on the
+// public dashboard. Edit privately if you want personalized labels.
 // ============================
 const OWNER_MAP = {
-  // user1's characters (from #wow thread, Feb 27):
+  // user1's characters:
   'Sanicon': 'user1',
   'Harclive': 'user1',
   'Phenis': 'user1',
