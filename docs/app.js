@@ -138,6 +138,32 @@ let compareMode = false;
 let compareSelection = [null, null];
 let currentGuildSlug = 'deaths-edge';
 
+// 'active' = owned characters logged in within ARCHIVE_THRESHOLD_DAYS
+// 'archive' = owned characters that haven't logged in for that long (or never)
+// 'all'     = every owned character regardless of last login
+// Non-owned characters are never shown — the dashboard is scoped to the OWNER_MAP crew.
+const ARCHIVE_THRESHOLD_DAYS = 30;
+let viewScope = 'active';
+
+function isOwned(m) {
+  return !!m.owner;
+}
+
+function isActiveByLogin(m) {
+  if (!m.lastLogin) return false;
+  return (Date.now() - m.lastLogin) < ARCHIVE_THRESHOLD_DAYS * 86400000;
+}
+
+function inViewScope(m) {
+  if (!isOwned(m)) return false;
+  if (viewScope === 'all') return true;
+  return viewScope === 'active' ? isActiveByLogin(m) : !isActiveByLogin(m);
+}
+
+function scopedMembers() {
+  return allMembers.filter(inViewScope);
+}
+
 // === Init ===
 window.addEventListener('DOMContentLoaded', () => {
   loadFromURL();
@@ -228,29 +254,46 @@ async function loadGuild(forceRefresh) {
 }
 
 function buildFilterOptions() {
-  // Owner tabs
+  // Status pills (Active / Archive / All) — counts use the OWNER_MAP crew only
+  const owned = allMembers.filter(isOwned);
+  const activeCount  = owned.filter(isActiveByLogin).length;
+  const archiveCount = owned.length - activeCount;
+  const statusEl = document.getElementById('filter-status');
+  if (statusEl) {
+    const pills = [
+      ['active',  `Active`,  activeCount],
+      ['archive', `Archive`, archiveCount],
+      ['all',     `All`,     owned.length],
+    ];
+    statusEl.innerHTML = pills.map(([val, label, count]) => `
+      <button class="filter-pill${viewScope === val ? ' active' : ''}" data-group="status" data-val="${val}" onclick="setViewScope('${val}', this)">
+        ${label} <span class="pill-count">${count}</span>
+      </button>`).join('');
+  }
+
+  // Owner / class / race pills are scoped to the current view
+  const base = scopedMembers();
+
   const ownerEl = document.getElementById('filter-owners');
   ownerEl.innerHTML = `<button class="filter-pill active" data-group="owner" data-val="" onclick="toggleFilter('owner','',this)">All</button>` +
     OWNERS.map(o => {
-      const count = allMembers.filter(m => m.owner === o).length;
+      const count = base.filter(m => m.owner === o).length;
       if (count === 0) return '';
       return `<button class="filter-pill" data-group="owner" data-val="${o}" style="--pill-color:${OWNER_COLORS[o]}" onclick="toggleFilter('owner','${o}',this)">${o} <span class="pill-count">${count}</span></button>`;
     }).join('');
 
-  // Class pills
-  const classes = [...new Set(allMembers.map(m => m.className))].sort();
+  const classes = [...new Set(base.map(m => m.className))].sort();
   const classEl = document.getElementById('filter-classes');
   classEl.innerHTML = classes.map(c => {
     const col = CLASS_COLORS[c] || '#c8a84b';
-    const count = allMembers.filter(m => m.className === c).length;
+    const count = base.filter(m => m.className === c).length;
     return `<button class="filter-pill" data-group="class" data-val="${c}" style="--pill-color:${col}" onclick="toggleFilter('class','${c}',this)">${c} <span class="pill-count">${count}</span></button>`;
   }).join('');
 
-  // Race pills
-  const races = [...new Set(allMembers.map(m => m.race).filter(Boolean))].sort();
+  const races = [...new Set(base.map(m => m.race).filter(Boolean))].sort();
   const raceEl = document.getElementById('filter-races');
   raceEl.innerHTML = races.map(r => {
-    const count = allMembers.filter(m => m.race === r).length;
+    const count = base.filter(m => m.race === r).length;
     return `<button class="filter-pill" data-group="race" data-val="${r}" onclick="toggleFilter('race','${r}',this)">${r} <span class="pill-count">${count}</span></button>`;
   }).join('');
 
@@ -327,6 +370,25 @@ function clearFilters() {
   document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
   const allOwnerBtn = document.querySelector('[data-group="owner"][data-val=""]');
   if (allOwnerBtn) allOwnerBtn.classList.add('active');
+  // Restore Status pill highlight after the wholesale removal above
+  document.querySelectorAll('[data-group="status"]').forEach(b => {
+    b.classList.toggle('active', b.dataset.val === viewScope);
+  });
+  filterAndRender();
+  updateURL();
+}
+
+function setViewScope(scope, btn) {
+  if (!['active', 'archive', 'all'].includes(scope)) return;
+  viewScope = scope;
+  // Owner / class / race filters can become incompatible with the new scope
+  // (e.g. an owner with zero archived chars). Clear them for predictability.
+  filterOwners.clear();
+  filterClasses.clear();
+  filterRaces.clear();
+  document.querySelectorAll('[data-group="status"]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  buildFilterOptions();
   filterAndRender();
   updateURL();
 }
@@ -356,7 +418,7 @@ function onLevelFilter(val, btn) {
 }
 
 function renderGuildStats(data) {
-  const members = data.members || [];
+  const members = scopedMembers();
   const maxLevel = members.filter(m => m.level >= 80);
   const avgIlvl = maxLevel.length
     ? Math.round(maxLevel.filter(m => m.averageIlvl > 0).reduce((a, m) => a + m.averageIlvl, 0) / maxLevel.filter(m => m.averageIlvl > 0).length)
@@ -404,7 +466,7 @@ function renderActiveChips(filtered, total) {
 }
 
 function filterAndRender() {
-  let filtered = allMembers.filter(m => {
+  let filtered = scopedMembers().filter(m => {
     if (m.level < minLevel) return false;
     if (filterOwners.size > 0 && !filterOwners.has(m.owner)) return false;
     if (filterClasses.size > 0 && !filterClasses.has(m.className)) return false;
@@ -431,7 +493,7 @@ function filterAndRender() {
     return 0;
   });
 
-  renderActiveChips(filtered.length, allMembers.length);
+  renderActiveChips(filtered.length, scopedMembers().length);
   const grid = document.getElementById('character-grid');
   if (!filtered.length) {
     grid.innerHTML = '<div class="empty-state">No characters match your filters.<br><small><a href="#" onclick="clearFilters();return false">Clear filters</a></small></div>';
@@ -576,12 +638,12 @@ function renderReadiness() {
     btn.classList.toggle('active', matches);
   });
 
-  let rows = allMembers.map(m => ({ ...m, readiness: getReadiness(m) }));
+  let rows = scopedMembers().map(m => ({ ...m, readiness: getReadiness(m) }));
   if (readinessOwnerFilter) rows = rows.filter(m => m.owner === readinessOwnerFilter);
   if (readinessRiskFilter) rows = rows.filter(m => m.readiness.risk === readinessRiskFilter);
   rows.sort((a, b) => b.readiness.score - a.readiness.score || (b.averageIlvl || 0) - (a.averageIlvl || 0));
 
-  const allScores = allMembers.map(m => getReadiness(m));
+  const allScores = scopedMembers().map(m => getReadiness(m));
   const ready = allScores.filter(r => r.risk === 'ready').length;
   const watch = allScores.filter(r => r.risk === 'watch').length;
   const risk = allScores.filter(r => r.risk === 'risk').length;
@@ -734,7 +796,7 @@ function renderContentLeaderboard(members) {
 
 function renderLeaderboard() {
   const cat = document.getElementById('lb-category')?.value || 'ilvl';
-  let members = [...allMembers];
+  let members = scopedMembers();
   if (lbOwnerFilter) members = members.filter(m => m.owner === lbOwnerFilter);
 
   if (cat === 'content') { renderContentLeaderboard(members); return; }
@@ -1148,7 +1210,7 @@ function buildMountsCharSelect() {
     grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐎 Select a character above to view their mount collection</div>';
   }
   if (sel.options.length > 1) return;
-  const sorted = [...allMembers].sort((a, b) => {
+  const sorted = scopedMembers().slice().sort((a, b) => {
     const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
     if (oa !== ob) return oa.localeCompare(ob);
     return (b.averageIlvl||0) - (a.averageIlvl||0);
@@ -1468,8 +1530,10 @@ function renderRaids() {
   const bossList = tierDef.bosses || [];
   const bossCount = bossList.length;
 
-  // Filter + sort members
+  // Filter + sort members. Restrict to the OWNER_MAP crew so raid view stays
+  // consistent with the rest of the dashboard.
   let members = (raidData.members || []).filter(m => {
+    if (!getOwner(m.name)) return false;
     if (raidOwnerFilter && getOwner(m.name) !== raidOwnerFilter) return false;
     return true;
   });
