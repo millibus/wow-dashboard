@@ -9334,8 +9334,8 @@
     {
       "name": "Colonic",
       "realm": "Onyxia",
-      "lastLogin": 1778125150000,
-      "level": 85,
+      "lastLogin": 1778161720000,
+      "level": 86,
       "race": "Blood Elf",
       "className": "Demon Hunter",
       "spec": "Vengeance",
@@ -9345,7 +9345,7 @@
       "achievementPoints": 3615,
       "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/3/209075203-avatar.jpg",
       "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/3/209075203-main-raw.png",
-      "averageIlvl": 152,
+      "averageIlvl": 161,
       "equipment": [
         {
           "slot": "Head",
@@ -9375,23 +9375,23 @@
         },
         {
           "slot": "Neck",
-          "name": "Medallion of the Dark Horde",
-          "ilvl": 139,
+          "name": "Helthra's Fetish",
+          "ilvl": 165,
           "quality": "Uncommon",
           "hasEmptySocket": true,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Stamina",
-              "value": 154
+              "value": 258
             },
             {
               "name": "Haste",
-              "value": 64
+              "value": 76
             },
             {
               "name": "Mastery",
-              "value": 51
+              "value": 68
             }
           ]
         },
@@ -9423,53 +9423,53 @@
         },
         {
           "slot": "Chest",
-          "name": "Verdant Tracker's Vest",
-          "ilvl": 151,
+          "name": "Smuggler's Leather Tunic",
+          "ilvl": 165,
           "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Agility",
-              "value": 34
+              "value": 39
             },
             {
               "name": "Intellect",
-              "value": 34
+              "value": 39
             },
             {
               "name": "Stamina",
-              "value": 352
+              "value": 459
             },
             {
               "name": "Haste",
-              "value": 36
+              "value": 34
             }
           ]
         },
         {
           "slot": "Waist",
-          "name": "Supremely Slimy Sash",
-          "ilvl": 159,
-          "quality": "Uncommon",
+          "name": "Spiritwarden's Sash",
+          "ilvl": 171,
+          "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
+              "name": "Agility",
+              "value": 31
+            },
+            {
               "name": "Intellect",
-              "value": 28
+              "value": 31
             },
             {
               "name": "Stamina",
-              "value": 307
+              "value": 379
             },
             {
-              "name": "Critical Strike",
-              "value": 22
-            },
-            {
-              "name": "Versatility",
-              "value": 28
+              "name": "Haste",
+              "value": 29
             }
           ]
         },
@@ -9501,27 +9501,27 @@
         },
         {
           "slot": "Feet",
-          "name": "Boots of Infinite Gravity",
-          "ilvl": 139,
+          "name": "Smuggler's Leather Footpads",
+          "ilvl": 168,
           "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Agility",
-              "value": 23
+              "value": 30
             },
             {
               "name": "Intellect",
-              "value": 23
+              "value": 30
             },
             {
               "name": "Stamina",
-              "value": 206
+              "value": 363
             },
             {
               "name": "Haste",
-              "value": 25
+              "value": 26
             }
           ]
         },
@@ -9553,27 +9553,27 @@
         },
         {
           "slot": "Hands",
-          "name": "Lynxslayer's Leather Gloves",
-          "ilvl": 151,
+          "name": "Verdant Tracker's Claws",
+          "ilvl": 171,
           "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Agility",
-              "value": 26
+              "value": 31
             },
             {
               "name": "Intellect",
-              "value": 26
+              "value": 31
             },
             {
               "name": "Stamina",
-              "value": 264
+              "value": 379
             },
             {
-              "name": "Versatility",
-              "value": 27
+              "name": "Critical Strike",
+              "value": 23
             }
           ]
         },
@@ -9601,23 +9601,23 @@
         },
         {
           "slot": "Ring 2",
-          "name": "Ring of Overgrowth",
-          "ilvl": 145,
+          "name": "Ring of Doubt",
+          "ilvl": 165,
           "quality": "Uncommon",
           "hasEmptySocket": true,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Stamina",
-              "value": 175
+              "value": 258
             },
             {
               "name": "Critical Strike",
-              "value": 69
+              "value": 61
             },
             {
               "name": "Haste",
-              "value": 52
+              "value": 82
             }
           ]
         },
@@ -9659,53 +9659,53 @@
         },
         {
           "slot": "Back",
-          "name": "Corrupted Twilight Cowl",
-          "ilvl": 158,
+          "name": "Verdant Tracker's Cover",
+          "ilvl": 165,
           "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Agility",
-              "value": 21
+              "value": 22
             },
             {
               "name": "Strength",
-              "value": 21
+              "value": 22
             },
             {
               "name": "Intellect",
-              "value": 21
+              "value": 22
             },
             {
               "name": "Stamina",
-              "value": 226
+              "value": 258
             }
           ]
         },
         {
           "slot": "Main Hand",
-          "name": "Cultist's Pillaged Glaive",
-          "ilvl": 152,
-          "quality": "Uncommon",
+          "name": "Stonebough Hatchet",
+          "ilvl": 165,
+          "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Agility",
-              "value": 17
-            },
-            {
-              "name": "Intellect",
-              "value": 100
+              "value": 20
             },
             {
               "name": "Stamina",
-              "value": 179
+              "value": 229
             },
             {
               "name": "Critical Strike",
-              "value": 18
+              "value": 19
+            },
+            {
+              "name": "Mastery",
+              "value": 16
             }
           ]
         },
@@ -9737,16 +9737,16 @@
         }
       ],
       "stats": {
-        "health": 232861,
-        "strength": 265,
-        "agility": 643,
-        "intellect": 325,
-        "stamina": 10984,
-        "crit": 19.9,
-        "haste": 19.2,
-        "mastery": 33.9,
-        "vers": 7.6,
-        "armor": 988
+        "health": 275897,
+        "strength": 302,
+        "agility": 740,
+        "intellect": 370,
+        "stamina": 13014,
+        "crit": 18,
+        "haste": 19.7,
+        "mastery": 39.4,
+        "vers": 5.1,
+        "armor": 1207
       },
       "lifeStats": {
         "totalDeaths": 21,
@@ -9754,12 +9754,12 @@
         "deathsFromPlayers": 2,
         "deathsInDungeons": 2,
         "deathsInRaids": 0,
-        "killingBlows": 3070,
-        "creaturesKilled": 3701,
-        "crittersKilled": 201,
-        "questsCompleted": 865,
+        "killingBlows": 3227,
+        "creaturesKilled": 3841,
+        "crittersKilled": 217,
+        "questsCompleted": 907,
         "questsAbandoned": 13,
-        "flightPaths": 16,
+        "flightPaths": 18,
         "timesHearthed": 4,
         "honorableKills": 0,
         "dungeonsEntered": 5,
@@ -15765,5 +15765,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-05-07T13:36:16.184Z"
+  "lastUpdated": "2026-05-07T14:57:43.819Z"
 }
