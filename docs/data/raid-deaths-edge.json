@@ -1,0 +1,197 @@
+{
+  "tiers": [
+    {
+      "name": "Liberation of Undermine",
+      "short": "LoU",
+      "season": "TWW S2",
+      "id": 1296,
+      "bosses": [
+        {
+          "name": "Vexie and the Geargrinders",
+          "id": 2639,
+          "short": "Vexie"
+        },
+        {
+          "name": "Cauldron of Carnage",
+          "id": 2640,
+          "short": "Cauldron"
+        },
+        {
+          "name": "Rik Reverb",
+          "id": 2641,
+          "short": "Rik"
+        },
+        {
+          "name": "Stix Bunkjunker",
+          "id": 2642,
+          "short": "Stix"
+        },
+        {
+          "name": "Sprocketmonger Lockenstock",
+          "id": 2653,
+          "short": "Sprocket"
+        },
+        {
+          "name": "The One-Armed Bandit",
+          "id": 2644,
+          "short": "Bandit"
+        },
+        {
+          "name": "Mug'Zee, Heads of Security",
+          "id": 2645,
+          "short": "Mug'Zee"
+        },
+        {
+          "name": "Chrome King Gallywix",
+          "id": 2646,
+          "short": "Gallywix"
+        }
+      ]
+    },
+    {
+      "name": "Nerub-ar Palace",
+      "short": "NaP",
+      "season": "TWW S1",
+      "id": 1273,
+      "bosses": [
+        {
+          "name": "Ulgrax the Devourer",
+          "id": 2607,
+          "short": "Ulgrax"
+        },
+        {
+          "name": "The Bloodbound Horror",
+          "id": 2611,
+          "short": "Bloodbound"
+        },
+        {
+          "name": "Sikran, Captain of the Sureki",
+          "id": 2599,
+          "short": "Sikran"
+        },
+        {
+          "name": "Rasha'nan",
+          "id": 2609,
+          "short": "Rasha'nan"
+        },
+        {
+          "name": "Broodtwister Ovi'nax",
+          "id": 2612,
+          "short": "Ovi'nax"
+        },
+        {
+          "name": "Nexus-Princess Ky'veza",
+          "id": 2601,
+          "short": "Ky'veza"
+        },
+        {
+          "name": "The Silken Court",
+          "id": 2608,
+          "short": "Silken"
+        },
+        {
+          "name": "Queen Ansurek",
+          "id": 2602,
+          "short": "Ansurek"
+        }
+      ]
+    }
+  ],
+  "members": [
+    {
+      "name": "user2",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Oathos",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Darthfurball",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Revän",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Incantation",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Caedus",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Apocalypsic",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Sanicon",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Decillin",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Verimor",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Jacobyy",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Korvanis",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Zion",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Colonic",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Stray",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Hollyballs",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Bbaronsamedi",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Dendis",
+      "realm": "onyxia",
+      "tiers": []
+    },
+    {
+      "name": "Darthhealz",
+      "realm": "onyxia",
+      "tiers": []
+    }
+  ]
+}
