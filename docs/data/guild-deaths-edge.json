@@ -9334,7 +9334,7 @@
     {
       "name": "Colonic",
       "realm": "Onyxia",
-      "lastLogin": 1778161720000,
+      "lastLogin": 1778450904000,
       "level": 86,
       "race": "Blood Elf",
       "className": "Demon Hunter",
@@ -9345,7 +9345,7 @@
       "achievementPoints": 3615,
       "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/3/209075203-avatar.jpg",
       "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/3/209075203-main-raw.png",
-      "averageIlvl": 161,
+      "averageIlvl": 163,
       "equipment": [
         {
           "slot": "Head",
@@ -9375,23 +9375,23 @@
         },
         {
           "slot": "Neck",
-          "name": "Helthra's Fetish",
-          "ilvl": 165,
-          "quality": "Uncommon",
+          "name": "Yoke of the Charging Bear",
+          "ilvl": 171,
+          "quality": "Rare",
           "hasEmptySocket": true,
           "enchantCount": 0,
           "stats": [
             {
               "name": "Stamina",
-              "value": 258
+              "value": 284
+            },
+            {
+              "name": "Critical Strike",
+              "value": 51
             },
             {
               "name": "Haste",
-              "value": 76
-            },
-            {
-              "name": "Mastery",
-              "value": 68
+              "value": 98
             }
           ]
         },
@@ -9623,25 +9623,12 @@
         },
         {
           "slot": "Trinket 1",
-          "name": "Puzzling Crypt Relic",
-          "ilvl": 152,
-          "quality": "Uncommon",
+          "name": "Permafrost Essence",
+          "ilvl": 171,
+          "quality": "Rare",
           "hasEmptySocket": false,
           "enchantCount": 0,
-          "stats": [
-            {
-              "name": "Agility",
-              "value": 33
-            },
-            {
-              "name": "Strength",
-              "value": 33
-            },
-            {
-              "name": "Intellect",
-              "value": 33
-            }
-          ]
+          "stats": []
         },
         {
           "slot": "Trinket 2",
@@ -9737,32 +9724,32 @@
         }
       ],
       "stats": {
-        "health": 275897,
+        "health": 276766,
         "strength": 302,
-        "agility": 740,
+        "agility": 707,
         "intellect": 370,
-        "stamina": 13014,
-        "crit": 18,
-        "haste": 19.7,
-        "mastery": 39.4,
+        "stamina": 13055,
+        "crit": 20.2,
+        "haste": 20.6,
+        "mastery": 34.1,
         "vers": 5.1,
-        "armor": 1207
+        "armor": 1156
       },
       "lifeStats": {
-        "totalDeaths": 21,
+        "totalDeaths": 22,
         "deathsFromFalling": 2,
         "deathsFromPlayers": 2,
         "deathsInDungeons": 2,
         "deathsInRaids": 0,
-        "killingBlows": 3227,
-        "creaturesKilled": 3841,
-        "crittersKilled": 217,
-        "questsCompleted": 907,
+        "killingBlows": 3253,
+        "creaturesKilled": 3993,
+        "crittersKilled": 227,
+        "questsCompleted": 911,
         "questsAbandoned": 13,
         "flightPaths": 18,
         "timesHearthed": 4,
         "honorableKills": 0,
-        "dungeonsEntered": 5,
+        "dungeonsEntered": 6,
         "delvesCompleted": 3,
         "raidsEntered": 0,
         "bossesDefeated": 0
@@ -15765,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-05-10T21:18:02.353Z"
+  "lastUpdated": "2026-05-10T22:17:00.738Z"
 }
