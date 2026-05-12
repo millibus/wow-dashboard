@@ -14899,7 +14899,400 @@
       "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/179/248028851-avatar.jpg",
       "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/179/248028851-main-raw.png",
       "averageIlvl": 158,
-      "equipment": [],
+      "equipment": [
+        {
+          "slot": "Head",
+          "name": "Dark Horde Cowl",
+          "ilvl": 174,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 42
+            },
+            {
+              "name": "Intellect",
+              "value": 42
+            },
+            {
+              "name": "Stamina",
+              "value": 522
+            },
+            {
+              "name": "Critical Strike",
+              "value": 41
+            }
+          ]
+        },
+        {
+          "slot": "Neck",
+          "name": "Arboreal Vine Collar",
+          "ilvl": 158,
+          "quality": "Rare",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 226
+            },
+            {
+              "name": "Critical Strike",
+              "value": 80
+            },
+            {
+              "name": "Versatility",
+              "value": 56
+            }
+          ]
+        },
+        {
+          "slot": "Shoulders",
+          "name": "Osseoclad Razorspaulders",
+          "ilvl": 151,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 26
+            },
+            {
+              "name": "Intellect",
+              "value": 26
+            },
+            {
+              "name": "Stamina",
+              "value": 264
+            },
+            {
+              "name": "Critical Strike",
+              "value": 18
+            }
+          ]
+        },
+        {
+          "slot": "Chest",
+          "name": "On'heia's Dusty Jerkin",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 37
+            },
+            {
+              "name": "Intellect",
+              "value": 37
+            },
+            {
+              "name": "Stamina",
+              "value": 410
+            },
+            {
+              "name": "Versatility",
+              "value": 37
+            }
+          ]
+        },
+        {
+          "slot": "Waist",
+          "name": "Aspiring Hara'ti Defender's Cord",
+          "ilvl": 180,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 34
+            },
+            {
+              "name": "Intellect",
+              "value": 34
+            },
+            {
+              "name": "Stamina",
+              "value": 411
+            },
+            {
+              "name": "Critical Strike",
+              "value": 28
+            }
+          ]
+        },
+        {
+          "slot": "Legs",
+          "name": "Humble Servant's Leggings",
+          "ilvl": 174,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 42
+            },
+            {
+              "name": "Intellect",
+              "value": 42
+            },
+            {
+              "name": "Stamina",
+              "value": 522
+            },
+            {
+              "name": "Critical Strike",
+              "value": 38
+            }
+          ]
+        },
+        {
+          "slot": "Feet",
+          "name": "Lightstalker's Treads",
+          "ilvl": 139,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 23
+            },
+            {
+              "name": "Intellect",
+              "value": 23
+            },
+            {
+              "name": "Stamina",
+              "value": 206
+            },
+            {
+              "name": "Critical Strike",
+              "value": 24
+            }
+          ]
+        },
+        {
+          "slot": "Wrist",
+          "name": "Mar'kag's Anklet",
+          "ilvl": 174,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 24
+            },
+            {
+              "name": "Intellect",
+              "value": 24
+            },
+            {
+              "name": "Stamina",
+              "value": 294
+            },
+            {
+              "name": "Critical Strike",
+              "value": 23
+            }
+          ]
+        },
+        {
+          "slot": "Hands",
+          "name": "Alndust-Touched Gloves",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 28
+            },
+            {
+              "name": "Intellect",
+              "value": 28
+            },
+            {
+              "name": "Stamina",
+              "value": 307
+            },
+            {
+              "name": "Critical Strike",
+              "value": 23
+            }
+          ]
+        },
+        {
+          "slot": "Ring 1",
+          "name": "Unmoved Elder's Hoop",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 231
+            },
+            {
+              "name": "Critical Strike",
+              "value": 66
+            },
+            {
+              "name": "Haste",
+              "value": 70
+            }
+          ]
+        },
+        {
+          "slot": "Ring 2",
+          "name": "Amarakk's Woven Signet",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 231
+            },
+            {
+              "name": "Critical Strike",
+              "value": 66
+            },
+            {
+              "name": "Mastery",
+              "value": 70
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 1",
+          "name": "Tangle of Vibrant Vines",
+          "ilvl": 171,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Critical Strike",
+              "value": 51
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 2",
+          "name": "Demon Trophy",
+          "ilvl": 102,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 21
+            },
+            {
+              "name": "Strength",
+              "value": 21
+            },
+            {
+              "name": "Intellect",
+              "value": 21
+            },
+            {
+              "name": "Critical Strike",
+              "value": 31
+            }
+          ]
+        },
+        {
+          "slot": "Back",
+          "name": "Rootwoven Cape",
+          "ilvl": 152,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 19
+            },
+            {
+              "name": "Strength",
+              "value": 19
+            },
+            {
+              "name": "Intellect",
+              "value": 19
+            },
+            {
+              "name": "Stamina",
+              "value": 202
+            }
+          ]
+        },
+        {
+          "slot": "Main Hand",
+          "name": "Repurposed Scarlet Blade",
+          "ilvl": 165,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 20
+            },
+            {
+              "name": "Stamina",
+              "value": 229
+            },
+            {
+              "name": "Critical Strike",
+              "value": 15
+            },
+            {
+              "name": "Haste",
+              "value": 19
+            }
+          ]
+        },
+        {
+          "slot": "Off Hand",
+          "name": "Spore-Touched Glaive",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 18
+            },
+            {
+              "name": "Intellect",
+              "value": 107
+            },
+            {
+              "name": "Stamina",
+              "value": 205
+            },
+            {
+              "name": "Haste",
+              "value": 16
+            }
+          ]
+        }
+      ],
       "stats": {
         "health": 177571,
         "strength": 345,
@@ -15359,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-05-12T03:08:04.635Z"
+  "lastUpdated": "2026-05-12T05:14:59.099Z"
 }
