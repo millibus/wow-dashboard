@@ -11499,8 +11499,8 @@
       "guild": "Deaths Edge",
       "title": "",
       "achievementPoints": 8890,
-      "avatarUrl": null,
-      "mainRawUrl": null,
+      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/41/234897449-avatar.jpg",
+      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/41/234897449-main-raw.png",
       "averageIlvl": 79,
       "equipment": [
         {
@@ -13166,16 +13166,16 @@
         }
       ],
       "stats": {
-        "health": 0,
-        "strength": 0,
-        "agility": 0,
-        "intellect": 0,
-        "stamina": 0,
-        "crit": 0,
-        "haste": 0,
-        "mastery": 0,
-        "vers": 0,
-        "armor": 0
+        "health": 209801,
+        "strength": 1278,
+        "agility": 3991,
+        "intellect": 1712,
+        "stamina": 9713,
+        "crit": 26.7,
+        "haste": 23.8,
+        "mastery": 25,
+        "vers": 4.8,
+        "armor": 2673
       },
       "lifeStats": {
         "totalDeaths": 9,
@@ -15752,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-05-17T00:39:19.577Z"
+  "lastUpdated": "2026-05-17T01:37:08.720Z"
 }
