@@ -4438,8 +4438,8 @@
       "guild": "Riot Act",
       "title": "",
       "achievementPoints": 8465,
-      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/40/235272488-avatar.jpg",
-      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/40/235272488-main-raw.png",
+      "avatarUrl": null,
+      "mainRawUrl": null,
       "averageIlvl": 145,
       "equipment": [
         {
@@ -9149,5 +9149,5 @@
       "rank": 1
     }
   ],
-  "lastUpdated": "2026-05-22T13:48:32.365Z"
+  "lastUpdated": "2026-05-22T15:04:57.850Z"
 }
