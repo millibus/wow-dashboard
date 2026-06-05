@@ -8454,8 +8454,8 @@
       "guild": "Deaths Edge",
       "title": "",
       "achievementPoints": 8890,
-      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/235/209070059-avatar.jpg",
-      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/235/209070059-main-raw.png",
+      "avatarUrl": null,
+      "mainRawUrl": null,
       "averageIlvl": 81,
       "equipment": [
         {
@@ -15752,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-06-05T07:31:04.737Z"
+  "lastUpdated": "2026-06-05T09:10:55.511Z"
 }
