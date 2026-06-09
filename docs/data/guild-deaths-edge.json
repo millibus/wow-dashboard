@@ -14054,7 +14054,362 @@
       "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/131/244320643-avatar.jpg",
       "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/131/244320643-main-raw.png",
       "averageIlvl": 180,
-      "equipment": [],
+      "equipment": [
+        {
+          "slot": "Head",
+          "name": "Dark Horde Helmet",
+          "ilvl": 196,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 52
+            },
+            {
+              "name": "Intellect",
+              "value": 52
+            },
+            {
+              "name": "Stamina",
+              "value": 623
+            },
+            {
+              "name": "Critical Strike",
+              "value": 50
+            }
+          ]
+        },
+        {
+          "slot": "Neck",
+          "name": "Nocturnal Thorncharm",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 231
+            },
+            {
+              "name": "Critical Strike",
+              "value": 80
+            },
+            {
+              "name": "Haste",
+              "value": 57
+            }
+          ]
+        },
+        {
+          "slot": "Shoulders",
+          "name": "Light's Hope Epaulets",
+          "ilvl": 183,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 35
+            },
+            {
+              "name": "Intellect",
+              "value": 35
+            },
+            {
+              "name": "Stamina",
+              "value": 421
+            },
+            {
+              "name": "Critical Strike",
+              "value": 33
+            }
+          ]
+        },
+        {
+          "slot": "Chest",
+          "name": "Fungus-Infested Brigandine",
+          "ilvl": 183,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 46
+            },
+            {
+              "name": "Intellect",
+              "value": 46
+            },
+            {
+              "name": "Stamina",
+              "value": 561
+            },
+            {
+              "name": "Haste",
+              "value": 38
+            }
+          ]
+        },
+        {
+          "slot": "Waist",
+          "name": "Tarnished Dawnlit Commander's Greatbelt",
+          "ilvl": 165,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 29
+            },
+            {
+              "name": "Intellect",
+              "value": 29
+            },
+            {
+              "name": "Stamina",
+              "value": 344
+            },
+            {
+              "name": "Critical Strike",
+              "value": 27
+            }
+          ]
+        },
+        {
+          "slot": "Legs",
+          "name": "Humble Servant's Pants",
+          "ilvl": 189,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 49
+            },
+            {
+              "name": "Intellect",
+              "value": 49
+            },
+            {
+              "name": "Stamina",
+              "value": 589
+            },
+            {
+              "name": "Critical Strike",
+              "value": 38
+            }
+          ]
+        },
+        {
+          "slot": "Feet",
+          "name": "Warboots of the Colossal Behemoths",
+          "ilvl": 187,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 36
+            },
+            {
+              "name": "Intellect",
+              "value": 36
+            },
+            {
+              "name": "Stamina",
+              "value": 435
+            },
+            {
+              "name": "Critical Strike",
+              "value": 27
+            }
+          ]
+        },
+        {
+          "slot": "Wrist",
+          "name": "Mar'kag's Oversized Ring",
+          "ilvl": 189,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 27
+            },
+            {
+              "name": "Intellect",
+              "value": 27
+            },
+            {
+              "name": "Stamina",
+              "value": 331
+            },
+            {
+              "name": "Haste",
+              "value": 24
+            }
+          ]
+        },
+        {
+          "slot": "Hands",
+          "name": "Twilightbreaker's Gauntlets",
+          "ilvl": 183,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 35
+            },
+            {
+              "name": "Intellect",
+              "value": 35
+            },
+            {
+              "name": "Stamina",
+              "value": 421
+            },
+            {
+              "name": "Critical Strike",
+              "value": 31
+            }
+          ]
+        },
+        {
+          "slot": "Ring 1",
+          "name": "Band of Severed Connections",
+          "ilvl": 165,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 258
+            },
+            {
+              "name": "Haste",
+              "value": 78
+            },
+            {
+              "name": "Versatility",
+              "value": 66
+            }
+          ]
+        },
+        {
+          "slot": "Ring 2",
+          "name": "Unmoved Elder's Hoop",
+          "ilvl": 189,
+          "quality": "Rare",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 331
+            },
+            {
+              "name": "Critical Strike",
+              "value": 74
+            },
+            {
+              "name": "Haste",
+              "value": 78
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 1",
+          "name": "Thriving Essence Sprig",
+          "ilvl": 174,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Haste",
+              "value": 52
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 2",
+          "name": "Tangle of Vibrant Vines",
+          "ilvl": 196,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Critical Strike",
+              "value": 63
+            }
+          ]
+        },
+        {
+          "slot": "Back",
+          "name": "Ancient Frond Cloak",
+          "ilvl": 159,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 21
+            },
+            {
+              "name": "Agility",
+              "value": 21
+            },
+            {
+              "name": "Intellect",
+              "value": 21
+            },
+            {
+              "name": "Stamina",
+              "value": 231
+            }
+          ]
+        },
+        {
+          "slot": "Main Hand",
+          "name": "Stonebough Greatsword",
+          "ilvl": 189,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Strength",
+              "value": 49
+            },
+            {
+              "name": "Stamina",
+              "value": 589
+            },
+            {
+              "name": "Versatility",
+              "value": 47
+            },
+            {
+              "name": "Mastery",
+              "value": 36
+            }
+          ]
+        }
+      ],
       "stats": {
         "health": 219220,
         "strength": 1090,
@@ -15397,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-06-09T15:17:37.078Z"
+  "lastUpdated": "2026-06-09T16:55:36.271Z"
 }
