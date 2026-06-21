@@ -7566,6 +7566,423 @@
       "rank": 2
     },
     {
+      "name": "Jacobyy",
+      "realm": "Onyxia",
+      "lastLogin": 1773705007000,
+      "level": 80,
+      "race": "Orc",
+      "className": "Hunter",
+      "spec": "Beast Mastery",
+      "faction": "Horde",
+      "guild": "Deaths Edge",
+      "title": "Jacobyy, Liberator of Orgrimmar",
+      "achievementPoints": 13440,
+      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/167/208911527-avatar.jpg",
+      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/167/208911527-main-raw.png",
+      "averageIlvl": 84,
+      "equipment": [
+        {
+          "slot": "Head",
+          "name": "Chitinoid Coif of the Aurora",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 18
+            },
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 30
+            },
+            {
+              "name": "Haste",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "slot": "Neck",
+          "name": "Long-Lost Choker",
+          "ilvl": 86,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 21
+            },
+            {
+              "name": "Critical Strike",
+              "value": 25
+            },
+            {
+              "name": "Versatility",
+              "value": 31
+            }
+          ]
+        },
+        {
+          "slot": "Shoulders",
+          "name": "Spaulders of the Stygian Sea",
+          "ilvl": 86,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 14
+            },
+            {
+              "name": "Intellect",
+              "value": 14
+            },
+            {
+              "name": "Stamina",
+              "value": 28
+            },
+            {
+              "name": "Critical Strike",
+              "value": 11
+            }
+          ]
+        },
+        {
+          "slot": "Shirt",
+          "name": "Antiseptic-Soaked Dressing",
+          "ilvl": 1,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": []
+        },
+        {
+          "slot": "Chest",
+          "name": "Hauberk of the Stygian Sea",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 18
+            },
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 30
+            },
+            {
+              "name": "Haste",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "slot": "Waist",
+          "name": "Sash of the Stygian Sea",
+          "ilvl": 80,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 13
+            },
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Critical Strike",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "slot": "Legs",
+          "name": "Flamestonge's Greaves of the Feverflare",
+          "ilvl": 80,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 18
+            },
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 27
+            },
+            {
+              "name": "Haste",
+              "value": 18
+            }
+          ]
+        },
+        {
+          "slot": "Feet",
+          "name": "Saboteur's Striders",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 13
+            },
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Critical Strike",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "slot": "Wrist",
+          "name": "Expeditionary Bracers of the Quickblade",
+          "ilvl": 80,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 10
+            },
+            {
+              "name": "Intellect",
+              "value": 10
+            },
+            {
+              "name": "Stamina",
+              "value": 15
+            },
+            {
+              "name": "Critical Strike",
+              "value": 11
+            }
+          ]
+        },
+        {
+          "slot": "Hands",
+          "name": "Chitinoid Grips of the Feverflare",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 14
+            },
+            {
+              "name": "Intellect",
+              "value": 14
+            },
+            {
+              "name": "Stamina",
+              "value": 23
+            },
+            {
+              "name": "Haste",
+              "value": 16
+            }
+          ]
+        },
+        {
+          "slot": "Ring 1",
+          "name": "Cyrce's Circlet",
+          "ilvl": 98,
+          "quality": "Epic",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 44
+            }
+          ]
+        },
+        {
+          "slot": "Ring 2",
+          "name": "Ceremonial Song Ring",
+          "ilvl": 86,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 21
+            },
+            {
+              "name": "Critical Strike",
+              "value": 39
+            },
+            {
+              "name": "Versatility",
+              "value": 18
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 1",
+          "name": "Scroll of Momentum",
+          "ilvl": 80,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 2",
+          "name": "Imperfect Ascendancy Serum",
+          "ilvl": 86,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 9
+            },
+            {
+              "name": "Intellect",
+              "value": 9
+            },
+            {
+              "name": "Strength",
+              "value": 9
+            },
+            {
+              "name": "Haste",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "slot": "Back",
+          "name": "Cave Topographer's Drape",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 10
+            },
+            {
+              "name": "Intellect",
+              "value": 10
+            },
+            {
+              "name": "Strength",
+              "value": 10
+            },
+            {
+              "name": "Stamina",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Main Hand",
+          "name": "Trailblazer's Hookshoot",
+          "ilvl": 89,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Agility",
+              "value": 19
+            },
+            {
+              "name": "Stamina",
+              "value": 46
+            },
+            {
+              "name": "Versatility",
+              "value": 21
+            },
+            {
+              "name": "Mastery",
+              "value": 18
+            }
+          ]
+        }
+      ],
+      "stats": {
+        "health": 53360,
+        "strength": 100,
+        "agility": 345,
+        "intellect": 129,
+        "stamina": 2668,
+        "crit": 20.4,
+        "haste": 7.5,
+        "mastery": 28.2,
+        "vers": 10.7,
+        "armor": 234
+      },
+      "lifeStats": {
+        "totalDeaths": 141,
+        "deathsFromFalling": 12,
+        "deathsFromPlayers": 12,
+        "deathsInDungeons": 10,
+        "deathsInRaids": 0,
+        "killingBlows": 15384,
+        "creaturesKilled": 16763,
+        "crittersKilled": 671,
+        "questsCompleted": 2640,
+        "questsAbandoned": 96,
+        "flightPaths": 161,
+        "timesHearthed": 17,
+        "honorableKills": 0,
+        "dungeonsEntered": 75,
+        "delvesCompleted": 22,
+        "raidsEntered": 7,
+        "bossesDefeated": 0
+      },
+      "rank": 1
+    },
+    {
       "name": "Zeison",
       "realm": "Onyxia",
       "lastLogin": 1769280586000,
@@ -8444,16 +8861,16 @@
         }
       ],
       "stats": {
-        "health": 0,
-        "strength": 0,
-        "agility": 0,
-        "intellect": 0,
-        "stamina": 0,
-        "crit": 0,
-        "haste": 0,
-        "mastery": 0,
-        "vers": 0,
-        "armor": 0
+        "health": 87880,
+        "strength": 129,
+        "agility": 342,
+        "intellect": 161,
+        "stamina": 4394,
+        "crit": 26.1,
+        "haste": 6.1,
+        "mastery": 27.3,
+        "vers": 7.5,
+        "armor": 498
       },
       "lifeStats": {
         "totalDeaths": 10,
@@ -15335,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-06-21T15:35:49.476Z"
+  "lastUpdated": "2026-06-21T16:34:07.815Z"
 }
