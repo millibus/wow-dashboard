@@ -4000,8 +4000,8 @@
       "guild": "Riot Act",
       "title": "Lubu the Explorer",
       "achievementPoints": 13400,
-      "avatarUrl": null,
-      "mainRawUrl": null,
+      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/10/235272458-avatar.jpg",
+      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/10/235272458-main-raw.png",
       "averageIlvl": 14,
       "equipment": [
         {
@@ -9149,5 +9149,5 @@
       "rank": 1
     }
   ],
-  "lastUpdated": "2026-06-26T16:41:11.092Z"
+  "lastUpdated": "2026-06-26T17:34:47.961Z"
 }
