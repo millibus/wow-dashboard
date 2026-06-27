@@ -1783,8 +1783,8 @@
       "guild": "Deaths Edge",
       "title": "Incantation the Patient",
       "achievementPoints": 8900,
-      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/13/207690253-avatar.jpg",
-      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/13/207690253-main-raw.png",
+      "avatarUrl": null,
+      "mainRawUrl": null,
       "averageIlvl": 79,
       "equipment": [
         {
@@ -4435,22 +4435,22 @@
         "armor": 651
       },
       "lifeStats": {
-        "totalDeaths": 45,
-        "deathsFromFalling": 7,
-        "deathsFromPlayers": 7,
-        "deathsInDungeons": 7,
+        "totalDeaths": 0,
+        "deathsFromFalling": 0,
+        "deathsFromPlayers": 0,
+        "deathsInDungeons": 0,
         "deathsInRaids": 0,
-        "killingBlows": 8128,
-        "creaturesKilled": 8486,
-        "crittersKilled": 391,
-        "questsCompleted": 1488,
-        "questsAbandoned": 95,
-        "flightPaths": 95,
-        "timesHearthed": 32,
+        "killingBlows": 0,
+        "creaturesKilled": 0,
+        "crittersKilled": 0,
+        "questsCompleted": 0,
+        "questsAbandoned": 0,
+        "flightPaths": 0,
+        "timesHearthed": 0,
         "honorableKills": 0,
-        "dungeonsEntered": 29,
+        "dungeonsEntered": 0,
         "delvesCompleted": 0,
-        "raidsEntered": 3,
+        "raidsEntered": 0,
         "bossesDefeated": 0
       },
       "rank": 1
@@ -15752,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-06-27T01:40:29.300Z"
+  "lastUpdated": "2026-06-27T03:07:15.557Z"
 }
