@@ -1356,7 +1356,388 @@
       "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/161/207595681-avatar.jpg",
       "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/161/207595681-main-raw.png",
       "averageIlvl": 95,
-      "equipment": [],
+      "equipment": [
+        {
+          "slot": "Head",
+          "name": "Earthen Scallywag's Cowl",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 30
+            },
+            {
+              "name": "Haste",
+              "value": 13
+            },
+            {
+              "name": "Mastery",
+              "value": 24
+            }
+          ]
+        },
+        {
+          "slot": "Neck",
+          "name": "Sunwell Defender's Brooch",
+          "ilvl": 120,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 94
+            },
+            {
+              "name": "Haste",
+              "value": 52
+            },
+            {
+              "name": "Mastery",
+              "value": 42
+            }
+          ]
+        },
+        {
+          "slot": "Shoulders",
+          "name": "Rescued Aeroknight's Mantle",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Critical Strike",
+              "value": 12
+            },
+            {
+              "name": "Mastery",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "slot": "Shirt",
+          "name": "Scarlet Filigreed Doublet",
+          "ilvl": 1,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": []
+        },
+        {
+          "slot": "Chest",
+          "name": "Vestment of the Reckoning's Vengeance",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 26
+            },
+            {
+              "name": "Haste",
+              "value": 14
+            },
+            {
+              "name": "Mastery",
+              "value": 21
+            }
+          ]
+        },
+        {
+          "slot": "Waist",
+          "name": "Flying Kobold's Seatbelt",
+          "ilvl": 78,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Critical Strike",
+              "value": 12
+            },
+            {
+              "name": "Haste",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "slot": "Legs",
+          "name": "Smuggled Nerubian Trousers",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 18
+            },
+            {
+              "name": "Stamina",
+              "value": 26
+            },
+            {
+              "name": "Critical Strike",
+              "value": 17
+            },
+            {
+              "name": "Versatility",
+              "value": 18
+            }
+          ]
+        },
+        {
+          "slot": "Feet",
+          "name": "Tarnished Dawnlit Spellbinder's Slippers",
+          "ilvl": 133,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 22
+            },
+            {
+              "name": "Stamina",
+              "value": 177
+            },
+            {
+              "name": "Critical Strike",
+              "value": 23
+            },
+            {
+              "name": "Mastery",
+              "value": 19
+            }
+          ]
+        },
+        {
+          "slot": "Wrist",
+          "name": "General's Pungent Wraps",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 10
+            },
+            {
+              "name": "Stamina",
+              "value": 15
+            },
+            {
+              "name": "Haste",
+              "value": 9
+            },
+            {
+              "name": "Versatility",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "slot": "Hands",
+          "name": "Gloves of Irradiating Imprisonment",
+          "ilvl": 78,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Critical Strike",
+              "value": 12
+            },
+            {
+              "name": "Versatility",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "slot": "Ring 1",
+          "name": "Gem-Studded Signet of the Aurora",
+          "ilvl": 83,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 17
+            },
+            {
+              "name": "Haste",
+              "value": 24
+            },
+            {
+              "name": "Versatility",
+              "value": 29
+            }
+          ]
+        },
+        {
+          "slot": "Ring 2",
+          "name": "Entropic Void Crystal",
+          "ilvl": 120,
+          "quality": "Uncommon",
+          "hasEmptySocket": true,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 94
+            },
+            {
+              "name": "Critical Strike",
+              "value": 46
+            },
+            {
+              "name": "Haste",
+              "value": 48
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 1",
+          "name": "Esteemed Earthen Emblem",
+          "ilvl": 78,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 17
+            },
+            {
+              "name": "Agility",
+              "value": 17
+            },
+            {
+              "name": "Strength",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 2",
+          "name": "Candle Confidant",
+          "ilvl": 79,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Back",
+          "name": "Sin'dorei Citizen's Shawl",
+          "ilvl": 126,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 15
+            },
+            {
+              "name": "Agility",
+              "value": 15
+            },
+            {
+              "name": "Strength",
+              "value": 15
+            },
+            {
+              "name": "Stamina",
+              "value": 111
+            }
+          ]
+        },
+        {
+          "slot": "Main Hand",
+          "name": "Recovered Sanctum Stave",
+          "ilvl": 120,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 114
+            },
+            {
+              "name": "Stamina",
+              "value": 168
+            },
+            {
+              "name": "Haste",
+              "value": 23
+            },
+            {
+              "name": "Versatility",
+              "value": 28
+            }
+          ]
+        },
+        {
+          "slot": "Tabard",
+          "name": "Tabard of the Achiever",
+          "ilvl": 1,
+          "quality": "Epic",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": []
+        }
+      ],
       "stats": {
         "health": 72597,
         "strength": 57,
@@ -4525,8 +4906,8 @@
       "guild": "Deaths Edge",
       "title": "",
       "achievementPoints": 3570,
-      "avatarUrl": null,
-      "mainRawUrl": null,
+      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/235/208628203-avatar.jpg",
+      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/235/208628203-main-raw.png",
       "averageIlvl": 209,
       "equipment": [
         {
@@ -10703,6 +11084,410 @@
       "rank": 2
     },
     {
+      "name": "Alduen",
+      "realm": "Onyxia",
+      "lastLogin": 1773706086000,
+      "level": 70,
+      "race": "Dracthyr",
+      "className": "Evoker",
+      "spec": "Devastation",
+      "faction": "Horde",
+      "guild": "Deaths Edge",
+      "title": "Alduen of the Nightfall",
+      "achievementPoints": 13440,
+      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/70/234878790-avatar.jpg",
+      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/70/234878790-main-raw.png",
+      "averageIlvl": 65,
+      "equipment": [
+        {
+          "slot": "Head",
+          "name": "Expedition Mercenary's Helm",
+          "ilvl": 72,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 16
+            },
+            {
+              "name": "Agility",
+              "value": 16
+            },
+            {
+              "name": "Stamina",
+              "value": 24
+            },
+            {
+              "name": "Critical Strike",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Neck",
+          "name": "Primalist Pendant",
+          "ilvl": 63,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 11
+            },
+            {
+              "name": "Haste",
+              "value": 21
+            },
+            {
+              "name": "Mastery",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Shoulders",
+          "name": "Expedition Mercenary's Monnion",
+          "ilvl": 69,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 12
+            },
+            {
+              "name": "Agility",
+              "value": 12
+            },
+            {
+              "name": "Stamina",
+              "value": 17
+            },
+            {
+              "name": "Haste",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "slot": "Chest",
+          "name": "Crimson Dracthyr Battlegear Hauberk",
+          "ilvl": 61,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 13
+            },
+            {
+              "name": "Agility",
+              "value": 13
+            },
+            {
+              "name": "Stamina",
+              "value": 19
+            },
+            {
+              "name": "Haste",
+              "value": 14
+            }
+          ]
+        },
+        {
+          "slot": "Waist",
+          "name": "Expedition Mercenary's Belt",
+          "ilvl": 68,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 11
+            },
+            {
+              "name": "Agility",
+              "value": 11
+            },
+            {
+              "name": "Stamina",
+              "value": 17
+            },
+            {
+              "name": "Critical Strike",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "slot": "Legs",
+          "name": "Crimson Dracthyr Battlegear Leggings",
+          "ilvl": 63,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 14
+            },
+            {
+              "name": "Agility",
+              "value": 14
+            },
+            {
+              "name": "Stamina",
+              "value": 20
+            },
+            {
+              "name": "Versatility",
+              "value": 12
+            }
+          ]
+        },
+        {
+          "slot": "Feet",
+          "name": "Expedition Mercenary's Boots",
+          "ilvl": 64,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 10
+            },
+            {
+              "name": "Agility",
+              "value": 10
+            },
+            {
+              "name": "Stamina",
+              "value": 16
+            },
+            {
+              "name": "Critical Strike",
+              "value": 11
+            }
+          ]
+        },
+        {
+          "slot": "Wrist",
+          "name": "Expedition Mercenary's Bracers",
+          "ilvl": 69,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 9
+            },
+            {
+              "name": "Agility",
+              "value": 9
+            },
+            {
+              "name": "Stamina",
+              "value": 13
+            },
+            {
+              "name": "Critical Strike",
+              "value": 10
+            }
+          ]
+        },
+        {
+          "slot": "Hands",
+          "name": "Crimson Dracthyr Battlegear Grips",
+          "ilvl": 62,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 10
+            },
+            {
+              "name": "Agility",
+              "value": 10
+            },
+            {
+              "name": "Stamina",
+              "value": 15
+            },
+            {
+              "name": "Critical Strike",
+              "value": 9
+            }
+          ]
+        },
+        {
+          "slot": "Ring 1",
+          "name": "Band of the Unscalable",
+          "ilvl": 71,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 14
+            },
+            {
+              "name": "Critical Strike",
+              "value": 13
+            },
+            {
+              "name": "Haste",
+              "value": 31
+            }
+          ]
+        },
+        {
+          "slot": "Ring 2",
+          "name": "Carved Basalt Ring",
+          "ilvl": 65,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Stamina",
+              "value": 12
+            },
+            {
+              "name": "Versatility",
+              "value": 23
+            },
+            {
+              "name": "Mastery",
+              "value": 17
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 1",
+          "name": "Ekrazathal's Colored Fang",
+          "ilvl": 62,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 13
+            }
+          ]
+        },
+        {
+          "slot": "Trinket 2",
+          "name": "Lifegift Ruby",
+          "ilvl": 69,
+          "quality": "Uncommon",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Versatility",
+              "value": 22
+            }
+          ]
+        },
+        {
+          "slot": "Back",
+          "name": "Crimson Dracthyr's Drape",
+          "ilvl": 61,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 7
+            },
+            {
+              "name": "Agility",
+              "value": 7
+            },
+            {
+              "name": "Strength",
+              "value": 7
+            },
+            {
+              "name": "Stamina",
+              "value": 11
+            }
+          ]
+        },
+        {
+          "slot": "Main Hand",
+          "name": "Emblazoned Ruby Staff",
+          "ilvl": 61,
+          "quality": "Rare",
+          "hasEmptySocket": false,
+          "enchantCount": 0,
+          "stats": [
+            {
+              "name": "Intellect",
+              "value": 57
+            },
+            {
+              "name": "Stamina",
+              "value": 19
+            },
+            {
+              "name": "Critical Strike",
+              "value": 11
+            },
+            {
+              "name": "Haste",
+              "value": 15
+            }
+          ]
+        }
+      ],
+      "stats": {
+        "health": 30238,
+        "strength": 64,
+        "agility": 99,
+        "intellect": 332,
+        "stamina": 2326,
+        "crit": 13.4,
+        "haste": 10.7,
+        "mastery": 22.7,
+        "vers": 7.7,
+        "armor": 326
+      },
+      "lifeStats": {
+        "totalDeaths": 3,
+        "deathsFromFalling": 2,
+        "deathsFromPlayers": 0,
+        "deathsInDungeons": 0,
+        "deathsInRaids": 0,
+        "killingBlows": 429,
+        "creaturesKilled": 606,
+        "crittersKilled": 28,
+        "questsCompleted": 462,
+        "questsAbandoned": 7,
+        "flightPaths": 5,
+        "timesHearthed": 6,
+        "honorableKills": 0,
+        "dungeonsEntered": 0,
+        "delvesCompleted": 0,
+        "raidsEntered": 0,
+        "bossesDefeated": 0
+      },
+      "rank": 1
+    },
+    {
       "name": "Stray",
       "realm": "Onyxia",
       "lastLogin": 1769280206000,
@@ -14967,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-06-29T21:31:49.084Z"
+  "lastUpdated": "2026-06-29T22:24:38.676Z"
 }
