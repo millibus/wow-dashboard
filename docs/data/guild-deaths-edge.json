@@ -2189,21 +2189,21 @@
         "armor": 99
       },
       "lifeStats": {
-        "totalDeaths": 0,
-        "deathsFromFalling": 0,
-        "deathsFromPlayers": 0,
-        "deathsInDungeons": 0,
-        "deathsInRaids": 0,
-        "killingBlows": 0,
-        "creaturesKilled": 0,
-        "crittersKilled": 0,
-        "questsCompleted": 0,
-        "questsAbandoned": 0,
-        "flightPaths": 0,
-        "timesHearthed": 0,
-        "honorableKills": 0,
-        "dungeonsEntered": 0,
-        "delvesCompleted": 0,
+        "totalDeaths": 72,
+        "deathsFromFalling": 1,
+        "deathsFromPlayers": 19,
+        "deathsInDungeons": 11,
+        "deathsInRaids": 1,
+        "killingBlows": 6645,
+        "creaturesKilled": 15873,
+        "crittersKilled": 493,
+        "questsCompleted": 1605,
+        "questsAbandoned": 397,
+        "flightPaths": 219,
+        "timesHearthed": 20,
+        "honorableKills": 4,
+        "dungeonsEntered": 50,
+        "delvesCompleted": 1,
         "raidsEntered": 0,
         "bossesDefeated": 0
       },
@@ -15752,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-07-20T02:15:55.471Z"
+  "lastUpdated": "2026-07-20T03:04:50.157Z"
 }
