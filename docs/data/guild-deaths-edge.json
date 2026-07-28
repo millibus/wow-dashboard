@@ -14455,8 +14455,8 @@
       "guild": "Deaths Edge",
       "title": "Bbaronsamedi the Fearless",
       "achievementPoints": 13440,
-      "avatarUrl": "https://render.worldofwarcraft.com/us/character/onyxia/93/245476957-avatar.jpg",
-      "mainRawUrl": "https://render.worldofwarcraft.com/us/character/onyxia/93/245476957-main-raw.png",
+      "avatarUrl": null,
+      "mainRawUrl": null,
       "averageIlvl": 76,
       "equipment": [
         {
@@ -15752,5 +15752,5 @@
       "rank": 5
     }
   ],
-  "lastUpdated": "2026-07-28T18:30:18.905Z"
+  "lastUpdated": "2026-07-28T19:32:05.163Z"
 }
