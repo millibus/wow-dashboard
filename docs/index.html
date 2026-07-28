@@ -5,9 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>⚔️ Death's Edge — Guild Dashboard</title>
   <meta name="description" content="Death's Edge guild dashboard — character roster, ilvl leaderboard, pets and mounts for Onyxia-US.">
+  <meta name="color-scheme" content="dark">
   <meta property="og:title" content="⚔️ Death's Edge — Guild Dashboard">
   <meta property="og:description" content="Character roster, ilvl leaderboard, stats, pets and mounts for Death's Edge on Onyxia-US.">
-  <meta property="og:image" content="https://wow.nwpremier.net/og-preview.jpg">
+  <meta property="og:image" content="https://wow.nwpremier.net/og-preview.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:url" content="https://wow.nwpremier.net">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
@@ -16,71 +19,93 @@
 </head>
 <body>
 
+<a class="skip-link" href="#view-roster">Skip to roster</a>
+
 <!-- HEADER -->
 <header>
   <div class="header-inner">
     <div class="header-title">
-      <span class="sword">⚔️</span>
+      <span class="sword" aria-hidden="true">⚔️</span>
       <div>
         <h1>Death's Edge</h1>
         <p class="subtitle">Guild Dashboard — Onyxia-US</p>
       </div>
     </div>
     <div class="header-right">
-      <div class="guild-toggle">
-        <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Death's Edge</button>
-        <button class="guild-toggle-btn" data-slug="riot-act" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
+      <div class="guild-toggle" role="group" aria-label="Choose guild">
+        <button type="button" class="guild-toggle-btn active" data-slug="deaths-edge" aria-pressed="true" onclick="switchGuild('deaths-edge')">🔴 Death's Edge</button>
+        <button type="button" class="guild-toggle-btn" data-slug="riot-act" aria-pressed="false" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
       </div>
       <span id="last-updated" class="last-updated"></span>
-      <button class="btn-refresh" onclick="loadGuild(true)">↻ Refresh</button>
+      <button type="button" class="btn-refresh" onclick="loadGuild(true)" title="Re-reads the latest snapshot. Snapshots are rebuilt hourly by GitHub Actions.">↻ Refresh</button>
     </div>
   </div>
   <div class="guild-stats" id="guild-stats"></div>
 </header>
 
+<!-- VIEW TABS -->
+<div class="view-tabs" role="tablist" aria-label="Dashboard views">
+  <button type="button" class="view-tab active" id="tab-roster" role="tab" aria-selected="true" aria-controls="view-roster" onclick="switchView('roster')">⚔ Roster</button>
+  <button type="button" class="view-tab" id="tab-readiness" role="tab" aria-selected="false" aria-controls="view-readiness" onclick="switchView('readiness')">🎯 Readiness</button>
+  <button type="button" class="view-tab" id="tab-leaderboard" role="tab" aria-selected="false" aria-controls="view-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
+  <button type="button" class="view-tab" id="tab-raids" role="tab" aria-selected="false" aria-controls="view-raids" onclick="switchView('raids')">⚔ Raids</button>
+  <button type="button" class="view-tab" id="tab-pets" role="tab" aria-selected="false" aria-controls="view-pets" onclick="switchView('pets')">🐾 Pets</button>
+  <button type="button" class="view-tab" id="tab-mounts" role="tab" aria-selected="false" aria-controls="view-mounts" onclick="switchView('mounts')">🐎 Mounts</button>
+  <button type="button" class="filter-toggle" id="btn-toggle-filters" data-action="toggle-filters" aria-expanded="false" aria-controls="filter-bar">
+    ⚙ Filters <span class="filter-count-badge hidden" id="filter-count-badge"></span>
+  </button>
+</div>
+
 <!-- FILTER BAR -->
-<div class="filter-bar" id="filter-bar">
+<div class="filter-bar collapsed" id="filter-bar">
   <div class="filter-bar-section">
-    <div class="filter-bar-label">Search</div>
-    <input type="text" id="search" class="filter-search" placeholder="Name, class, race..." oninput="onSearch(this.value)">
+    <label class="filter-bar-label" for="search">Search</label>
+    <input type="search" id="search" class="filter-search" placeholder="Name, class, race..." oninput="onSearch(this.value)">
+  </div>
+  <div class="filter-bar-section" data-fills="filter-status">
+    <div class="filter-bar-label" id="lbl-status">Status</div>
+    <div class="filter-bar-pills" id="filter-status" role="group" aria-labelledby="lbl-status"></div>
+  </div>
+  <div class="filter-bar-section" data-fills="filter-owners">
+    <div class="filter-bar-label" id="lbl-owner">Owner</div>
+    <div class="filter-bar-pills" id="filter-owners" role="group" aria-labelledby="lbl-owner"></div>
+  </div>
+  <div class="filter-bar-section" data-fills="filter-classes">
+    <div class="filter-bar-label" id="lbl-class">Class</div>
+    <div class="filter-bar-pills" id="filter-classes" role="group" aria-labelledby="lbl-class"></div>
+  </div>
+  <div class="filter-bar-section" data-fills="filter-races">
+    <div class="filter-bar-label" id="lbl-race">Race</div>
+    <div class="filter-bar-pills" id="filter-races" role="group" aria-labelledby="lbl-race"></div>
+  </div>
+  <div class="filter-bar-section" data-fills="filter-ranks">
+    <div class="filter-bar-label" id="lbl-rank">Guild rank</div>
+    <div class="filter-bar-pills" id="filter-ranks" role="group" aria-labelledby="lbl-rank"></div>
   </div>
   <div class="filter-bar-section">
-    <div class="filter-bar-label">Status</div>
-    <div class="filter-bar-pills" id="filter-status"></div>
-  </div>
-  <div class="filter-bar-section">
-    <div class="filter-bar-label">Owner</div>
-    <div class="filter-bar-pills" id="filter-owners"></div>
-  </div>
-  <div class="filter-bar-section">
-    <div class="filter-bar-label">Class</div>
-    <div class="filter-bar-pills" id="filter-classes"></div>
-  </div>
-  <div class="filter-bar-section">
-    <div class="filter-bar-label">Race</div>
-    <div class="filter-bar-pills" id="filter-races"></div>
-  </div>
-  <div class="filter-bar-section">
-    <div class="filter-bar-label">Level</div>
-    <div class="filter-bar-pills">
-      <button class="level-btn active" data-val="0" onclick="onLevelFilter('0', this)">All</button>
-      <button class="level-btn" data-val="70" onclick="onLevelFilter('70', this)">70+</button>
-      <button class="level-btn" data-val="80" onclick="onLevelFilter('80', this)">80+</button>
+    <div class="filter-bar-label" id="lbl-level">Level</div>
+    <div class="filter-bar-pills" role="group" aria-labelledby="lbl-level">
+      <button type="button" class="level-btn active" data-val="0" data-action="level">All</button>
+      <button type="button" class="level-btn" data-val="70" data-action="level">70+</button>
+      <button type="button" class="level-btn" data-val="80" data-action="level">80+</button>
+      <button type="button" class="level-btn" data-val="90" data-action="level">90+</button>
     </div>
   </div>
   <div class="filter-bar-section">
-    <div class="filter-bar-label">Sort by</div>
+    <label class="filter-bar-label" for="sort-select">Sort by</label>
     <select id="sort-select" class="sort-select" onchange="onSortChange(this.value)">
       <option value="ilvl">Item Level ↓</option>
       <option value="level">Level ↓</option>
+      <option value="recent">Recently played</option>
       <option value="name">Name A–Z</option>
       <option value="class">Class</option>
       <option value="race">Race</option>
       <option value="owner">Owner</option>
+      <option value="rank">Guild rank</option>
     </select>
   </div>
-  <div class="filter-bar-section" style="justify-content:flex-end;margin-left:auto;align-self:flex-end">
-    <button class="btn-compare-mode" id="btn-compare-mode" onclick="toggleCompareMode()">⚔ Compare</button>
+  <div class="filter-bar-section filter-bar-actions">
+    <button type="button" class="btn-compare-mode" id="btn-compare-mode" aria-pressed="false" onclick="toggleCompareMode()">⚔ Compare</button>
   </div>
 </div>
 
@@ -88,64 +113,69 @@
 <div id="compare-bar" class="compare-bar hidden">
   <div class="compare-bar-inner">
     <span id="compare-char1" class="compare-name">— Pick a character</span>
-    <span class="vs">VS</span>
+    <span class="vs" aria-hidden="true">VS</span>
     <span id="compare-char2" class="compare-name">— Pick a character</span>
-    <button class="btn-compare-go" id="btn-compare-go" onclick="doCompare()" disabled>Compare ▶</button>
-    <button class="btn-cancel" onclick="cancelCompare()">✕ Cancel</button>
+    <div class="compare-bar-buttons">
+      <button type="button" class="btn-compare-go" id="btn-compare-go" onclick="doCompare()" disabled>Compare ▶</button>
+      <button type="button" class="btn-cancel" onclick="cancelCompare()">✕ Cancel</button>
+    </div>
   </div>
 </div>
 
-<!-- VIEW TABS -->
-<div class="view-tabs">
-  <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
-  <button class="view-tab" id="tab-readiness" onclick="switchView('readiness')">🎯 Readiness</button>
-  <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
-  <button class="view-tab" id="tab-raids" onclick="switchView('raids')">⚔ Raids</button>
-  <button class="view-tab" id="tab-pets" onclick="switchView('pets')">🐾 Pets</button>
-  <button class="view-tab" id="tab-mounts" onclick="switchView('mounts')">🐎 Mounts</button>
-</div>
-
 <!-- RESULTS / CHIPS (roster only) -->
-<div class="results-bar" id="active-chips"></div>
+<div class="results-bar" id="active-chips" aria-live="polite"></div>
 
 <!-- MAIN GRID -->
-<div class="main-content" id="view-roster">
+<div class="main-content" id="view-roster" role="tabpanel" aria-labelledby="tab-roster">
   <div id="character-grid" class="character-grid"></div>
 </div>
 
 <!-- READINESS VIEW -->
-<div class="main-content hidden" id="view-readiness">
+<div class="main-content hidden" id="view-readiness" role="tabpanel" aria-labelledby="tab-readiness">
   <div class="readiness-hero">
     <div>
       <div class="readiness-kicker">Raid Night Prep</div>
       <h2>Readiness Radar</h2>
-      <p>Ranks guild members by gear, gems/enchants, raid activity, and quick-fix opportunities.</p>
+      <p>Scores each character against the rest of the roster: gear relative to the guild's best-geared 80s, gems and enchants, and how recently they've been played.</p>
     </div>
     <div id="readiness-summary" class="readiness-summary"></div>
   </div>
   <div class="leaderboard-controls readiness-controls">
     <div class="lb-control-group">
-      <label class="filter-bar-label">Owner</label>
-      <div class="filter-bar-pills" id="readiness-owner-filter"></div>
+      <div class="filter-bar-label" id="lbl-ready-owner">Owner</div>
+      <div class="filter-bar-pills" id="readiness-owner-filter" role="group" aria-labelledby="lbl-ready-owner"></div>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Risk</label>
-      <div class="filter-bar-pills" id="readiness-risk-filter">
-        <button class="filter-pill active" onclick="setReadinessRisk('',this)">All</button>
-        <button class="filter-pill" style="--pill-color:#34d399" onclick="setReadinessRisk('ready',this)">Ready</button>
-        <button class="filter-pill" style="--pill-color:#f59e0b" onclick="setReadinessRisk('watch',this)">Watch</button>
-        <button class="filter-pill" style="--pill-color:#e74c3c" onclick="setReadinessRisk('risk',this)">At risk</button>
+      <div class="filter-bar-label" id="lbl-ready-risk">Risk</div>
+      <div class="filter-bar-pills" id="readiness-risk-filter" role="group" aria-labelledby="lbl-ready-risk">
+        <button type="button" class="filter-pill active" data-risk="" onclick="setReadinessRisk('',this)">All</button>
+        <button type="button" class="filter-pill" data-risk="ready" style="--pill-color:#34d399" onclick="setReadinessRisk('ready',this)">Ready</button>
+        <button type="button" class="filter-pill" data-risk="watch" style="--pill-color:#f59e0b" onclick="setReadinessRisk('watch',this)">Watch</button>
+        <button type="button" class="filter-pill" data-risk="risk" style="--pill-color:#e74c3c" onclick="setReadinessRisk('risk',this)">At risk</button>
       </div>
     </div>
   </div>
+
+  <!-- Gear audit: the free fixes, per slot -->
+  <section class="gear-audit-section">
+    <div class="gear-audit-head">
+      <button type="button" class="btn-audit-toggle" id="btn-gear-audit" data-action="toggle-audit" aria-expanded="false" aria-controls="gear-audit-wrap">▸ Show gear audit</button>
+      <span class="gear-audit-headline" id="gear-audit-headline"></span>
+    </div>
+    <div id="gear-audit-wrap" class="hidden">
+      <div id="gear-audit"></div>
+    </div>
+  </section>
+
   <div id="readiness-grid" class="readiness-grid"></div>
 </div>
 
 <!-- LEADERBOARD -->
-<div class="main-content hidden" id="view-leaderboard">
+<div class="main-content hidden" id="view-leaderboard" role="tabpanel" aria-labelledby="tab-leaderboard">
+  <div id="hall-of-infamy"></div>
   <div class="leaderboard-controls">
     <div class="lb-control-group">
-      <label class="filter-bar-label">Category</label>
+      <label class="filter-bar-label" for="lb-category">Category</label>
       <select id="lb-category" class="sort-select" onchange="renderLeaderboard();updateURL()">
         <optgroup label="⚔ Gear">
           <option value="ilvl">⚔ Avg Item Level</option>
@@ -163,7 +193,7 @@
         <optgroup label="⚔️ Content Cleared">
           <option value="content">📊 Content Cleared (Dungeons + Raids + Delves)</option>
         </optgroup>
-        <optgroup label="💀 Life Stats (click character to load)">
+        <optgroup label="💀 Life Stats">
           <option value="totalDeaths">💀 Total Deaths</option>
           <option value="killingBlows">⚔️ Killing Blows</option>
           <option value="creaturesKilled">🗡️ Creatures Killed</option>
@@ -177,107 +207,116 @@
       </select>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Owner</label>
-      <div class="filter-bar-pills" id="lb-owner-filter"></div>
+      <div class="filter-bar-label" id="lbl-lb-owner">Owner</div>
+      <div class="filter-bar-pills" id="lb-owner-filter" role="group" aria-labelledby="lbl-lb-owner"></div>
     </div>
   </div>
   <div id="leaderboard-table"></div>
 </div>
 
 <!-- PETS VIEW -->
-<div class="main-content hidden" id="view-pets">
+<div class="main-content hidden" id="view-pets" role="tabpanel" aria-labelledby="tab-pets">
   <div class="leaderboard-controls">
     <div class="lb-control-group">
-      <label class="filter-bar-label">Character</label>
+      <label class="filter-bar-label" for="pets-char-select">Character</label>
       <select id="pets-char-select" class="sort-select" onchange="loadPets()">
         <option value="">Select a character...</option>
       </select>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Filter</label>
-      <div class="filter-bar-pills" id="pets-rarity-filter">
-        <button class="filter-pill active" onclick="setPetsRarity('',this)">All</button>
-        <button class="filter-pill" style="--pill-color:#a335ee" onclick="setPetsRarity('Epic',this)">Epic</button>
-        <button class="filter-pill" style="--pill-color:#0070dd" onclick="setPetsRarity('Rare',this)">Rare</button>
-        <button class="filter-pill" style="--pill-color:#1eff00" onclick="setPetsRarity('Uncommon',this)">Uncommon</button>
-        <button class="filter-pill" onclick="setPetsRarity('Common',this)">Common</button>
-        <button class="filter-pill" id="pets-fav-btn" onclick="togglePetsFav(this)">⭐ Faves only</button>
+      <div class="filter-bar-label" id="lbl-pets-filter">Filter</div>
+      <div class="filter-bar-pills" id="pets-rarity-filter" role="group" aria-labelledby="lbl-pets-filter">
+        <button type="button" class="filter-pill active" onclick="setPetsRarity('',this)">All</button>
+        <button type="button" class="filter-pill" style="--pill-color:#a335ee" onclick="setPetsRarity('Epic',this)">Epic</button>
+        <button type="button" class="filter-pill" style="--pill-color:#0070dd" onclick="setPetsRarity('Rare',this)">Rare</button>
+        <button type="button" class="filter-pill" style="--pill-color:#1eff00" onclick="setPetsRarity('Uncommon',this)">Uncommon</button>
+        <button type="button" class="filter-pill" onclick="setPetsRarity('Common',this)">Common</button>
+        <button type="button" class="filter-pill" id="pets-fav-btn" aria-pressed="false" onclick="togglePetsFav(this)">⭐ Faves only</button>
       </div>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Search</label>
-      <input type="text" class="filter-search" id="pets-search" placeholder="Pet name..." oninput="renderPets()" style="width:180px">
+      <label class="filter-bar-label" for="pets-search">Search</label>
+      <input type="search" class="filter-search filter-search-sm" id="pets-search" placeholder="Pet name..." oninput="onPetsSearch()">
     </div>
   </div>
-  <div id="pets-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="pets-summary" class="collection-summary"></div>
   <div id="pets-grid" class="pets-grid"></div>
 </div>
 
 <!-- MOUNTS VIEW -->
-<div class="main-content hidden" id="view-mounts">
+<div class="main-content hidden" id="view-mounts" role="tabpanel" aria-labelledby="tab-mounts">
   <div class="leaderboard-controls">
     <div class="lb-control-group">
-      <label class="filter-bar-label">Character</label>
+      <label class="filter-bar-label" for="mounts-char-select">Character</label>
       <select id="mounts-char-select" class="sort-select" onchange="loadMounts()">
         <option value="">Select a character...</option>
       </select>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Filter</label>
-      <div class="filter-bar-pills" id="mounts-filter-pills">
-        <button class="filter-pill active" onclick="setMountsFilter('all',this)">All</button>
-        <button class="filter-pill" onclick="setMountsFilter('fav',this)">⭐ Faves</button>
-        <button class="filter-pill" onclick="setMountsFilter('unusable',this)">🚫 Can't use</button>
+      <div class="filter-bar-label" id="lbl-mounts-filter">Filter</div>
+      <div class="filter-bar-pills" id="mounts-filter-pills" role="group" aria-labelledby="lbl-mounts-filter">
+        <button type="button" class="filter-pill active" onclick="setMountsFilter('all',this)">All</button>
+        <button type="button" class="filter-pill" onclick="setMountsFilter('fav',this)">⭐ Faves</button>
+        <button type="button" class="filter-pill" onclick="setMountsFilter('rare',this)">💎 Guild-unique</button>
+        <button type="button" class="filter-pill" onclick="setMountsFilter('unusable',this)">🚫 Can't use</button>
       </div>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Search</label>
-      <input type="text" class="filter-search" id="mounts-search" placeholder="Mount name..." oninput="renderMounts()" style="width:180px">
+      <label class="filter-bar-label" for="mounts-search">Search</label>
+      <input type="search" class="filter-search filter-search-sm" id="mounts-search" placeholder="Mount name..." oninput="onMountsSearch()">
     </div>
   </div>
-  <div id="mounts-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="mounts-summary" class="collection-summary"></div>
   <div id="mounts-grid" class="pets-grid"></div>
 </div>
 
 <!-- Raids View -->
-<div class="main-content hidden" id="view-raids">
-  <div class="leaderboard-controls" style="flex-wrap:wrap;gap:12px">
+<div class="main-content hidden" id="view-raids" role="tabpanel" aria-labelledby="tab-raids">
+  <div class="leaderboard-controls">
     <div class="lb-control-group">
-      <label class="filter-bar-label">Tier</label>
-      <div class="filter-bar-pills" id="raid-tier-pills"></div>
+      <div class="filter-bar-label" id="lbl-raid-tier">Tier</div>
+      <div class="filter-bar-pills" id="raid-tier-pills" role="group" aria-labelledby="lbl-raid-tier"></div>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Difficulty</label>
-      <div class="filter-bar-pills" id="raid-diff-pills">
-        <button class="filter-pill active" onclick="setRaidDiff('normal',this)">Normal</button>
-        <button class="filter-pill" onclick="setRaidDiff('heroic',this)">Heroic</button>
-        <button class="filter-pill" onclick="setRaidDiff('mythic',this)">Mythic</button>
+      <div class="filter-bar-label" id="lbl-raid-diff">Difficulty</div>
+      <div class="filter-bar-pills" id="raid-diff-pills" role="group" aria-labelledby="lbl-raid-diff">
+        <button type="button" class="filter-pill active" onclick="setRaidDiff('normal',this)">Normal</button>
+        <button type="button" class="filter-pill" onclick="setRaidDiff('heroic',this)">Heroic</button>
+        <button type="button" class="filter-pill" onclick="setRaidDiff('mythic',this)">Mythic</button>
       </div>
     </div>
     <div class="lb-control-group">
-      <label class="filter-bar-label">Owner</label>
-      <div class="filter-bar-pills" id="raid-owner-pills"></div>
+      <div class="filter-bar-label" id="lbl-raid-owner">Owner</div>
+      <div class="filter-bar-pills" id="raid-owner-pills" role="group" aria-labelledby="lbl-raid-owner"></div>
     </div>
   </div>
-  <div id="raid-loading" style="padding:60px;text-align:center;color:var(--text-dim)">⚔ Loading raid data...</div>
-  <div id="raid-content" style="padding:16px 24px"></div>
+  <div id="raid-loading" class="raid-loading">⚔ Loading raid data...</div>
+  <div id="raid-content" class="raid-content"></div>
 </div>
 
 <!-- Character Detail Modal -->
-<div id="modal" class="modal hidden" onclick="closeModal(event)">
+<div id="modal" class="modal hidden" onclick="closeModal(event)" role="dialog" aria-modal="true" aria-labelledby="modal-title">
   <div class="modal-content" id="modal-content">
-    <button class="modal-close" onclick="closeModal()">✕</button>
+    <button type="button" class="modal-close" aria-label="Close character details" onclick="closeModal()">✕</button>
     <div id="modal-body"></div>
   </div>
 </div>
 
 <!-- Compare Modal -->
-<div id="compare-modal" class="modal hidden" onclick="closeCompareModal(event)">
+<div id="compare-modal" class="modal hidden" onclick="closeCompareModal(event)" role="dialog" aria-modal="true" aria-labelledby="compare-title">
   <div class="modal-content modal-wide">
-    <button class="modal-close" onclick="closeCompareModal()">✕</button>
+    <button type="button" class="modal-close" aria-label="Close comparison" onclick="closeCompareModal()">✕</button>
     <div id="compare-body"></div>
   </div>
 </div>
+
+<noscript>
+  <div class="noscript-note">
+    This dashboard renders the guild snapshot in your browser, so it needs JavaScript enabled.
+    The underlying data is plain JSON — you can read it directly at
+    <code>data/guild-deaths-edge.json</code>.
+  </div>
+</noscript>
 
 <script src="app.js"></script>
 </body>

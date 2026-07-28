@@ -16,11 +16,16 @@
   --gold-dim: rgba(200,168,75,0.3);
   --text-bright: #f0f2f8;
   --text: #b8bdd0;
-  --text-dim: #6b7090;
+  /* Raised from #6b7090: the old value failed WCAG AA against every panel
+     background it was used on, and it is used on about forty rules. */
+  --text-dim: #8a90ad;
   --red-bright: #e74c3c;
   --green: #2ecc71;
+  --card-bg: var(--bg2);
+  --radius-sm: 4px;
   --radius: 8px;
   --radius-lg: 12px;
+  --focus: #7cc4ff;
   --shadow: 0 4px 24px rgba(0,0,0,0.5);
   --shadow-card: 0 2px 16px rgba(0,0,0,0.4);
 }
@@ -195,11 +200,13 @@ h1 {
 .filter-pill.active {
   background: var(--pill-color, var(--gold));
   border-color: var(--pill-color, var(--gold));
-  color: #000;
+  /* --pill-text is computed from the pill color's luminance in app.js; dark
+     class colors like Death Knight red were unreadable with a flat #000. */
+  color: var(--pill-text, #000);
   font-weight: 700;
 }
 
-.filter-pill.active .pill-count { opacity: 0.6; }
+.filter-pill.active .pill-count { opacity: 0.75; }
 
 .pill-count {
   font-size: 0.6rem;
@@ -230,12 +237,13 @@ h1 {
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 0.82rem;
-  outline: none;
   width: 200px;
+  max-width: 100%;
   line-height: 1.6;
 }
 .filter-search:focus { border-color: var(--gold); }
 .filter-search::placeholder { color: var(--text-dim); }
+.filter-search-sm { width: 180px; }
 
 /* Sort */
 .sort-select {
@@ -245,9 +253,9 @@ h1 {
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 0.75rem;
-  outline: none;
   cursor: pointer;
   line-height: 1.6;
+  max-width: 100%;
 }
 .sort-select:focus { border-color: var(--gold); }
 
@@ -562,9 +570,20 @@ h1 {
   color: var(--text-dim);
 }
 
+/* Background and text color are both set inline — text is chosen per class
+   color by luminance so every badge clears contrast, not just the light ones. */
 .badge-class {
-  color: #000;
   font-weight: 800;
+}
+
+.badge-plain {
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+}
+
+.badge-rank {
+  background: rgba(200,168,75,0.16);
+  color: var(--gold-light);
 }
 
 .badge-spec {
@@ -713,8 +732,9 @@ h1 {
   padding: 28px;
   max-width: 700px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
   position: relative;
   box-shadow: var(--shadow);
 }
@@ -846,12 +866,18 @@ h1 {
 }
 
 .ilvl-cell { font-weight: 700; }
-.q-Epic { color: #a335ee; }
-.q-Rare { color: #0070dd; }
-.q-Uncommon { color: #1eff00; }
-.q-Common { color: #9d9d9d; }
+/* Text-on-dark variants of the WoW quality colors. The canonical #a335ee and
+   #0070dd are borderline unreadable as body text on a near-black table. */
+.q-Epic { color: #c77dff; }
+.q-Rare { color: #4da6ff; }
+.q-Uncommon { color: #4ade80; }
+.q-Common { color: #d6d6d6; }
+.q-Poor { color: #9d9d9d; }
 .q-Artifact { color: #e6cc80; }
+.q-Heirloom { color: #7ee6d0; }
+.q-Legendary { color: #ff9d3c; }
 .socket-warn { color: #ffeb3b; margin-left: 4px; }
+.enchant-warn { color: #8ab4f8; margin-left: 4px; }
 
 /* Compare modal */
 .compare-val { font-size: 0.8rem; }
@@ -912,7 +938,8 @@ h1 {
     white-space: nowrap;
   }
 
-  /* Filter bar: stack sections vertically */
+  /* Filter bar: stack sections vertically. It starts collapsed on phones —
+     eight filter groups pushed the roster two screens down otherwise. */
   .filter-bar {
     flex-direction: column;
     gap: 10px;
@@ -925,8 +952,11 @@ h1 {
     width: 100%;
     max-width: 100%;
   }
+  .filter-search-sm { width: 100%; }
   .filter-bar-pills { flex-wrap: wrap; gap: 6px; }
-  .filter-pill { font-size: 0.7rem; padding: 4px 10px; }
+  .filter-pill, .level-btn { font-size: 0.72rem; padding: 6px 11px; }
+  .filter-bar-actions { margin-left: 0; align-self: stretch; }
+  .filter-bar-actions .btn-compare-mode { width: 100%; padding: 8px; }
 
   /* Active chips */
   .results-bar { padding: 6px 16px; flex-wrap: wrap; gap: 6px; }
@@ -948,15 +978,19 @@ h1 {
   .char-ilvl { font-size: 1.8rem; }
 
   /* Leaderboard: scrollable table */
-  #leaderboard-table { overflow-x: auto; }
+  .lb-scroll { overflow-x: auto; }
   .lb-table { min-width: 500px; }
   .lb-val-cell { width: 160px; }
 
   /* Leaderboard controls: stack */
-  .leaderboard-controls { flex-direction: column; gap: 12px; }
+  .leaderboard-controls { flex-direction: column; gap: 12px; align-items: stretch; }
 
-  /* Compare selection bar */
-  .compare-bar { flex-wrap: wrap; gap: 8px; padding: 10px 16px; }
+  /* Compare selection bar: the buttons must stay reachable */
+  .compare-bar { padding: 10px 16px; }
+  .compare-bar-inner { flex-wrap: wrap; gap: 8px; }
+  .compare-name { min-width: 0; flex: 1 1 40%; font-size: 0.78rem; padding: 6px 10px; }
+  .compare-bar-buttons { width: 100%; display: flex; gap: 8px; }
+  .compare-bar-buttons button { flex: 1; padding: 9px 12px; }
 
   /* Modals: slide up from bottom on mobile */
   .modal {
@@ -978,12 +1012,32 @@ h1 {
   #back-to-top { width: 36px; height: 36px; bottom: 16px; right: 16px; }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
   h1 { font-size: 0.95rem; }
-  .guild-stat { min-width: 100%; }
-  .view-tab { font-size: 0.65rem; padding: 8px 6px; }
+  /* Stat tiles become a compact scrolling strip rather than a 2x3 block that
+     ate most of a phone screen before any roster was visible. */
+  .guild-stats {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0;
+    padding: 6px 12px;
+    scrollbar-width: none;
+  }
+  .guild-stats::-webkit-scrollbar { display: none; }
+  .guild-stat {
+    min-width: auto;
+    flex: 0 0 auto;
+    padding: 4px 14px;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .guild-stat-label { font-size: 0.55rem; }
+  .guild-stat-value { font-size: 0.85rem; margin-top: 0; }
+  .view-tab { font-size: 0.68rem; padding: 9px 7px; }
   .character-grid { gap: 8px; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+  .compare-name { flex-basis: 100%; }
 }
 
 /* === Full-body hover tooltip === */
@@ -1489,6 +1543,7 @@ h1 {
   z-index: 200;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
+#back-to-top.visible { opacity: 1; pointer-events: auto; }
 #back-to-top:hover { background: var(--bg3); }
 
 /* === Raid Progress Tab === */
@@ -1593,8 +1648,15 @@ h1 {
 
 .raid-miss {
   background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.15);
-  border: 1px solid rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.42);
+  border: 1px solid rgba(255,255,255,0.09);
+}
+
+/* "Not killed" and "we have no data for this character" are different answers. */
+.raid-unknown {
+  background: rgba(245,158,11,0.10);
+  color: #f5b342;
+  border: 1px solid rgba(245,158,11,0.3);
 }
 
 @media (max-width: 768px) {
@@ -1604,4 +1666,530 @@ h1 {
   }
   .raid-boss-header { min-width: 22px; font-size: 0.5rem; }
   .raid-cell { min-width: 22px; font-size: 0.6rem; height: 20px; }
+}
+
+/* ============================================================
+   FOCUS, MOTION & GLOBAL A11Y
+   ============================================================ */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 2000;
+  background: var(--gold);
+  color: #000;
+  padding: 10px 16px;
+  font-weight: 700;
+  border-radius: 0 0 var(--radius) 0;
+}
+.skip-link:focus { left: 0; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+/* Mouse users keep the old borderless look; keyboard users get a ring. */
+:focus:not(:focus-visible) { outline: none; }
+
+body.modal-open { overflow: hidden; }
+
+.noscript-note {
+  margin: 40px auto;
+  max-width: 640px;
+  padding: 20px 24px;
+  background: var(--bg2);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  line-height: 1.6;
+}
+.noscript-note code { color: var(--gold); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Hover effects only where hover actually exists — on touch these stick
+   after a tap and make cards look permanently selected. */
+@media (hover: none) {
+  .char-card:hover, .readiness-card:hover, .lb-row:hover, .pet-card:hover {
+    transform: none;
+    background: inherit;
+  }
+}
+
+.char-card:active, .readiness-card:active, .pet-card:active { transform: scale(0.995); }
+
+/* ============================================================
+   STICKY TABS + COLLAPSIBLE FILTERS (mobile)
+   ============================================================ */
+.filter-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-dim);
+  padding: 10px 14px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: auto;
+  align-items: center;
+  gap: 6px;
+}
+.filter-toggle[aria-expanded="true"] { color: var(--gold); }
+
+.filter-count-badge {
+  background: var(--gold);
+  color: #000;
+  font-size: 0.6rem;
+  font-weight: 800;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+@media (max-width: 768px) {
+  /* The tab strip is what people navigate with, so that is what sticks —
+     the old sticky header ate ~230px of a phone viewport. */
+  header { position: static; }
+  .view-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg1);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .view-tabs::-webkit-scrollbar { display: none; }
+  .view-tab { flex: 0 0 auto; }
+  .filter-toggle { display: inline-flex; position: sticky; right: 0; background: var(--bg1); }
+  .filter-bar.collapsed { display: none; }
+}
+
+/* ============================================================
+   ROSTER CARD ADDITIONS
+   ============================================================ */
+.char-race {
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.char-lastseen {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.04);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   GEAR AUDIT BOARD
+   ============================================================ */
+.gear-audit-section {
+  margin: 0 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg2);
+  overflow: hidden;
+}
+
+.gear-audit-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+}
+
+.btn-audit-toggle {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--gold);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.btn-audit-toggle:hover { background: rgba(200,168,75,0.12); }
+
+.gear-audit-headline {
+  font-size: 0.78rem;
+  color: var(--text);
+}
+
+.audit-scroll {
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+}
+
+.audit-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.72rem;
+}
+
+.audit-table th, .audit-table td {
+  padding: 4px 3px;
+  text-align: center;
+}
+
+.audit-table thead th {
+  color: var(--text-dim);
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg2);
+}
+
+.audit-name {
+  text-align: left !important;
+  padding-left: 12px !important;
+  white-space: nowrap;
+  font-weight: 700;
+  position: sticky;
+  left: 0;
+  background: var(--bg2);
+  z-index: 1;
+  min-width: 120px;
+}
+
+.audit-slot { min-width: 30px; }
+
+.audit-cell {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  cursor: help;
+}
+
+.audit-ok { color: rgba(46,204,113,0.55); }
+.audit-socket { color: #ffd54f; }
+.audit-enchant { color: #8ab4f8; }
+.audit-socket-enchant { color: #ff8a65; font-weight: 700; }
+.audit-empty { color: var(--text-dim); opacity: 0.5; }
+
+.audit-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.audit-table tbody tr:hover .audit-name { background: var(--bg3); }
+
+.audit-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+}
+.audit-legend i { font-style: normal; margin-right: 4px; font-size: 0.8rem; }
+
+/* ============================================================
+   HALL OF INFAMY
+   ============================================================ */
+.infamy-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 0 0 18px;
+}
+
+.infamy-card {
+  background: linear-gradient(160deg, rgba(255,255,255,0.04), var(--card-bg));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--class-color, var(--gold));
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.infamy-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+
+.infamy-title {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.infamy-name {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin-top: 4px;
+}
+
+.infamy-val {
+  font-size: 0.8rem;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.infamy-val small { color: var(--text-dim); font-size: 0.65rem; }
+
+.infamy-note {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ============================================================
+   STAT SOURCES (detail modal)
+   ============================================================ */
+.source-list { display: flex; flex-direction: column; gap: 10px; }
+
+.source-row { font-size: 0.75rem; }
+
+.source-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.source-head strong { color: var(--text-bright); font-variant-numeric: tabular-nums; }
+
+.source-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg3);
+  gap: 1px;
+}
+
+.source-seg {
+  background: var(--gold);
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+.source-seg:nth-child(even) { background: var(--gold-light); }
+.source-seg:hover { opacity: 1; }
+
+.source-top {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+
+/* ============================================================
+   COLLECTIONS
+   ============================================================ */
+.collection-summary {
+  padding: 8px 24px;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+
+.pet-card { background: var(--card-bg); }
+.pet-card-fav { border-color: rgba(200,168,75,0.4); }
+
+a.pet-name {
+  text-decoration: none;
+  display: block;
+}
+a.pet-name:hover { text-decoration: underline; }
+
+.pet-unusable { font-size: 0.62rem; color: #ff7a6b; }
+
+.own-count, .own-unique {
+  font-size: 0.6rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.own-count { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+.own-unique { background: rgba(200,168,75,0.16); color: var(--gold-light); font-weight: 700; }
+
+/* ============================================================
+   CHIPS, EMPTY STATES & MISC
+   ============================================================ */
+.chip-x {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 4px 6px;
+  margin: -4px -4px -4px 2px;
+  border-radius: 3px;
+}
+.chip-x:hover { background: rgba(255,255,255,0.12); }
+
+.empty-sub {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 8px;
+  max-width: 460px;
+  margin-inline: auto;
+  line-height: 1.5;
+}
+
+.empty-icon { font-size: 2rem; margin-bottom: 12px; }
+
+.empty-state { padding: 48px 20px; }
+
+.modal-loading, .modal-error {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-dim);
+}
+.modal-error { color: var(--red-bright); }
+
+.lb-empty { text-align: center; padding: 40px; color: var(--text-dim); }
+
+.guild-stat-skeleton {
+  height: 49px;
+  width: 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+}
+
+.gear-slot { color: var(--text-dim); }
+
+.gear-hint {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #ffd54f;
+}
+
+.gear-scroll { overflow-x: auto; }
+
+.detail-subline {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.armory-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--gold);
+  text-decoration: none;
+  border: 1px solid var(--gold);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+.armory-link:hover { background: var(--gold); color: #000; }
+
+.stat-box-note { font-size: 0.7rem; color: var(--text-dim); }
+
+.stat-crit { border-color: #e74c3c44; }
+.stat-crit .stat-box-value { color: #ff6b5b; }
+.stat-haste { border-color: #f39c1244; }
+.stat-haste .stat-box-value { color: #f5a623; }
+.stat-mastery { border-color: #3498db44; }
+.stat-mastery .stat-box-value { color: #5dade2; }
+.stat-vers { border-color: #2ecc7144; }
+.stat-vers .stat-box-value { color: #43d787; }
+
+/* ============================================================
+   COMPARE MODAL
+   ============================================================ */
+.compare-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.compare-head-name { font-size: 1.5rem; font-weight: 800; }
+.compare-head-sub { font-size: 0.8rem; color: var(--text-dim); }
+.compare-head-ilvl { font-size: 2rem; font-weight: 900; color: var(--gold); }
+.compare-head-label { font-size: 0.65rem; color: var(--text-dim); }
+.compare-vs { font-size: 1.4rem; font-weight: 800; color: var(--red-bright); }
+
+.compare-table { width: 100%; border-collapse: collapse; }
+.compare-cell { padding: 5px 8px; font-variant-numeric: tabular-nums; }
+.compare-table tr td:first-child { text-align: right; }
+.compare-table tr td:last-child { text-align: left; }
+.compare-gear { font-size: 0.78rem; }
+.compare-label {
+  text-align: center;
+  padding: 5px 4px;
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.compare-legend { margin-top: 10px; font-size: 0.7rem; color: var(--text-dim); }
+.compare-caveat { margin-top: 6px; font-style: italic; }
+
+/* ============================================================
+   RAIDS
+   ============================================================ */
+.raid-loading { padding: 60px; text-align: center; color: var(--text-dim); }
+.raid-content { padding: 16px 24px; }
+.raid-scroll { overflow-x: auto; padding-bottom: 6px; }
+.raid-table { min-width: 560px; }
+.raid-tier-name { font-size: 1rem; font-weight: 700; color: var(--gold); }
+.raid-tier-sub { font-size: 0.75rem; color: var(--text-dim); }
+.raid-owner-tag { font-size: 0.7rem; margin-right: 4px; }
+
+@media (max-width: 768px) {
+  .raid-content { padding: 12px 16px; }
+  .collection-summary { padding: 8px 16px; }
+}
+
+/* NOTE ON ORDERING: the main "Mobile Responsiveness" block above is declared
+   BEFORE the readiness/leaderboard component rules, so several of its overrides
+   lost the cascade on source order alone (equal specificity, later rule wins).
+   These re-state the ones that matter. New mobile overrides belong here, at the
+   end of the file, not in that earlier block. */
+@media (max-width: 768px) {
+  .readiness-summary {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .readiness-hero { gap: 14px; }
+
+  /* A plain 1fr track still refuses to shrink below the card's min-content
+     width; minmax(0,1fr) is what actually lets it fit a 375px screen. */
+  .readiness-grid { grid-template-columns: minmax(0, 1fr); }
+  .readiness-card { flex-direction: column; min-width: 0; }
+  .readiness-card-main { min-width: 0; width: 100%; }
+  .readiness-card-top { flex-direction: column; gap: 6px; }
+  .readiness-bars { grid-template-columns: minmax(0, 1fr); }
+  .readiness-foot { flex-wrap: wrap; gap: 6px; }
+  .readiness-actions { padding-left: 18px; }
+  .readiness-score-ring { align-self: flex-start; }
+
+  .infamy-strip { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .compare-head { grid-template-columns: 1fr auto 1fr; gap: 4px; }
+  .compare-head-name { font-size: 1.05rem; }
+  .compare-head-ilvl { font-size: 1.4rem; }
 }
