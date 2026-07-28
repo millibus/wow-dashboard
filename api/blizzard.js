@@ -5,10 +5,23 @@
 
 const axios = require('axios');
 
-const BASE = 'https://us.api.blizzard.com';
+const REGION = process.env.BLIZZARD_REGION || 'us';
+const LOCALE = process.env.BLIZZARD_LOCALE || 'en_US';
+const BASE = `https://${REGION}.api.blizzard.com`;
 const OAUTH_URL = 'https://oauth.battle.net/token';
+const NAMESPACE = `profile-${REGION}`;
+const TIMEOUT_MS = Number(process.env.BLIZZARD_TIMEOUT_MS || 10000);
+const MAX_RETRIES = 2;
+
+// The guild list lives here so the API server and the snapshot builder can't
+// drift apart on which guilds exist or which realm they're on.
+const GUILDS = {
+  'deaths-edge': { slug: 'deaths-edge', realm: 'onyxia', faction: 'horde' },
+  'riot-act': { slug: 'riot-act', realm: 'onyxia', faction: 'alliance' },
+};
 
 let tokenData = null;
+let tokenPromise = null;
 
 function clientCreds() {
   const id = process.env.BLIZZARD_CLIENT_ID;
@@ -19,40 +32,84 @@ function clientCreds() {
   return { id, secret };
 }
 
+function hasCreds() {
+  return !!(process.env.BLIZZARD_CLIENT_ID && process.env.BLIZZARD_CLIENT_SECRET);
+}
+
 async function getToken() {
   if (tokenData && tokenData.expires > Date.now()) return tokenData.token;
+  // A snapshot run fires dozens of requests at once on a cold start; without
+  // this they would each mint their own token.
+  if (tokenPromise) return tokenPromise;
+
   const { id, secret } = clientCreds();
-  const res = await axios.post(
+  tokenPromise = axios.post(
     OAUTH_URL,
     new URLSearchParams({ grant_type: 'client_credentials' }),
-    { auth: { username: id, password: secret } }
-  );
-  tokenData = {
-    token: res.data.access_token,
-    expires: Date.now() + (res.data.expires_in - 60) * 1000,
-  };
-  return tokenData.token;
-}
-
-async function bnet(path) {
-  const token = await getToken();
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}locale=en_US`;
-  const res = await axios.get(url, {
-    headers: { Authorization: `Bearer ${token}` },
+    { auth: { username: id, password: secret }, timeout: TIMEOUT_MS },
+  ).then(res => {
+    tokenData = {
+      token: res.data.access_token,
+      expires: Date.now() + (res.data.expires_in - 60) * 1000,
+    };
+    return tokenData.token;
+  }).finally(() => {
+    tokenPromise = null;
   });
-  return res.data;
+
+  return tokenPromise;
 }
 
-function calcAvgIlvl(items) {
-  const ilvls = items
-    .map(i => i.level?.value || 0)
-    .filter(v => v > 0);
-  if (!ilvls.length) return 0;
-  return Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// Retries the failures that are actually worth retrying: rate limits (honouring
+// Retry-After), 5xx, and network timeouts. A 401 means the cached token went
+// bad, so it's cleared once and the call is retried with a fresh one.
+async function bnet(path, attempt = 0) {
+  const token = await getToken();
+  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}locale=${LOCALE}`;
+  try {
+    const res = await axios.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      timeout: TIMEOUT_MS,
+    });
+    return res.data;
+  } catch (err) {
+    const status = err.response?.status;
+
+    if (status === 401 && attempt === 0) {
+      tokenData = null;
+      return bnet(path, attempt + 1);
+    }
+
+    const retryable = status === 429 || (status >= 500 && status < 600) ||
+      err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT' || err.code === 'ECONNRESET';
+
+    if (retryable && attempt < MAX_RETRIES) {
+      const retryAfter = Number(err.response?.headers?.['retry-after']);
+      const backoff = Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 500 * Math.pow(2, attempt);
+      await sleep(backoff);
+      return bnet(path, attempt + 1);
+    }
+
+    // 404 is a normal answer here (deleted or renamed character), so keep the
+    // message short and let callers decide.
+    throw new Error(status ? `Blizzard ${status} on ${path.split('?')[0]}` : err.message);
+  }
 }
 
 function realmSlug(realm) {
-  return realm.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+  return String(realm).toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
+}
+
+// Blizzard reports crit/haste under melee_, ranged_ and spell_ keys; a caster
+// has 0 in melee_crit. Taking the max gives the character's actual rating
+// regardless of class.
+function bestOf(st, ...keys) {
+  const values = keys.map(k => st[k]?.value ?? 0).filter(v => typeof v === 'number');
+  return parseFloat((Math.max(0, ...values)).toFixed(1));
 }
 
 async function fetchCharacter(realm, name) {
@@ -60,11 +117,11 @@ async function fetchCharacter(realm, name) {
   const slug = realmSlug(realm);
 
   const [profile, equipment, stats, media, achStats] = await Promise.allSettled([
-    bnet(`/profile/wow/character/${slug}/${encoded}?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/equipment?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/statistics?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/character-media?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/achievements/statistics?namespace=profile-us`),
+    bnet(`/profile/wow/character/${slug}/${encoded}?namespace=${NAMESPACE}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/equipment?namespace=${NAMESPACE}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/statistics?namespace=${NAMESPACE}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/character-media?namespace=${NAMESPACE}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/achievements/statistics?namespace=${NAMESPACE}`),
   ]);
 
   if (profile.status === 'rejected') return null;
@@ -114,7 +171,9 @@ async function fetchCharacter(realm, name) {
     achievementPoints: p.achievement_points || 0,
     avatarUrl,
     mainRawUrl,
-    averageIlvl: calcAvgIlvl(items) || p.equipped_item_level || p.average_item_level || 0,
+    // Blizzard's own equipped item level, not an average of the equipment list —
+    // that average would count shirts and tabards and undercount everyone.
+    averageIlvl: p.equipped_item_level ?? p.average_item_level ?? 0,
     equipment: items,
     stats: {
       health: st.health || 0,
@@ -122,9 +181,9 @@ async function fetchCharacter(realm, name) {
       agility: st.agility?.effective || 0,
       intellect: st.intellect?.effective || 0,
       stamina: st.stamina?.effective || 0,
-      crit: parseFloat((st.melee_crit?.value || 0).toFixed(1)),
-      haste: parseFloat((st.melee_haste?.value || 0).toFixed(1)),
-      mastery: parseFloat((st.mastery?.value || 0).toFixed(1)),
+      crit: bestOf(st, 'melee_crit', 'ranged_crit', 'spell_crit'),
+      haste: bestOf(st, 'melee_haste', 'ranged_haste', 'spell_haste'),
+      mastery: bestOf(st, 'mastery'),
       vers: parseFloat((st.versatility_damage_done_bonus || 0).toFixed(1)),
       armor: st.armor?.effective || 0,
     },
@@ -155,7 +214,7 @@ async function fetchCharacter(realm, name) {
 async function fetchPets(realm, name) {
   const encoded = encodeURIComponent(name.toLowerCase());
   const slug = realmSlug(realm);
-  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/pets?namespace=profile-us`);
+  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/pets?namespace=${NAMESPACE}`);
 
   const pets = (data.pets || []).map(p => ({
     name: p.species?.name || '?',
@@ -185,7 +244,7 @@ async function fetchPets(realm, name) {
 async function fetchMounts(realm, name) {
   const encoded = encodeURIComponent(name.toLowerCase());
   const slug = realmSlug(realm);
-  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/mounts?namespace=profile-us`);
+  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/mounts?namespace=${NAMESPACE}`);
 
   const mounts = (data.mounts || []).map(m => ({
     name: m.mount?.name || '?',
@@ -236,7 +295,7 @@ async function fetchRaidProgress(realm, name) {
   const slug = realmSlug(realm);
   const encoded = encodeURIComponent(name.toLowerCase());
   try {
-    const data = await bnet(`/profile/wow/character/${slug}/${encoded}/encounters/raids?namespace=profile-us`);
+    const data = await bnet(`/profile/wow/character/${slug}/${encoded}/encounters/raids?namespace=${NAMESPACE}`);
     const expansions = data.expansions || [];
     const result = { name, realm, tiers: [] };
 
@@ -285,8 +344,11 @@ async function batched(arr, concurrency, fn, spacingMs = 0) {
 module.exports = {
   bnet,
   getToken,
-  calcAvgIlvl,
+  hasCreds,
   realmSlug,
+  GUILDS,
+  REGION,
+  NAMESPACE,
   fetchCharacter,
   fetchPets,
   fetchMounts,

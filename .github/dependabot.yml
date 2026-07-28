@@ -1,7 +1,9 @@
 version: 2
 updates:
+  # The only package.json lives in api/. Pointed at "/" this ecosystem matched
+  # nothing, so npm dependencies were never actually checked.
   - package-ecosystem: "npm"
-    directory: "/"
+    directory: "/api"
     schedule:
       interval: "weekly"
   - package-ecosystem: "github-actions"

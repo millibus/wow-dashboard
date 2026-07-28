@@ -1,4 +1,13 @@
+node_modules/
 api/node_modules/
-api/.env
+
+# Credentials — matched anywhere, not just api/.env
+.env
+*.env
+!.env.example
+
 *.log
 .DS_Store
+
+# Atomic snapshot writes leave these behind if a run is killed mid-write
+docs/data/*.tmp

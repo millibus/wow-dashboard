@@ -5,6 +5,7 @@ on:
     - cron: '0 * * * *'  # hourly
   workflow_dispatch:
 
+# Only the commit step needs write access; nothing here touches issues or PRs.
 permissions:
   contents: write
 
@@ -17,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -29,6 +30,9 @@ jobs:
         working-directory: api
         run: npm ci
 
+      # build-snapshot.js exits non-zero if a guild comes back empty or loses
+      # more than 30% of its roster, so a rate-limited run fails here instead of
+      # committing a hollowed-out snapshot.
       - name: Build snapshot
         env:
           BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
@@ -36,7 +40,7 @@ jobs:
         run: node scripts/build-snapshot.js
 
       - name: Commit snapshot
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore(data): refresh snapshot [skip ci]'
           commit_user_name: 'wow-dashboard-bot'
