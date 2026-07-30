@@ -4842,16 +4842,16 @@
         }
       ],
       "stats": {
-        "health": 0,
-        "strength": 0,
-        "agility": 0,
-        "intellect": 0,
-        "stamina": 0,
-        "crit": 0,
-        "haste": 0,
-        "mastery": 0,
-        "vers": 0,
-        "armor": 0
+        "health": 8289,
+        "strength": 52,
+        "agility": 235,
+        "intellect": 122,
+        "stamina": 921,
+        "crit": 27,
+        "haste": 12.5,
+        "mastery": 9.6,
+        "vers": 6,
+        "armor": 181
       },
       "lifeStats": {
         "totalDeaths": 1,
@@ -9149,5 +9149,5 @@
       "rank": 1
     }
   ],
-  "lastUpdated": "2026-07-30T14:46:24.038Z"
+  "lastUpdated": "2026-07-30T15:38:26.109Z"
 }
