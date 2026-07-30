@@ -36,7 +36,7 @@ jobs:
         run: node scripts/build-snapshot.js
 
       - name: Commit snapshot
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: 'chore(data): refresh snapshot [skip ci]'
           commit_user_name: 'wow-dashboard-bot'
