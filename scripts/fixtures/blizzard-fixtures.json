@@ -1,0 +1,1502 @@
+{
+  "/data/wow/guild/onyxia/deaths-edge/roster": {
+    "guild": {
+      "name": "Death's Edge"
+    },
+    "members": [
+      {
+        "character": {
+          "name": "Decillin",
+          "id": 207690001,
+          "level": 90,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 0
+      },
+      {
+        "character": {
+          "name": "Kel'thar",
+          "id": 207690002,
+          "level": 75,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 3
+      },
+      {
+        "character": {
+          "name": "Revän",
+          "id": 207690003,
+          "level": 80,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 4
+      },
+      {
+        "character": {
+          "name": "Lowbie",
+          "id": 207690004,
+          "level": 5,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 9
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin": {
+    "name": "Decillin",
+    "level": 90,
+    "realm": {
+      "name": "Onyxia",
+      "slug": "onyxia"
+    },
+    "id": 207690001,
+    "last_login_timestamp": 1756000000000,
+    "race": {
+      "name": "Undead"
+    },
+    "character_class": {
+      "name": "Death Knight"
+    },
+    "active_spec": {
+      "name": "Blood"
+    },
+    "faction": {
+      "name": "Horde"
+    },
+    "guild": {
+      "name": "Death's Edge"
+    },
+    "active_title": {
+      "display_string": "{name} the Tested"
+    },
+    "achievement_points": 4200,
+    "equipped_item_level": 209,
+    "average_item_level": 211
+  },
+  "/profile/wow/character/onyxia/decillin/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Helm of Decillin",
+        "level": {
+          "value": 209
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "sockets": [
+          {}
+        ],
+        "enchantments": [],
+        "stats": [
+          {
+            "type": {
+              "name": "Stamina"
+            },
+            "value": 800
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Vestment of the Tester's Vigil",
+        "level": {
+          "value": 208
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ],
+        "stats": [
+          {
+            "type": {
+              "name": "Intellect"
+            },
+            "value": 500
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Shirt"
+        },
+        "name": "Dark Silk Shirt",
+        "level": {
+          "value": 1
+        },
+        "quality": {
+          "name": "Uncommon"
+        },
+        "sockets": [],
+        "enchantments": [],
+        "stats": []
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin/statistics": {
+    "health": 500000,
+    "strength": {
+      "effective": 15000
+    },
+    "agility": {
+      "effective": 12000
+    },
+    "intellect": {
+      "effective": 14000
+    },
+    "stamina": {
+      "effective": 30000
+    },
+    "melee_crit": {
+      "value": 15.5
+    },
+    "melee_haste": {
+      "value": 20.25
+    },
+    "mastery": {
+      "value": 30.75
+    },
+    "versatility_damage_done_bonus": 8.5,
+    "armor": {
+      "effective": 9000
+    }
+  },
+  "/profile/wow/character/onyxia/decillin/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690001-avatar.jpg"
+      },
+      {
+        "key": "main-raw",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690001-main-raw.png"
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "name": "Total deaths",
+            "quantity": 123
+          },
+          {
+            "name": "Quests completed",
+            "quantity": 2500
+          }
+        ],
+        "sub_categories": [
+          {
+            "statistics": [
+              {
+                "name": "Deaths from falling",
+                "quantity": 7
+              },
+              {
+                "name": "Victories over the Lich King (10-player bosses defeated)",
+                "quantity": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin/collections/pets": {
+    "pets": [
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 25,
+        "is_favorite": true
+      },
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 5,
+        "is_favorite": false
+      },
+      {
+        "species": {
+          "name": "Anubisath Idol",
+          "id": 1155
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "level": 25,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin/collections/mounts": {
+    "mounts": [
+      {
+        "mount": {
+          "name": "Onyxian Drake",
+          "id": 349
+        },
+        "is_usable": true,
+        "is_favorite": true
+      },
+      {
+        "mount": {
+          "name": "Invincible",
+          "id": 363
+        },
+        "is_usable": false,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/decillin/encounters/raids": {
+    "expansions": [
+      {
+        "expansion": {
+          "name": "The War Within",
+          "id": 505
+        },
+        "instances": [
+          {
+            "instance": {
+              "name": "Liberation of Undermine",
+              "id": 1296
+            },
+            "modes": [
+              {
+                "difficulty": {
+                  "type": "NORMAL"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 4
+                    },
+                    {
+                      "encounter": {
+                        "id": 2640,
+                        "name": "Cauldron of Carnage"
+                      },
+                      "completed_count": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "difficulty": {
+                  "type": "HEROIC"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar": {
+    "name": "Kel'thar",
+    "level": 75,
+    "realm": {
+      "name": "Onyxia",
+      "slug": "onyxia"
+    },
+    "id": 207690002,
+    "last_login_timestamp": 1756000000000,
+    "race": {
+      "name": "Blood Elf"
+    },
+    "character_class": {
+      "name": "Rogue"
+    },
+    "active_spec": {
+      "name": "Assassination"
+    },
+    "faction": {
+      "name": "Horde"
+    },
+    "guild": {
+      "name": "Death's Edge"
+    },
+    "active_title": {
+      "display_string": "{name} the Tested"
+    },
+    "achievement_points": 4200,
+    "equipped_item_level": 98,
+    "average_item_level": 100
+  },
+  "/profile/wow/character/onyxia/kel'thar/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Helm of Kel'thar",
+        "level": {
+          "value": 98
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "sockets": [
+          {}
+        ],
+        "enchantments": [],
+        "stats": [
+          {
+            "type": {
+              "name": "Stamina"
+            },
+            "value": 800
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Vestment of the Tester's Vigil",
+        "level": {
+          "value": 97
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ],
+        "stats": [
+          {
+            "type": {
+              "name": "Intellect"
+            },
+            "value": 500
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Shirt"
+        },
+        "name": "Dark Silk Shirt",
+        "level": {
+          "value": 1
+        },
+        "quality": {
+          "name": "Uncommon"
+        },
+        "sockets": [],
+        "enchantments": [],
+        "stats": []
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar/statistics": {
+    "health": 500000,
+    "strength": {
+      "effective": 15000
+    },
+    "agility": {
+      "effective": 12000
+    },
+    "intellect": {
+      "effective": 14000
+    },
+    "stamina": {
+      "effective": 30000
+    },
+    "melee_crit": {
+      "value": 15.5
+    },
+    "melee_haste": {
+      "value": 20.25
+    },
+    "mastery": {
+      "value": 30.75
+    },
+    "versatility_damage_done_bonus": 8.5,
+    "armor": {
+      "effective": 9000
+    }
+  },
+  "/profile/wow/character/onyxia/kel'thar/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690002-avatar.jpg"
+      },
+      {
+        "key": "main-raw",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690002-main-raw.png"
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "name": "Total deaths",
+            "quantity": 123
+          },
+          {
+            "name": "Quests completed",
+            "quantity": 2500
+          }
+        ],
+        "sub_categories": [
+          {
+            "statistics": [
+              {
+                "name": "Deaths from falling",
+                "quantity": 7
+              },
+              {
+                "name": "Victories over the Lich King (10-player bosses defeated)",
+                "quantity": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar/collections/pets": {
+    "pets": [
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 25,
+        "is_favorite": true
+      },
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 5,
+        "is_favorite": false
+      },
+      {
+        "species": {
+          "name": "Anubisath Idol",
+          "id": 1155
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "level": 25,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar/collections/mounts": {
+    "mounts": [
+      {
+        "mount": {
+          "name": "Onyxian Drake",
+          "id": 349
+        },
+        "is_usable": true,
+        "is_favorite": true
+      },
+      {
+        "mount": {
+          "name": "Invincible",
+          "id": 363
+        },
+        "is_usable": false,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/kel'thar/encounters/raids": {
+    "expansions": [
+      {
+        "expansion": {
+          "name": "The War Within",
+          "id": 505
+        },
+        "instances": [
+          {
+            "instance": {
+              "name": "Liberation of Undermine",
+              "id": 1296
+            },
+            "modes": [
+              {
+                "difficulty": {
+                  "type": "NORMAL"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 4
+                    },
+                    {
+                      "encounter": {
+                        "id": 2640,
+                        "name": "Cauldron of Carnage"
+                      },
+                      "completed_count": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "difficulty": {
+                  "type": "HEROIC"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän": {
+    "name": "Revän",
+    "level": 80,
+    "realm": {
+      "name": "Onyxia",
+      "slug": "onyxia"
+    },
+    "id": 207690003,
+    "last_login_timestamp": 1756000000000,
+    "race": {
+      "name": "Blood Elf"
+    },
+    "character_class": {
+      "name": "Warlock"
+    },
+    "active_spec": {
+      "name": "Demonology"
+    },
+    "faction": {
+      "name": "Horde"
+    },
+    "guild": {
+      "name": "Death's Edge"
+    },
+    "active_title": {
+      "display_string": "{name} the Tested"
+    },
+    "achievement_points": 4200,
+    "equipped_item_level": 95,
+    "average_item_level": 97
+  },
+  "/profile/wow/character/onyxia/revän/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Helm of Revän",
+        "level": {
+          "value": 95
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "sockets": [
+          {}
+        ],
+        "enchantments": [],
+        "stats": [
+          {
+            "type": {
+              "name": "Stamina"
+            },
+            "value": 800
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Vestment of the Tester's Vigil",
+        "level": {
+          "value": 94
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ],
+        "stats": [
+          {
+            "type": {
+              "name": "Intellect"
+            },
+            "value": 500
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Shirt"
+        },
+        "name": "Dark Silk Shirt",
+        "level": {
+          "value": 1
+        },
+        "quality": {
+          "name": "Uncommon"
+        },
+        "sockets": [],
+        "enchantments": [],
+        "stats": []
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän/statistics": {
+    "health": 500000,
+    "strength": {
+      "effective": 15000
+    },
+    "agility": {
+      "effective": 12000
+    },
+    "intellect": {
+      "effective": 14000
+    },
+    "stamina": {
+      "effective": 30000
+    },
+    "melee_crit": {
+      "value": 15.5
+    },
+    "melee_haste": {
+      "value": 20.25
+    },
+    "mastery": {
+      "value": 30.75
+    },
+    "versatility_damage_done_bonus": 8.5,
+    "armor": {
+      "effective": 9000
+    }
+  },
+  "/profile/wow/character/onyxia/revän/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690003-avatar.jpg"
+      },
+      {
+        "key": "main-raw",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690003-main-raw.png"
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "name": "Total deaths",
+            "quantity": 123
+          },
+          {
+            "name": "Quests completed",
+            "quantity": 2500
+          }
+        ],
+        "sub_categories": [
+          {
+            "statistics": [
+              {
+                "name": "Deaths from falling",
+                "quantity": 7
+              },
+              {
+                "name": "Victories over the Lich King (10-player bosses defeated)",
+                "quantity": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän/collections/pets": {
+    "pets": [
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 25,
+        "is_favorite": true
+      },
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 5,
+        "is_favorite": false
+      },
+      {
+        "species": {
+          "name": "Anubisath Idol",
+          "id": 1155
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "level": 25,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän/collections/mounts": {
+    "mounts": [
+      {
+        "mount": {
+          "name": "Onyxian Drake",
+          "id": 349
+        },
+        "is_usable": true,
+        "is_favorite": true
+      },
+      {
+        "mount": {
+          "name": "Invincible",
+          "id": 363
+        },
+        "is_usable": false,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/revän/encounters/raids": {
+    "expansions": [
+      {
+        "expansion": {
+          "name": "The War Within",
+          "id": 505
+        },
+        "instances": [
+          {
+            "instance": {
+              "name": "Liberation of Undermine",
+              "id": 1296
+            },
+            "modes": [
+              {
+                "difficulty": {
+                  "type": "NORMAL"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 4
+                    },
+                    {
+                      "encounter": {
+                        "id": 2640,
+                        "name": "Cauldron of Carnage"
+                      },
+                      "completed_count": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "difficulty": {
+                  "type": "HEROIC"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/data/wow/guild/onyxia/riot-act/roster": {
+    "guild": {
+      "name": "Riot Act"
+    },
+    "members": [
+      {
+        "character": {
+          "name": "Arkon",
+          "id": 207690101,
+          "level": 90,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 0
+      },
+      {
+        "character": {
+          "name": "Grrumpy",
+          "id": 207690102,
+          "level": 80,
+          "realm": {
+            "slug": "onyxia"
+          }
+        },
+        "rank": 2
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon": {
+    "name": "Arkon",
+    "level": 90,
+    "realm": {
+      "name": "Onyxia",
+      "slug": "onyxia"
+    },
+    "id": 207690101,
+    "last_login_timestamp": 1756000000000,
+    "race": {
+      "name": "Human"
+    },
+    "character_class": {
+      "name": "Paladin"
+    },
+    "active_spec": {
+      "name": "Protection"
+    },
+    "faction": {
+      "name": "Alliance"
+    },
+    "guild": {
+      "name": "Riot Act"
+    },
+    "active_title": {
+      "display_string": "{name} the Tested"
+    },
+    "achievement_points": 4200,
+    "equipped_item_level": 190,
+    "average_item_level": 192
+  },
+  "/profile/wow/character/onyxia/arkon/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Helm of Arkon",
+        "level": {
+          "value": 190
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "sockets": [
+          {}
+        ],
+        "enchantments": [],
+        "stats": [
+          {
+            "type": {
+              "name": "Stamina"
+            },
+            "value": 800
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Vestment of the Tester's Vigil",
+        "level": {
+          "value": 189
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ],
+        "stats": [
+          {
+            "type": {
+              "name": "Intellect"
+            },
+            "value": 500
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Shirt"
+        },
+        "name": "Dark Silk Shirt",
+        "level": {
+          "value": 1
+        },
+        "quality": {
+          "name": "Uncommon"
+        },
+        "sockets": [],
+        "enchantments": [],
+        "stats": []
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon/statistics": {
+    "health": 500000,
+    "strength": {
+      "effective": 15000
+    },
+    "agility": {
+      "effective": 12000
+    },
+    "intellect": {
+      "effective": 14000
+    },
+    "stamina": {
+      "effective": 30000
+    },
+    "melee_crit": {
+      "value": 15.5
+    },
+    "melee_haste": {
+      "value": 20.25
+    },
+    "mastery": {
+      "value": 30.75
+    },
+    "versatility_damage_done_bonus": 8.5,
+    "armor": {
+      "effective": 9000
+    }
+  },
+  "/profile/wow/character/onyxia/arkon/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690101-avatar.jpg"
+      },
+      {
+        "key": "main-raw",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690101-main-raw.png"
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "name": "Total deaths",
+            "quantity": 123
+          },
+          {
+            "name": "Quests completed",
+            "quantity": 2500
+          }
+        ],
+        "sub_categories": [
+          {
+            "statistics": [
+              {
+                "name": "Deaths from falling",
+                "quantity": 7
+              },
+              {
+                "name": "Victories over the Lich King (10-player bosses defeated)",
+                "quantity": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon/collections/pets": {
+    "pets": [
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 25,
+        "is_favorite": true
+      },
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 5,
+        "is_favorite": false
+      },
+      {
+        "species": {
+          "name": "Anubisath Idol",
+          "id": 1155
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "level": 25,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon/collections/mounts": {
+    "mounts": [
+      {
+        "mount": {
+          "name": "Onyxian Drake",
+          "id": 349
+        },
+        "is_usable": true,
+        "is_favorite": true
+      },
+      {
+        "mount": {
+          "name": "Invincible",
+          "id": 363
+        },
+        "is_usable": false,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/arkon/encounters/raids": {
+    "expansions": [
+      {
+        "expansion": {
+          "name": "The War Within",
+          "id": 505
+        },
+        "instances": [
+          {
+            "instance": {
+              "name": "Liberation of Undermine",
+              "id": 1296
+            },
+            "modes": [
+              {
+                "difficulty": {
+                  "type": "NORMAL"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 4
+                    },
+                    {
+                      "encounter": {
+                        "id": 2640,
+                        "name": "Cauldron of Carnage"
+                      },
+                      "completed_count": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "difficulty": {
+                  "type": "HEROIC"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy": {
+    "name": "Grrumpy",
+    "level": 80,
+    "realm": {
+      "name": "Onyxia",
+      "slug": "onyxia"
+    },
+    "id": 207690102,
+    "last_login_timestamp": 1756000000000,
+    "race": {
+      "name": "Dwarf"
+    },
+    "character_class": {
+      "name": "Hunter"
+    },
+    "active_spec": {
+      "name": "Beast Mastery"
+    },
+    "faction": {
+      "name": "Alliance"
+    },
+    "guild": {
+      "name": "Riot Act"
+    },
+    "active_title": {
+      "display_string": "{name} the Tested"
+    },
+    "achievement_points": 4200,
+    "equipped_item_level": 110,
+    "average_item_level": 112
+  },
+  "/profile/wow/character/onyxia/grrumpy/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Helm of Grrumpy",
+        "level": {
+          "value": 110
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "sockets": [
+          {}
+        ],
+        "enchantments": [],
+        "stats": [
+          {
+            "type": {
+              "name": "Stamina"
+            },
+            "value": 800
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Vestment of the Tester's Vigil",
+        "level": {
+          "value": 109
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ],
+        "stats": [
+          {
+            "type": {
+              "name": "Intellect"
+            },
+            "value": 500
+          }
+        ]
+      },
+      {
+        "slot": {
+          "name": "Shirt"
+        },
+        "name": "Dark Silk Shirt",
+        "level": {
+          "value": 1
+        },
+        "quality": {
+          "name": "Uncommon"
+        },
+        "sockets": [],
+        "enchantments": [],
+        "stats": []
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy/statistics": {
+    "health": 500000,
+    "strength": {
+      "effective": 15000
+    },
+    "agility": {
+      "effective": 12000
+    },
+    "intellect": {
+      "effective": 14000
+    },
+    "stamina": {
+      "effective": 30000
+    },
+    "melee_crit": {
+      "value": 15.5
+    },
+    "melee_haste": {
+      "value": 20.25
+    },
+    "mastery": {
+      "value": 30.75
+    },
+    "versatility_damage_done_bonus": 8.5,
+    "armor": {
+      "effective": 9000
+    }
+  },
+  "/profile/wow/character/onyxia/grrumpy/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690102-avatar.jpg"
+      },
+      {
+        "key": "main-raw",
+        "value": "https://render.worldofwarcraft.com/us/character/onyxia/0/207690102-main-raw.png"
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "name": "Total deaths",
+            "quantity": 123
+          },
+          {
+            "name": "Quests completed",
+            "quantity": 2500
+          }
+        ],
+        "sub_categories": [
+          {
+            "statistics": [
+              {
+                "name": "Deaths from falling",
+                "quantity": 7
+              },
+              {
+                "name": "Victories over the Lich King (10-player bosses defeated)",
+                "quantity": 3
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy/collections/pets": {
+    "pets": [
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 25,
+        "is_favorite": true
+      },
+      {
+        "species": {
+          "name": "Mechanical Squirrel",
+          "id": 39
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "level": 5,
+        "is_favorite": false
+      },
+      {
+        "species": {
+          "name": "Anubisath Idol",
+          "id": 1155
+        },
+        "quality": {
+          "name": "Epic"
+        },
+        "level": 25,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy/collections/mounts": {
+    "mounts": [
+      {
+        "mount": {
+          "name": "Onyxian Drake",
+          "id": 349
+        },
+        "is_usable": true,
+        "is_favorite": true
+      },
+      {
+        "mount": {
+          "name": "Invincible",
+          "id": 363
+        },
+        "is_usable": false,
+        "is_favorite": false
+      }
+    ]
+  },
+  "/profile/wow/character/onyxia/grrumpy/encounters/raids": {
+    "expansions": [
+      {
+        "expansion": {
+          "name": "The War Within",
+          "id": 505
+        },
+        "instances": [
+          {
+            "instance": {
+              "name": "Liberation of Undermine",
+              "id": 1296
+            },
+            "modes": [
+              {
+                "difficulty": {
+                  "type": "NORMAL"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 4
+                    },
+                    {
+                      "encounter": {
+                        "id": 2640,
+                        "name": "Cauldron of Carnage"
+                      },
+                      "completed_count": 2
+                    }
+                  ]
+                }
+              },
+              {
+                "difficulty": {
+                  "type": "HEROIC"
+                },
+                "progress": {
+                  "encounters": [
+                    {
+                      "encounter": {
+                        "id": 2639,
+                        "name": "Vexie and the Geargrinders"
+                      },
+                      "completed_count": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

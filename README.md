@@ -75,6 +75,16 @@ pm2 start ecosystem.config.js
 
 The VPS path is independent of the public GitHub Pages site — both can run simultaneously, and the frontend prefers snapshots when present.
 
+### Testing
+
+```bash
+cd api && npm ci && cd ..
+npm test        # unit tests + a full pipeline run against scripts/fixtures/ (no credentials needed)
+npm run validate  # schema/sanity-check docs/data
+```
+
+The fixtures in `scripts/fixtures/blizzard-fixtures.json` are synthetic. To replace them with real (credential-free) captures, run locally with valid credentials: `npm run capture-fixtures`.
+
 ### When the refresh pipeline fails
 
 Failures open (and update) a single GitHub issue labeled `pipeline-failure`; it closes itself on the next successful run. The most common failure:
