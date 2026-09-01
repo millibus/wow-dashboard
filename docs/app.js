@@ -20,23 +20,88 @@ async function fetchData(staticPath, apiPath) {
   return res.json();
 }
 
+// The snapshot age is the dashboard's health signal. A small grey "29d ago"
+// is easy to miss — which is how a month of failed refreshes went unnoticed —
+// so past a day the age is color-coded AND a banner is raised that says the
+// pipeline itself is likely down.
+const STALE_WARN_MS = 24 * 3600e3;
+const STALE_ALERT_MS = 7 * 86400e3;
+const ACTIONS_URL = 'https://github.com/millibus/wow-dashboard/actions/workflows/refresh-data.yml';
+
+const UNREADABLE_MSG = 'The snapshot timestamp could not be read, so this data may be out of date.';
+
 function setSnapshotTimestamp() {
-  fetch('data/generated-at.json', { cache: 'no-cache' })
+  fetch('data/generated-at.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
     .then(d => {
-      if (!d?.ts) return;
       const el = document.getElementById('last-updated');
-      if (!el) return;
-      const ageMs = Date.now() - new Date(d.ts).getTime();
+      // A truthy but unparsable ts (NaN) must take the unreadable path, not
+      // sail through every comparison as false and render "Snapshot NaNd ago"
+      // with no warning at all — the exact silence this banner exists to end.
+      const ts = d?.ts ? new Date(d.ts).getTime() : NaN;
+      if (!Number.isFinite(ts)) {
+        if (el) {
+          el.textContent = 'Snapshot age unknown';
+          el.classList.remove('is-stale');
+          el.classList.add('is-alert');
+        }
+        showStaleBanner('alert', UNREADABLE_MSG);
+        return;
+      }
+      const ageMs = Date.now() - ts;
       const mins = Math.round(ageMs / 60000);
       const label = mins < 1 ? 'just now'
         : mins < 60 ? `${mins}m ago`
         : mins < 1440 ? `${Math.round(mins / 60)}h ago`
         : `${Math.round(mins / 1440)}d ago`;
-      el.textContent = `Snapshot ${label}`;
-      el.title = new Date(d.ts).toLocaleString();
+      if (el) {
+        el.textContent = `Snapshot ${label}`;
+        el.title = new Date(ts).toLocaleString();
+        el.classList.toggle('is-stale', ageMs >= STALE_WARN_MS);
+        el.classList.toggle('is-alert', ageMs >= STALE_ALERT_MS);
+      }
+      if (ageMs >= STALE_WARN_MS) {
+        const days = Math.round(ageMs / 86400e3);
+        const age = days >= 1 ? `${days} day${days === 1 ? '' : 's'}` : `${Math.round(ageMs / 3600e3)} hours`;
+        showStaleBanner(ageMs >= STALE_ALERT_MS ? 'alert' : 'warn',
+          `This data is ${age} old — the hourly refresh has not succeeded since then.`);
+      } else {
+        // Refresh and guild switch re-run this: a banner raised by an earlier
+        // reading must come down once the data is fresh again.
+        hideStaleBanner();
+      }
     })
-    .catch(() => {});
+    .catch(() => {
+      showStaleBanner('alert', UNREADABLE_MSG);
+    });
+}
+
+// Built with createElement/textContent — no interpolation of fetched values.
+function showStaleBanner(level, message) {
+  const banner = document.getElementById('stale-banner');
+  if (!banner) return;
+  banner.replaceChildren();
+  banner.className = `stale-banner is-${level}`;
+  // Announced to screen readers when it appears: 'alert' interrupts, 'status'
+  // waits for a pause.
+  banner.setAttribute('role', level === 'alert' ? 'alert' : 'status');
+  banner.setAttribute('aria-atomic', 'true');
+  banner.hidden = false;
+  banner.append(document.createTextNode(`⚠ ${message} `));
+  const link = document.createElement('a');
+  link.href = ACTIONS_URL;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'Check the refresh workflow';
+  banner.append(link);
+}
+
+function hideStaleBanner() {
+  const banner = document.getElementById('stale-banner');
+  if (!banner) return;
+  banner.replaceChildren();
+  banner.hidden = true;
+  banner.className = 'stale-banner';
 }
 
 // ============================
