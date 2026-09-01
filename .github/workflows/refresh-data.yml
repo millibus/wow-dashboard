@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: '17 * * * *'  # hourly at :17 — off GitHub's congested :00 spike
   workflow_dispatch:
+    inputs:
+      sanity_override:
+        description: 'Accept a legitimately large roster change (member floor / shrink guard). Schema validation still applies.'
+        type: boolean
+        default: false
 
 concurrency:
   group: refresh-data
@@ -40,16 +45,19 @@ jobs:
         env:
           BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
           BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+          SNAPSHOT_SANITY_OVERRIDE: ${{ inputs.sanity_override && '1' || '' }}
         run: node scripts/build-snapshot.js
 
       - name: Validate snapshot
-        run: node scripts/validate-snapshot.js docs/data
+        run: |
+          node scripts/validate-snapshot.js docs/data
+          node scripts/validate-snapshot-v2.js docs/data/v2
 
       - name: Upload snapshot artifact
         uses: actions/upload-artifact@v4
         with:
           name: snapshot-data
-          path: docs/data/*.json
+          path: docs/data
           retention-days: 3
           if-no-files-found: error
 
@@ -65,6 +73,11 @@ jobs:
           # Enough history for the rebase below to find a merge base when
           # another run pushed between checkout and push.
           fetch-depth: 50
+
+      # Artifact extraction cannot represent deletions (e.g. a removed
+      # member's V2 files) — replace the tree so the artifact is authoritative.
+      - name: Clear previous snapshot tree
+        run: rm -rf docs/data && mkdir -p docs/data
 
       - name: Download validated snapshot
         uses: actions/download-artifact@v4
@@ -116,6 +129,10 @@ jobs:
 
       - uses: actions/checkout@v5
         if: steps.pages.outputs.mode == 'workflow'
+
+      - name: Clear previous snapshot tree
+        if: steps.pages.outputs.mode == 'workflow'
+        run: rm -rf docs/data && mkdir -p docs/data
 
       - name: Download validated snapshot
         if: steps.pages.outputs.mode == 'workflow'

@@ -27,4 +27,6 @@ jobs:
         run: npm test
 
       - name: Validate committed snapshot data
-        run: node scripts/validate-snapshot.js docs/data
+        run: |
+          node scripts/validate-snapshot.js docs/data
+          node scripts/validate-snapshot-v2.js docs/data/v2 --allow-missing
