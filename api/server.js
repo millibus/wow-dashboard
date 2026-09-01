@@ -11,7 +11,7 @@ const {
   batched,
   bnet,
   RAID_TIERS,
-} = require('./blizzard');
+} = require('../scripts/lib/blizzard');
 
 const app = express();
 const cache = new NodeCache({ stdTTL: 300 }); // 5 min default
