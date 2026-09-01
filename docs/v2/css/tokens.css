@@ -16,7 +16,11 @@
 
   --ink: #eef0f6;
   --ink-2: #a9afc3;
-  --ink-3: #6b7186;
+  /* --ink-3 carries real content (metric labels, counts, meta), so it clears
+     WCAG AA 4.5:1 on every surface token below — not just "looks dim enough". */
+  --ink-3: #868da3;
+  /* Non-text only: hairlines, dividers, decorative glyphs. */
+  --ink-faint: #6b7186;
 
   --green: #4ade80;
   --green-ink: #86efac;
@@ -26,7 +30,7 @@
   --amber-ink: #f6cd85;
   --amber-dim: rgba(240, 179, 78, 0.1);
   --amber-border: rgba(240, 179, 78, 0.35);
-  --red: #e74c3c;
+  --red: #ff6b5c;
   --red-dim: rgba(231, 76, 60, 0.12);
   --red-border: rgba(231, 76, 60, 0.4);
 

@@ -10,6 +10,15 @@
     { "slug": "riot-act", "realm": "onyxia", "faction": "alliance" }
   ],
   "limits": { "minMembers": 2, "maxShrinkPercent": 40, "raidMemberCap": 60 },
+  "_readinessComment": "Raid-readiness scoring. ilvlFloor/ilvlTarget move every patch — keep them here, never in the frontend. Scores are ilvl (0-45) + preparation (0-35) + activity (0-20), minus a penalty for characters below minLevel.",
+  "readiness": {
+    "minLevel": 80,
+    "ilvlFloor": 520,
+    "ilvlTarget": 610,
+    "belowLevelPenalty": 25,
+    "readyScore": 80,
+    "watchScore": 60
+  },
   "cadencesHours": { "raids": 4, "collections": 24, "catalog": 24 },
   "expensive": { "trackedOnly": true },
   "tierOverrides": {

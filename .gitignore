@@ -2,3 +2,9 @@ api/node_modules/
 api/.env
 *.log
 .DS_Store
+
+# Playwright / e2e artifacts
+node_modules/
+tests/e2e/.site-data/
+test-results/
+playwright-report/

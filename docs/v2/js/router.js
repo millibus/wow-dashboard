@@ -5,10 +5,12 @@
 // popstate applies the URL without writing history again.
 
 const NAV_KEYS = ['guild', 'tab', 'char'];
-const FILTER_KEYS = ['q', 'sort', 'scope', 'owners', 'classes'];
+const FILTER_KEYS = ['q', 'sort', 'scope', 'owners', 'classes', 'risk', 'metric',
+  'tier', 'diff', 'pc', 'kind', 'rarity', 'fav'];
 
 export function readUrl() {
   const p = new URLSearchParams(location.search);
+  const tierId = Number(p.get('tier'));
   return {
     guild: p.get('guild') || null,
     tab: p.get('tab') || 'roster',
@@ -18,6 +20,14 @@ export function readUrl() {
     scope: p.get('scope') || 'active',
     owners: new Set((p.get('owners') || '').split(',').filter(Boolean)),
     classes: new Set((p.get('classes') || '').split(',').filter(Boolean)),
+    risk: p.get('risk') || null,
+    category: p.get('metric') || 'ilvl',
+    tierId: Number.isFinite(tierId) && tierId > 0 ? tierId : null,
+    difficulty: p.get('diff') || 'normal',
+    collectionKey: p.get('pc') || null,
+    collectionKind: p.get('kind') || 'pets',
+    rarity: p.get('rarity') || null,
+    favoritesOnly: p.get('fav') === '1',
   };
 }
 
@@ -31,6 +41,20 @@ function buildQuery(s) {
   if (s.scope && s.scope !== 'active') p.set('scope', s.scope);
   if (s.owners?.size) p.set('owners', [...s.owners].sort().join(','));
   if (s.classes?.size) p.set('classes', [...s.classes].sort().join(','));
+  // Per-view state is only carried in the URL while its own tab is open, so a
+  // deep link stays about what the reader is actually looking at.
+  if (s.tab === 'readiness' && s.risk) p.set('risk', s.risk);
+  if (s.tab === 'leaderboard' && s.category && s.category !== 'ilvl') p.set('metric', s.category);
+  if (s.tab === 'raids') {
+    if (s.tierId) p.set('tier', String(s.tierId));
+    if (s.difficulty && s.difficulty !== 'normal') p.set('diff', s.difficulty);
+  }
+  if (s.tab === 'collections') {
+    if (s.collectionKey) p.set('pc', s.collectionKey);
+    if (s.collectionKind && s.collectionKind !== 'pets') p.set('kind', s.collectionKind);
+    if (s.rarity) p.set('rarity', s.rarity);
+    if (s.favoritesOnly) p.set('fav', '1');
+  }
   const q = p.toString();
   return q ? `?${q}` : '';
 }

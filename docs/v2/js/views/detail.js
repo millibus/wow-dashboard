@@ -4,7 +4,7 @@
 
 import { el, clear } from '../dom.js';
 import { fetchSnapshotFile, identityKey, relAge } from '../api.js';
-import { classColor } from '../config.js';
+import { classColor, classInk } from '../config.js';
 
 const QUALITY_CLASS = new Set([
   'Poor', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Artifact', 'Heirloom',
@@ -52,7 +52,10 @@ function renderShell(dialog, member, charFile, statusText) {
   const color = classColor(member.className);
   const detail = charFile?.detail || null;
 
-  const body = el('div', { class: 'detail-body', style: { '--class-color': color } });
+  const body = el('div', {
+    class: 'detail-body',
+    style: { '--class-color': color, '--class-ink': classInk(member.className) },
+  });
 
   const closeBtn = el('button', {
     class: 'dialog-close', type: 'button', autofocus: true,

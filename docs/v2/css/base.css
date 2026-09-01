@@ -15,6 +15,11 @@ body {
 
 img { max-width: 100%; }
 
+/* Any `display` rule outranks the UA stylesheet's [hidden] — without this a
+   hidden-but-styled element (the stale banner, the toolbar) still takes up
+   space. Hiding is a state the markup declares; CSS must not overrule it. */
+[hidden] { display: none !important; }
+
 button, input, select {
   font: inherit;
   color: inherit;

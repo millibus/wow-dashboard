@@ -24,6 +24,10 @@ const DEFAULTS = {
   expensive: { trackedOnly: true },
   tierOverrides: {},
   lifeStatDefs: [],
+  readiness: {
+    minLevel: 80, ilvlFloor: 520, ilvlTarget: 610,
+    belowLevelPenalty: 25, readyScore: 80, watchScore: 60,
+  },
 };
 
 let cached = null;
@@ -41,6 +45,7 @@ function loadConfig() {
     limits: { ...DEFAULTS.limits, ...(raw.limits || {}) },
     cadencesHours: { ...DEFAULTS.cadencesHours, ...(raw.cadencesHours || {}) },
     expensive: { ...DEFAULTS.expensive, ...(raw.expensive || {}) },
+    readiness: { ...DEFAULTS.readiness, ...(raw.readiness || {}) },
   };
   cachedPath = p;
   return cached;

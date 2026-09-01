@@ -1,5 +1,6 @@
 /* Components: header, tabs, toolbar, filters, stat strip, roster, dialog,
-   banner, bottom nav. Class identity arrives via --class-color per element. */
+   banner, bottom nav. Class identity arrives per element as --class-color (accents: rails, tints,
+   swatches) and --class-ink (text: the AA-readable variant of the same hue). */
 
 /* ---------- Header ---------- */
 .site-header {
@@ -247,7 +248,7 @@
   font-family: var(--font-display);
   font-size: 19px;
   font-weight: 700;
-  color: var(--class-color, var(--gold));
+  color: var(--class-ink, var(--gold));
   background: color-mix(in srgb, var(--class-color, var(--gold)) 14%, transparent);
   overflow: hidden;
 }
@@ -259,7 +260,7 @@
 .char-name { font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .char-spec { font-size: 12px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .char-ilvl { margin-left: auto; text-align: right; flex-shrink: 0; }
-.char-ilvl b { display: block; font-size: 22px; font-weight: 700; color: var(--class-color, var(--gold)); line-height: 1.1; }
+.char-ilvl b { display: block; font-size: 22px; font-weight: 700; color: var(--class-ink, var(--gold)); line-height: 1.1; }
 .char-ilvl span { font-size: 10px; letter-spacing: 1px; color: var(--ink-3); }
 .char-meta { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-3); }
 .char-meta .lvl {
@@ -310,7 +311,7 @@
 .detail-head { display: flex; align-items: flex-start; gap: 16px; }
 .detail-head .monogram { width: 64px; height: 64px; font-size: 26px; }
 .detail-title { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; }
-.detail-sub { margin: 2px 0 0; font-size: 13px; color: var(--class-color, var(--ink-2)); font-weight: 600; }
+.detail-sub { margin: 2px 0 0; font-size: 13px; color: var(--class-ink, var(--ink-2)); font-weight: 600; }
 .detail-sub2 { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
 .detail-ilvl { margin-left: auto; text-align: right; }
 .detail-ilvl b { display: block; font-size: 34px; font-weight: 700; color: var(--gold-light); line-height: 1; }
@@ -352,10 +353,192 @@
 }
 .gear-table td { padding: 8px 8px 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); }
 .gear-table .num { text-align: right; font-weight: 600; }
+/* Item-quality colors, lightened where the canonical value cannot clear
+   WCAG AA on a dark ground (Rare blue and Epic purple). */
 .q-Poor { color: #9d9d9d; } .q-Common { color: var(--ink); } .q-Uncommon { color: #1eff00; }
-.q-Rare { color: #0070dd; } .q-Epic { color: #a335ee; } .q-Legendary { color: #ff8000; }
+.q-Rare { color: #4d9fff; } .q-Epic { color: #c77dff; } .q-Legendary { color: #ff8000; }
 .q-Artifact { color: #e6cc80; } .q-Heirloom { color: #00ccff; }
 .piece-note { font-size: 12px; color: var(--amber-ink); }
+
+/* ---------- Shared: meters, link-styled buttons, scrollable tables ---------- */
+.meter {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.meter-fill { display: block; height: 100%; border-radius: 2px; background: var(--gold); }
+
+.linklike {
+  padding: 0;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--gold-light);
+}
+.linklike:hover { text-decoration: underline; }
+
+/* Wide tables scroll inside their own box; the page never scrolls sideways. */
+.matrix-wrap { overflow-x: auto; margin: 4px 0 8px; }
+
+/* ---------- Readiness ---------- */
+.readiness-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+.readiness-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--ink-3);
+  border-radius: var(--radius);
+}
+.readiness-card:hover { background: var(--raised); border-color: var(--border-strong); }
+.readiness-card.risk-ready { border-left-color: var(--green); }
+.readiness-card.risk-watch { border-left-color: var(--amber); }
+.readiness-card.risk-risk { border-left-color: var(--red); }
+.readiness-head { display: flex; align-items: flex-start; gap: 12px; }
+.readiness-head .char-id { flex: 1; min-width: 0; }
+.readiness-score { text-align: right; flex-shrink: 0; }
+.readiness-score b { display: block; font-size: 24px; font-weight: 700; line-height: 1.1; color: var(--ink); }
+.readiness-score span { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-3); }
+.risk-ready .readiness-score b { color: var(--green-ink); }
+.risk-watch .readiness-score b { color: var(--amber-ink); }
+.risk-risk .readiness-score b { color: var(--red); }
+.risk-ready .meter-fill { background: var(--green); }
+.risk-watch .meter-fill { background: var(--amber); }
+.risk-risk .meter-fill { background: var(--red); }
+.readiness-actions {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.readiness-actions li { margin: 2px 0; }
+.pill.risk-ready[aria-pressed="true"] { background: var(--green-dim); border-color: var(--green-border); color: var(--green-ink); }
+.pill.risk-watch[aria-pressed="true"] { background: var(--amber-dim); border-color: var(--amber-border); color: var(--amber-ink); }
+.pill.risk-risk[aria-pressed="true"] { background: var(--red-dim); border-color: var(--red-border); color: var(--red); }
+
+/* ---------- Leaderboard ---------- */
+.lb-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.lb-table th {
+  text-align: left;
+  padding: 0 12px 10px 0;
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+.lb-table td { padding: 10px 12px 10px 0; border-top: 1px solid rgba(255, 255, 255, 0.05); vertical-align: top; }
+.lb-table .num, .lb-table th.num { text-align: right; padding-right: 0; font-variant-numeric: tabular-nums; }
+.lb-table .num span { font-weight: 700; font-size: 15px; }
+.lb-rank, .lb-rank-hd { width: 44px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.lb-sub { display: block; font-size: 11.5px; color: var(--ink-3); }
+.owner { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.owner .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--owner-color, var(--ink-3)); }
+
+/* ---------- Raids ---------- */
+.tier-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 24px;
+  padding: 4px 0 18px;
+}
+.tier-title { flex: 1; min-width: 260px; }
+.tier-eyebrow {
+  margin: 0;
+  font-size: 10.5px;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.tier-title h2 { margin: 4px 0 2px; font-family: var(--font-display); font-size: 24px; font-weight: 700; }
+.tier-sub { margin: 0; font-size: 12.5px; color: var(--ink-2); }
+.tier-meters { display: flex; gap: 22px; flex-wrap: wrap; }
+.tier-meter { min-width: 84px; }
+.tier-meter-value b { font-size: 22px; font-weight: 700; color: var(--ink); }
+.tier-meter-value span { font-size: 13px; color: var(--ink-3); }
+.tier-meter-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.matrix { border-collapse: collapse; font-size: 13px; }
+.matrix th, .matrix td { border: 1px solid var(--border); }
+.matrix thead th {
+  padding: 8px 6px;
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.matrix-corner {
+  text-align: left;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ink-3) !important;
+}
+.matrix-name {
+  padding: 6px 12px 6px 8px;
+  text-align: left;
+  font-weight: 600;
+  background: var(--surface);
+  white-space: nowrap;
+  position: sticky;
+  left: 0;
+}
+.matrix-name .piece-note { display: block; font-size: 10.5px; }
+.matrix-cell {
+  width: 58px;
+  padding: 7px 4px;
+  text-align: center;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.matrix-cell.is-killed {
+  background: var(--green-dim);
+  color: var(--green-ink);
+  font-weight: 700;
+}
+
+/* ---------- Collections ---------- */
+.collection-grid {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.collection-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.collection-name { font-size: 13.5px; font-weight: 600; }
+.collection-meta { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--ink-3); }
+.collection-meta .fav { color: var(--gold-light); }
 
 /* ---------- Bottom nav (mobile) ---------- */
 .bottom-nav { display: none; }
@@ -386,7 +569,11 @@
     padding: 8px 12px;
   }
   .stat + .stat { border-left: 1px solid var(--border); padding-left: 12px; }
-  .roster-grid { grid-template-columns: 1fr; }
+  .roster-grid, .readiness-grid { grid-template-columns: 1fr; }
+  .tier-head { gap: 14px; padding-bottom: 14px; }
+  .tier-meters { gap: 14px; }
+  /* Five tabs make the bottom nav tight — keep labels readable, not clipped. */
+  .bottom-nav button { font-size: 9.5px; }
 
   .bottom-nav {
     display: flex;

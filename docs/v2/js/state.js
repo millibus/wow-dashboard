@@ -13,6 +13,26 @@ const state = {
   classes: new Set(),   // empty = all
   detailKey: null,      // identity key of the open character dialog
   loadError: null,
+
+  // Readiness
+  risk: null,           // null = all
+
+  // Leaderboard
+  category: 'ilvl',
+
+  // Raids
+  catalog: undefined,   // undefined = not loaded, null = unavailable
+  raids: null,
+  tierId: null,
+  difficulty: 'normal',
+
+  // Collections
+  collectionsIndex: null,
+  collectionKey: null,
+  collectionKind: 'pets',
+  rarity: null,
+  favoritesOnly: false,
+  collections: {},      // identity key -> file | null (loading) | 'error'
 };
 
 const listeners = new Set();
