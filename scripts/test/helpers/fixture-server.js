@@ -17,11 +17,9 @@ async function startFixtureApi(fixturesPath = DEFAULT_FIXTURES) {
   const fixtures = JSON.parse(fs.readFileSync(fixturesPath, 'utf8'));
   const server = http.createServer((req, res) => {
     let pathname;
-    try {
-      pathname = decodeURIComponent(new URL(req.url, 'http://x').pathname);
-    } catch (_) {
-      pathname = req.url;
-    }
+    try { pathname = new URL(req.url, 'http://x').pathname; }
+    catch (_) { pathname = String(req.url).split('?')[0]; }
+    try { pathname = decodeURIComponent(pathname); } catch (_) { /* keep encoded */ }
     const body = fixtures[pathname];
     if (body === undefined) {
       res.writeHead(404, { 'Content-Type': 'application/json' });

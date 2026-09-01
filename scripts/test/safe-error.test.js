@@ -75,6 +75,14 @@ test('network errors classify as NETWORK_*', () => {
   assert.equal(safeCode(err), 'NETWORK_ECONNREFUSED');
 });
 
+test('non-network system errors classify as SYS_*, never NETWORK_*', () => {
+  for (const code of ['ENOSPC', 'EACCES', 'EMFILE']) {
+    const err = new Error(`${code}: boom`);
+    err.code = code;
+    assert.equal(safeCode(err), `SYS_${code}`);
+  }
+});
+
 test('plain error messages are kept but redacted', () => {
   const err = new Error(`disk full while writing ${SENTINEL_SECRET}`);
   const line = formatSafeError(err);

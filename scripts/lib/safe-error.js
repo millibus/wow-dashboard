@@ -50,7 +50,9 @@ function safeCode(err) {
   const status = err.response && err.response.status;
   if (typeof status === 'number') return `HTTP_${status}`;
   if (typeof err.code === 'string' && RETRYABLE_NETWORK_CODES.has(err.code)) return `NETWORK_${err.code}`;
-  if (typeof err.code === 'string' && /^E[A-Z_]+$/.test(err.code)) return `NETWORK_${err.code}`;
+  // Other system codes (ENOSPC, EACCES, …) are NOT network problems — a
+  // NETWORK_ prefix would mis-triage them as transient in the incident issue.
+  if (typeof err.code === 'string' && /^E[A-Z_]+$/.test(err.code)) return `SYS_${err.code}`;
   return 'UNKNOWN';
 }
 

@@ -41,10 +41,12 @@ if [ -z "$existing" ]; then
 fi
 
 # Issue already open: find the fingerprint and time of the last update we made.
-info=$(gh issue view "$existing" --json body,comments \
-  --jq '{body: .body, last: (.comments | if length > 0 then .[-1] else null end)}')
+info=$(gh issue view "$existing" --json body,comments,createdAt \
+  --jq '{body: .body, createdAt: .createdAt, last: (.comments | if length > 0 then .[-1] else null end)}')
 last_text=$(echo "$info" | jq -r 'if .last then .last.body else .body end')
-last_time=$(echo "$info" | jq -r 'if .last then .last.createdAt else empty end')
+# Fall back to the issue's creation time when there are no comments yet, so a
+# fresh incident does not immediately look older than the reminder interval.
+last_time=$(echo "$info" | jq -r 'if .last then .last.createdAt else .createdAt end')
 
 last_code=$(echo "$last_text" | sed -n 's/.*<!-- fingerprint:\([A-Za-z0-9_]*\) -->.*/\1/p' | head -1)
 

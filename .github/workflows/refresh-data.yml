@@ -61,6 +61,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          # Enough history for the rebase below to find a merge base when
+          # another run pushed between checkout and push.
+          fetch-depth: 50
 
       - name: Download validated snapshot
         uses: actions/download-artifact@v4
@@ -152,7 +156,7 @@ jobs:
         run: bash .github/scripts/report-failure.sh
 
       - name: Close incident on recovery
-        if: needs.build.result == 'success' && needs.commit.result == 'success'
+        if: needs.build.result == 'success' && needs.commit.result == 'success' && needs.deploy.result == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

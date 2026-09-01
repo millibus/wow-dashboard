@@ -81,6 +81,9 @@ test('validator rejects an empty or credential-tainted snapshot', () => {
     assert.ok(problems.some(p => p.includes('ts must be')), 'bad timestamp caught');
     assert.ok(problems.some(p => p.includes('non-empty array')), 'empty roster caught');
     assert.ok(problems.some(p => p.includes('forbidden string')), 'credential-shaped string caught');
+    assert.ok(problems.some(p => p.startsWith('collections-deaths-edge.json: missing')), 'missing triplet file caught');
+    assert.ok(problems.some(p => p.startsWith('guild-riot-act.json: missing')), 'missing second guild caught');
+    assert.equal(validateDir(dir).length, problems.length, 'errors must not accumulate across calls');
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
