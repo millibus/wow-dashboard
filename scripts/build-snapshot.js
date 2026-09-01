@@ -49,10 +49,22 @@ const OUT_DIR = process.env.SNAPSHOT_OUT_DIR || path.join(__dirname, '..', 'docs
 const OWNER_CONFIG = process.env.SNAPSHOT_TRACKED_PATH
   || path.join(__dirname, '..', 'config', 'tracked-characters.json');
 
+// Legacy files: minified (kills the 28k-line hourly diffs) and skipped when
+// content is unchanged ignoring volatile timestamps — no churn, smaller repo.
+// generated-at.json is the exception: its changing ts IS the freshness signal.
+const { canonicalStringify, contentEquals } = require('./lib/canonical');
 function writeJson(filename, data) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const filePath = path.join(OUT_DIR, filename);
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2) + '\n');
+  if (filename !== 'generated-at.json') {
+    try {
+      if (contentEquals(JSON.parse(fs.readFileSync(filePath, 'utf8')), data)) {
+        console.log(`  ${filename} unchanged — not rewritten`);
+        return;
+      }
+    } catch (_) { /* no previous file or unparsable — write fresh */ }
+  }
+  fs.writeFileSync(filePath, canonicalStringify(data) + '\n');
   const sizeKb = (fs.statSync(filePath).size / 1024).toFixed(1);
   console.log(`  wrote ${filename} (${sizeKb} KB)`);
 }

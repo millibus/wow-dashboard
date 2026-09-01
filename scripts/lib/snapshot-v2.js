@@ -22,6 +22,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { canonicalStringify, contentEquals } = require('./canonical');
 
 const SCHEMA_VERSION = 2;
 // Region comes from the central config (identity keys, filenames, and the
@@ -304,6 +305,11 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     if (raid) raids.members.push({ id: m.id, name: m.name, status: raidStatus, tiers: raid.tiers || [] });
   }
 
+  // Stable ordering: Blizzard's roster order is not guaranteed run-to-run,
+  // and order churn would defeat the unchanged-bytes reuse above.
+  roster.members.sort((a, b) => a.id - b.id);
+  raids.members.sort((a, b) => a.id - b.id);
+
   return {
     status: guildDegraded ? 'degraded' : 'fresh',
     roster, characters, collections, collectionsIndex, raids,
@@ -321,14 +327,23 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
 // Build the staging tree and return { stagingDir, manifest }.
 function buildStaging(outRoot, guildOutputs) {
   const stagingDir = path.join(outRoot, `v2.staging-${process.pid}`);
+  const prevRoot = path.join(outRoot, 'v2');
   fs.rmSync(stagingDir, { recursive: true, force: true });
   fs.mkdirSync(stagingDir, { recursive: true });
 
   const files = {};
+  // Canonical serialization plus churn elimination: when a file's content is
+  // unchanged (ignoring volatile timestamps), the PREVIOUS bytes are staged
+  // verbatim — identical hash, no git diff, and timestamps like
+  // sourceUpdatedAt keep meaning "when this data last actually changed".
   const writeFile = (rel, data) => {
     const full = path.join(stagingDir, rel);
     fs.mkdirSync(path.dirname(full), { recursive: true });
-    const buf = Buffer.from(JSON.stringify(data));
+    let buf = Buffer.from(canonicalStringify(data));
+    try {
+      const prevBuf = fs.readFileSync(path.join(prevRoot, rel));
+      if (contentEquals(JSON.parse(prevBuf.toString('utf8')), data)) buf = prevBuf;
+    } catch (_) { /* no previous file — write fresh */ }
     fs.writeFileSync(full, buf);
     files[rel] = { sha256: sha256(buf), bytes: buf.length };
   };
@@ -341,6 +356,10 @@ function buildStaging(outRoot, guildOutputs) {
       continue;
     }
     writeFile(`guilds/${slug}.json`, g.roster);
+    // The staged roster may be the REUSED previous bytes — read the timestamp
+    // back from what was actually staged so sourceUpdatedAt keeps meaning
+    // "when the roster data last changed", not "last run".
+    const stagedRoster = JSON.parse(fs.readFileSync(path.join(stagingDir, `guilds/${slug}.json`), 'utf8'));
     writeFile(`raids/${slug}.json`, g.raids);
     writeFile(`collections/${slug}/index.json`, g.collectionsIndex);
     for (const [key, char] of g.characters) writeFile(`characters/${slug}/${key}.json`, char);
@@ -349,7 +368,7 @@ function buildStaging(outRoot, guildOutputs) {
       status: g.status,
       counts: g.counts,
       errors: g.errors.slice(0, 10),
-      sourceUpdatedAt: g.roster.updatedAt || g.roster.carriedForwardAt || null,
+      sourceUpdatedAt: stagedRoster.updatedAt || stagedRoster.carriedForwardAt || null,
       componentFetchedAt: g.fetchedAt || {},
       files: {
         roster: `guilds/${slug}.json`,
@@ -387,7 +406,7 @@ function buildStaging(outRoot, guildOutputs) {
     guilds: manifestGuilds,
     files,
   };
-  const manifestBuf = Buffer.from(JSON.stringify(manifest));
+  const manifestBuf = Buffer.from(canonicalStringify(manifest));
   fs.writeFileSync(path.join(stagingDir, 'manifest.json'), manifestBuf);
   return { stagingDir, manifest };
 }
