@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Death's Edge — Guild Dashboard</title>
+  <meta name="description" content="Deaths Edge and Riot Act guild dashboard — Onyxia-US">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="preconnect" href="https://render.worldofwarcraft.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <div class="brand">
+      <svg class="crest" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4 L15 15 M4 4 L4 8 M4 4 L8 4"></path><path d="M20 4 L9 15 M20 4 L20 8 M20 4 L16 4"></path><path d="M6.5 17.5 L9 15 M17.5 17.5 L15 15"></path><circle cx="12" cy="18.5" r="2.2"></circle></svg>
+      <div class="brand-text">
+        <h1 id="guild-title" class="wordmark">Death's Edge</h1>
+        <p id="guild-subtitle" class="subtitle">Onyxia-US · Guild Dashboard</p>
+      </div>
+    </div>
+    <div class="header-tools">
+      <div id="guild-switcher" class="segmented" role="group" aria-label="Guild"></div>
+      <div id="freshness" class="freshness" aria-live="polite"></div>
+    </div>
+  </header>
+
+  <div id="stale-banner" hidden></div>
+
+  <nav class="tabs-bar" aria-label="Views">
+    <div id="tabs" class="tabs" role="tablist" aria-label="Dashboard views"></div>
+    <div class="toolbar">
+      <label class="search-box">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20 L16 16"></path></svg>
+        <span class="visually-hidden">Search roster</span>
+        <input id="search" type="search" placeholder="Search name, class, spec…" autocomplete="off">
+      </label>
+      <label class="sort-box">
+        <span class="visually-hidden">Sort by</span>
+        <select id="sort">
+          <option value="ilvl">Item level</option>
+          <option value="level">Level</option>
+          <option value="name">Name</option>
+          <option value="class">Class</option>
+        </select>
+      </label>
+    </div>
+  </nav>
+
+  <div id="filters" class="filters" aria-label="Filters"></div>
+
+  <main id="main">
+    <div id="stats" class="stat-strip" aria-label="Guild summary"></div>
+    <p id="result-count" class="result-count" aria-live="polite"></p>
+    <section id="view" class="view" role="tabpanel" aria-label="Current view"></section>
+  </main>
+
+  <nav id="bottom-nav" class="bottom-nav" aria-label="Views"></nav>
+
+  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"></dialog>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
