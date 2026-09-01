@@ -284,7 +284,12 @@ async function main() {
       raidMinLevel: CONFIG.raidMinLevel,
       archiveThresholdDays: CONFIG.archiveThresholdDays,
       guilds: CONFIG.guilds.map(g => ({ slug: g.slug, faction: g.faction })),
-      owners: (() => { try { return JSON.parse(fs.readFileSync(OWNER_CONFIG, 'utf8')).owners || []; } catch (_) { return []; } })(),
+      owners: (() => {
+        try {
+          const parsed = JSON.parse(fs.readFileSync(OWNER_CONFIG, 'utf8')).owners;
+          return Array.isArray(parsed) ? parsed.filter(o => typeof o === 'string') : [];
+        } catch (_) { return []; }
+      })(),
     },
   };
   const legacyPlan = [];

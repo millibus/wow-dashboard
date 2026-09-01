@@ -19,6 +19,10 @@ export async function fetchSnapshotFile(manifest, rel) {
   if (hash) {
     const res = await fetch(`${DATA_BASE}${rel}?v=${hash.slice(0, 16)}`);
     if (res.ok) return res.json();
+    // Only a 404 falls through to the no-store retry (a CDN still serving a
+    // pre-publish tree). Real server errors must surface, not be masked by a
+    // second fetch that could return a version the manifest doesn't describe.
+    if (res.status !== 404) throw new Error(`FILE_HTTP_${res.status}`);
   }
   const res = await fetch(`${DATA_BASE}${rel}`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`FILE_HTTP_${res.status}`);

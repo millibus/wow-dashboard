@@ -4,9 +4,10 @@
 //   active  = owned, logged in within the archive threshold
 //   archive = owned, not logged in for that long (or never)
 //   all     = every owned character
-// The threshold compares lastLogin against the SNAPSHOT's publish time, not
-// the viewer's clock — a stale snapshot must not silently reshuffle members
-// into the archive.
+// The threshold compares lastLogin against the ROSTER's own data timestamp
+// (when its content last actually changed), not the viewer's clock and not
+// the manifest publish time: a carried-forward or unchanged roster republished
+// hourly must not gradually reshuffle its members into the archive.
 
 import { el, clear } from '../dom.js';
 import { identityKey } from '../api.js';
@@ -15,24 +16,26 @@ import { classColor, ownerColor } from '../config.js';
 const DEFAULT_ARCHIVE_DAYS = 30;
 
 function archiveCutoffMs(manifest) {
-  const days = manifest?.config?.archiveThresholdDays || DEFAULT_ARCHIVE_DAYS;
-  return days * 86400e3;
+  const days = manifest?.config?.archiveThresholdDays;
+  return (Number.isFinite(days) && days > 0 ? days : DEFAULT_ARCHIVE_DAYS) * 86400e3;
 }
 
-function snapshotNow(manifest) {
-  const t = Date.parse(manifest?.publishedAt || '');
+function rosterAsOf(roster, manifest) {
+  // updatedAt survives carry-forward and byte-reuse unchanged, so lastLogin
+  // values are exactly as of this moment.
+  const t = Date.parse(roster?.updatedAt || manifest?.publishedAt || '');
   return Number.isFinite(t) ? t : Date.now();
 }
 
-export function isActiveByLogin(member, manifest) {
+export function isActiveByLogin(member, roster, manifest) {
   if (!member.lastLogin) return false;
-  return snapshotNow(manifest) - member.lastLogin < archiveCutoffMs(manifest);
+  return rosterAsOf(roster, manifest) - member.lastLogin < archiveCutoffMs(manifest);
 }
 
-function inScope(member, scope, manifest) {
+function inScope(member, scope, roster, manifest) {
   if (!member.owner) return false;
   if (scope === 'all') return true;
-  const active = isActiveByLogin(member, manifest);
+  const active = isActiveByLogin(member, roster, manifest);
   return scope === 'active' ? active : !active;
 }
 
@@ -40,7 +43,7 @@ export function filterMembers(state) {
   const members = state.roster?.members || [];
   const q = state.search.trim().toLowerCase();
   return members
-    .filter(m => inScope(m, state.scope, state.manifest))
+    .filter(m => inScope(m, state.scope, state.roster, state.manifest))
     .filter(m => !state.owners.size || state.owners.has(m.owner))
     .filter(m => !state.classes.size || state.classes.has(m.className))
     .filter(m => !q ||
@@ -75,7 +78,7 @@ export function renderFilters(container, state, actions) {
   const members = (state.roster?.members || []).filter(m => m.owner);
   if (!members.length) return;
 
-  const cutActive = m => isActiveByLogin(m, state.manifest);
+  const cutActive = m => isActiveByLogin(m, state.roster, state.manifest);
   const counts = {
     active: members.filter(cutActive).length,
     archive: members.filter(m => !cutActive(m)).length,

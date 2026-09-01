@@ -43,6 +43,10 @@ export async function openDetail(dialog, member, state) {
 }
 
 function renderShell(dialog, member, charFile, statusText) {
+  // Rebuilding an OPEN dialog destroys the focused node and `autofocus` is
+  // only honored by showModal(), so focus must be restored by hand below.
+  const hadFocusInside = dialog.open &&
+    (dialog.contains(document.activeElement) || document.activeElement === document.body);
   clear(dialog);
   dialog.dataset.key = identityKey(member);
   const color = classColor(member.className);
@@ -50,11 +54,13 @@ function renderShell(dialog, member, charFile, statusText) {
 
   const body = el('div', { class: 'detail-body', style: { '--class-color': color } });
 
-  body.append(el('button', {
+  const closeBtn = el('button', {
     class: 'dialog-close', type: 'button', autofocus: true,
     'aria-label': 'Close dialog', text: '✕',
     onclick: () => dialog.close(),
-  }));
+  });
+  body.append(closeBtn);
+  const restoreFocus = () => { if (hadFocusInside) closeBtn.focus(); };
 
   const mono = el('div', { class: 'monogram', 'aria-hidden': 'true', style: { '--class-color': color } });
   const avatar = detail?.avatarUrl || member.avatarUrl;
@@ -78,6 +84,7 @@ function renderShell(dialog, member, charFile, statusText) {
   if (statusText) {
     body.append(el('p', { class: 'piece-note', role: 'status', text: statusText }));
     dialog.append(body);
+    restoreFocus();
     return;
   }
 
@@ -86,6 +93,7 @@ function renderShell(dialog, member, charFile, statusText) {
   appendGear(body, detail, components);
   appendLifeStats(body, detail, components, charFile);
   dialog.append(body);
+  restoreFocus();
 }
 
 function subLine(member, detail) {
