@@ -283,6 +283,7 @@ async function main() {
       levelCap: CONFIG.levelCap,
       raidMinLevel: CONFIG.raidMinLevel,
       archiveThresholdDays: CONFIG.archiveThresholdDays,
+      readiness: CONFIG.readiness,
       guilds: CONFIG.guilds.map(g => ({ slug: g.slug, faction: g.faction })),
       owners: (() => {
         try {

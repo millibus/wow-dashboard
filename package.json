@@ -4,8 +4,14 @@
   "description": "Deaths Edge / Riot Act guild dashboard — static frontend + hourly snapshot pipeline",
   "scripts": {
     "test": "node --test scripts/test/*.test.js",
+    "test:e2e": "playwright test",
     "validate": "node scripts/validate-snapshot.js",
     "snapshot": "node scripts/build-snapshot.js",
-    "capture-fixtures": "node scripts/capture-fixtures.js"
+    "capture-fixtures": "node scripts/capture-fixtures.js",
+    "serve:e2e": "node tests/e2e/serve.js"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "^1.55.0"
   }
 }

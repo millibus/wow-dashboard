@@ -8,6 +8,10 @@ import { getState, setState, subscribe } from './state.js';
 import { readUrl, syncUrl, onPopstate } from './router.js';
 import { renderFreshness, renderStaleBanner } from './views/banner.js';
 import { renderFilters, renderStats, renderRoster, filterMembers } from './views/roster.js';
+import { renderReadinessFilters, renderReadiness } from './views/readiness.js';
+import { renderLeaderboardFilters, renderLeaderboard } from './views/leaderboard.js';
+import { renderRaidFilters, renderRaids } from './views/raids.js';
+import { renderCollectionFilters, renderCollections, ensureCollection } from './views/collections.js';
 import { setupDialog, openDetail } from './views/detail.js';
 import { TABS } from './config.js';
 
@@ -31,8 +35,9 @@ const ui = {
 
 const NAV_ICONS = {
   roster: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5'],
-  raids: ['M4 4l16 16M20 4L4 20', 'M4 4v4M4 4h4M20 4v4M20 4h-4'],
+  readiness: ['M12 3l7 3v5c0 4.3-2.9 8.2-7 9.5C7.9 19.2 5 15.3 5 11V6l7-3Z', 'M9 12l2 2 4-4'],
   leaderboard: ['M5 20V10M12 20V4M19 20v-7'],
+  raids: ['M4 4l16 16M20 4L4 20', 'M4 4v4M4 4h4M20 4v4M20 4h-4'],
   collections: ['M4 7h16v13H4Z', 'M8 7V4h8v3'],
 };
 
@@ -58,6 +63,44 @@ async function loadRoster(slug) {
   } catch (err) {
     if (getState().guild !== slug) return;
     setState({ roster: null, loadError: String(err?.message || err) });
+  }
+}
+
+// Raids and collections are fetched only when their tab is first opened, and
+// only for the active guild — the roster view never pays for them.
+async function loadRaids(slug) {
+  const state = getState();
+  if (state.raids && state.raids.slug === slug) return;
+  const [raids, catalog] = await Promise.all([
+    fetchSnapshotFile(state.manifest, `raids/${slug}.json`).catch(() => null),
+    state.catalog !== undefined
+      ? Promise.resolve(state.catalog)
+      : fetchSnapshotFile(state.manifest, 'raid-catalog.json').catch(() => null),
+  ]);
+  if (getState().guild !== slug) return;
+  const tiers = catalog?.tiers || [];
+  const tierId = tiers.some(t => t.id === getState().tierId) ? getState().tierId : (tiers[0]?.id ?? null);
+  setState({ raids: raids ? { ...raids, slug } : null, catalog: catalog ?? null, tierId });
+}
+
+async function loadCollectionsIndex(slug) {
+  const state = getState();
+  if (state.collectionsIndex && state.collectionsIndex.slug === slug) return;
+  const index = await fetchSnapshotFile(state.manifest, `collections/${slug}/index.json`)
+    .catch(() => ({ characters: {} }));
+  if (getState().guild !== slug) return;
+  const keys = Object.keys(index.characters || {});
+  const collectionKey = keys.includes(getState().collectionKey) ? getState().collectionKey : (keys[0] || null);
+  setState({ collectionsIndex: { ...index, slug }, collectionKey });
+}
+
+// Kick off whatever the active tab needs; safe to call on every render.
+function ensureTabData(state) {
+  if (!state.guild || !state.manifest) return;
+  if (state.tab === 'raids') loadRaids(state.guild);
+  if (state.tab === 'collections') {
+    if (!state.collectionsIndex || state.collectionsIndex.slug !== state.guild) loadCollectionsIndex(state.guild);
+    else ensureCollection(state, setState);
   }
 }
 
@@ -117,10 +160,25 @@ function tabKeydown(e, index) {
 
 // --- Views ------------------------------------------------------------------
 
-const rosterActions = {
+const openMember = member => setState({ detailKey: identityKey(member) });
+
+const actions = {
+  // Roster
   setScope: scope => setState({ scope }),
   toggleOwner: owner => setState({ owners: toggled(getState().owners, owner) }),
   toggleClass: cls => setState({ classes: toggled(getState().classes, cls) }),
+  // Readiness
+  setRisk: risk => setState({ risk }),
+  // Leaderboard
+  setCategory: category => setState({ category }),
+  // Raids
+  setTier: tierId => setState({ tierId }),
+  setDifficulty: difficulty => setState({ difficulty }),
+  // Collections
+  setCollectionKey: collectionKey => setState({ collectionKey }),
+  setCollectionKind: collectionKind => setState({ collectionKind, rarity: null }),
+  setRarity: rarity => setState({ rarity }),
+  toggleFavorites: () => setState({ favoritesOnly: !getState().favoritesOnly }),
 };
 
 function toggled(set, value) {
@@ -130,22 +188,19 @@ function toggled(set, value) {
 }
 
 function renderView(state) {
+  // The search/sort toolbar and the summary strip belong to the roster only.
   const isRoster = state.tab === 'roster';
   document.querySelector('.tabs-bar .toolbar').hidden = !isRoster;
-  ui.filters.hidden = !isRoster;
   ui.stats.hidden = !isRoster;
   ui.resultCount.hidden = !isRoster;
-
   if (!isRoster) {
-    clear(ui.filters); clear(ui.stats);
+    clear(ui.stats);
     ui.resultCount.textContent = '';
-    renderPlaceholder(state.tab);
-    return;
   }
 
+  // Every view is a projection of the roster, so its load state gates them all.
   if (state.loadError) {
-    clear(ui.filters); clear(ui.stats);
-    ui.resultCount.textContent = '';
+    clear(ui.filters);
     clear(ui.view);
     ui.view.append(el('div', { class: 'empty-state' },
       el('p', { text: 'The roster could not be loaded.' }),
@@ -154,27 +209,38 @@ function renderView(state) {
     return;
   }
   if (!state.roster) {
+    clear(ui.filters);
     clear(ui.view);
     ui.view.append(el('div', { class: 'empty-state' }, el('p', { text: 'Loading roster…' })));
     return;
   }
 
-  const filtered = filterMembers(state);
-  renderFilters(ui.filters, state, rosterActions);
-  renderStats(ui.stats, filtered);
-  const scoped = (state.roster.members || []).filter(m => m.owner).length;
-  ui.resultCount.textContent = `Showing ${filtered.length} of ${scoped} characters`;
-  renderRoster(ui.view, filtered, member => setState({ detailKey: identityKey(member) }));
-}
-
-function renderPlaceholder(tab) {
-  clear(ui.view);
-  const label = TABS.find(t => t.id === tab)?.label || tab;
-  ui.view.append(el('div', { class: 'placeholder-view' },
-    icon(NAV_ICONS[tab] || [], { size: 36 }),
-    el('p', { text: `${label} is coming in the next update.` }),
-    el('p', { class: 'piece-note', text: 'This view is being migrated to the new dashboard.' }),
-  ));
+  switch (state.tab) {
+    case 'readiness':
+      renderReadinessFilters(ui.filters, state, actions);
+      renderReadiness(ui.view, state, openMember);
+      break;
+    case 'leaderboard':
+      renderLeaderboardFilters(ui.filters, state, actions);
+      renderLeaderboard(ui.view, state, openMember);
+      break;
+    case 'raids':
+      renderRaidFilters(ui.filters, state, actions);
+      renderRaids(ui.view, state, openMember);
+      break;
+    case 'collections':
+      renderCollectionFilters(ui.filters, state, actions);
+      renderCollections(ui.view, state);
+      break;
+    default: {
+      const filtered = filterMembers(state);
+      renderFilters(ui.filters, state, actions);
+      renderStats(ui.stats, filtered);
+      const scoped = (state.roster.members || []).filter(m => m.owner).length;
+      ui.resultCount.textContent = `Showing ${filtered.length} of ${scoped} characters`;
+      renderRoster(ui.view, filtered, openMember);
+    }
+  }
 }
 
 // --- Detail dialog ----------------------------------------------------------
@@ -194,7 +260,13 @@ function syncDialog(state) {
 
 function switchGuild(slug) {
   if (slug === getState().guild) return;
-  setState({ guild: slug, detailKey: null, owners: new Set(), classes: new Set(), search: '' });
+  // Guild-scoped data must not leak across a switch: everything keyed to the
+  // old guild is dropped, and its tab reloads on the next render.
+  setState({
+    guild: slug, detailKey: null, owners: new Set(), classes: new Set(), search: '',
+    raids: null, tierId: null,
+    collectionsIndex: null, collectionKey: null, collections: {},
+  });
   ui.search.value = '';
   loadRoster(slug);
 }
@@ -212,6 +284,14 @@ function applyUrl(urlState, { load = false } = {}) {
     scope: ['active', 'archive', 'all'].includes(urlState.scope) ? urlState.scope : 'active',
     owners: urlState.owners,
     classes: urlState.classes,
+    risk: urlState.risk,
+    category: urlState.category,
+    tierId: urlState.tierId,
+    difficulty: ['normal', 'heroic', 'mythic'].includes(urlState.difficulty) ? urlState.difficulty : 'normal',
+    collectionKey: urlState.collectionKey,
+    collectionKind: urlState.collectionKind === 'mounts' ? 'mounts' : 'pets',
+    rarity: urlState.rarity,
+    favoritesOnly: urlState.favoritesOnly,
   });
   ui.search.value = urlState.search;
   ui.sort.value = getState().sort;
@@ -240,10 +320,17 @@ async function boot() {
     }
     if (changed.includes('roster') || changed.includes('guild')) renderHeaderText(state);
     if (changed.includes('tab')) renderTabs(state);
-    // Re-render the grid only when its inputs changed — a dialog open/close
+    // Re-render the view only when its inputs changed — a dialog open/close
     // must not rebuild it (that would detach the card focus returns to).
-    const viewKeys = ['manifest', 'guild', 'roster', 'tab', 'search', 'sort', 'scope', 'owners', 'classes', 'loadError'];
+    const viewKeys = [
+      'manifest', 'guild', 'roster', 'tab', 'loadError',
+      'search', 'sort', 'scope', 'owners', 'classes',
+      'risk', 'category',
+      'catalog', 'raids', 'tierId', 'difficulty',
+      'collectionsIndex', 'collectionKey', 'collectionKind', 'rarity', 'favoritesOnly', 'collections',
+    ];
     if (changed.some(k => viewKeys.includes(k))) renderView(state);
+    ensureTabData(state);
     syncDialog(state);
   });
 

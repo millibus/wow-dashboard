@@ -69,6 +69,11 @@ test('fresh run publishes a valid V2 snapshot with stable-identity files', async
     assert.equal(typeof manifest.config.archiveThresholdDays, 'number');
     assert.deepEqual(manifest.config.guilds.map(g => g.slug).sort(), ['deaths-edge', 'riot-act']);
     assert.ok(Array.isArray(manifest.config.owners));
+    // Readiness thresholds are config, never frontend constants — the scoring
+    // view reads them from here.
+    for (const key of ['minLevel', 'ilvlFloor', 'ilvlTarget', 'readyScore', 'watchScore']) {
+      assert.equal(typeof manifest.config.readiness[key], 'number', `readiness.${key} projected`);
+    }
 
     const roster = readV2(outDir, 'guilds/deaths-edge.json');
     const decillin = roster.members.find(m => m.name === 'Decillin');

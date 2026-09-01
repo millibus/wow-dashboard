@@ -11,7 +11,7 @@
 
 import { el, clear } from '../dom.js';
 import { identityKey } from '../api.js';
-import { classColor, ownerColor } from '../config.js';
+import { classColor, classInk, ownerColor } from '../config.js';
 
 const DEFAULT_ARCHIVE_DAYS = 30;
 
@@ -131,7 +131,10 @@ export function renderStats(container, filtered) {
 // --- Cards -----------------------------------------------------------------
 
 function monogram(member) {
-  const box = el('span', { class: 'monogram', style: { '--class-color': classColor(member.className) }, 'aria-hidden': 'true' });
+  const box = el('span', {
+    class: 'monogram', 'aria-hidden': 'true',
+    style: { '--class-color': classColor(member.className), '--class-ink': classInk(member.className) },
+  });
   if (member.avatarUrl) {
     box.append(el('img', { src: member.avatarUrl, alt: '', loading: 'lazy' }));
     // A broken render-service image falls back to the initial.
@@ -162,11 +165,10 @@ export function renderRoster(container, filtered, onOpen) {
   }
   const grid = el('div', { class: 'roster-grid' });
   for (const m of filtered) {
-    const color = classColor(m.className);
     const note = componentNote(m);
     const card = el('button', {
       class: 'char-card', type: 'button',
-      style: { '--class-color': color },
+      style: { '--class-color': classColor(m.className), '--class-ink': classInk(m.className) },
       dataset: { key: identityKey(m) },
       onclick: () => onOpen(m),
     },
