@@ -40,11 +40,14 @@ const { loadConfig } = require('./lib/config');
 try { require('dotenv').config({ path: path.join(__dirname, '..', 'api', '.env') }); } catch (_) {}
 
 const CONFIG = loadConfig();
+require('./lib/blizzard').setRegion(CONFIG.region);
 const GUILDS = Object.fromEntries(CONFIG.guilds.map(g => [g.slug, g]));
 
 // SNAPSHOT_OUT_DIR is a test seam (write into a temp dir); production never sets it.
 const OUT_DIR = process.env.SNAPSHOT_OUT_DIR || path.join(__dirname, '..', 'docs', 'data');
-const OWNER_CONFIG = path.join(__dirname, '..', 'config', 'tracked-characters.json');
+// SNAPSHOT_TRACKED_PATH is a test seam; production never sets it.
+const OWNER_CONFIG = process.env.SNAPSHOT_TRACKED_PATH
+  || path.join(__dirname, '..', 'config', 'tracked-characters.json');
 
 function writeJson(filename, data) {
   fs.mkdirSync(OUT_DIR, { recursive: true });

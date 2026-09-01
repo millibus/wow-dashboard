@@ -142,6 +142,74 @@ test('within-cadence collections and raids are reused without refetching, stayin
   } finally { fs.rmSync(outDir, { recursive: true, force: true }); }
 });
 
+test('a character removed from tracking drops to not_tracked instead of carrying stale data forever', async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-untrack-'));
+  const cfgDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-untrackcfg-'));
+  const tracked = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'config', 'tracked-characters.json'), 'utf8'));
+  tracked.characters = tracked.characters.filter(c => c.name !== 'Decillin');
+  const trackedPath = path.join(cfgDir, 'tracked-characters.json');
+  fs.writeFileSync(trackedPath, JSON.stringify(tracked));
+  try {
+    let oauth = await startFakeOauth();
+    let api = await startFixtureApi();
+    try { assert.equal((await runSnapshot(outDir, api, oauth)).code, 0); }
+    finally { oauth.server.close(); api.server.close(); }
+
+    oauth = await startFakeOauth();
+    api = await startFixtureApi();
+    let r;
+    try { r = await runSnapshot(outDir, api, oauth, { SNAPSHOT_TRACKED_PATH: trackedPath }); }
+    finally { oauth.server.close(); api.server.close(); }
+    assert.equal(r.code, 0, r.stderr);
+    assert.deepEqual(validateV2Dir(path.join(outDir, 'v2')), []);
+
+    const roster = readV2(outDir, 'guilds/deaths-edge.json');
+    const decillin = roster.members.find(m => m.name === 'Decillin');
+    assert.equal(decillin.components.collections, 'not_tracked', 'untracked member must not carry stale collections');
+    assert.equal(decillin.components.raids, 'not_tracked');
+    assert.ok(!fs.existsSync(path.join(outDir, 'v2', 'collections/deaths-edge', 'us-onyxia-207690001.json')),
+      'stale collection file must not be republished');
+    const manifest = readV2(outDir, 'manifest.json');
+    assert.equal(manifest.guilds['deaths-edge'].counts.carriedForward, 0,
+      'deliberate exclusion is not carry-forward degradation');
+  } finally { fs.rmSync(outDir, { recursive: true, force: true }); fs.rmSync(cfgDir, { recursive: true, force: true }); }
+});
+
+test('journal payloads listing raids under `instances` are also accepted', async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-shape-'));
+  const oauth = await startFakeOauth();
+  const api = await startFixtureApi({
+    mutate: fixtures => {
+      const exp = fixtures['/data/wow/journal-expansion/505'];
+      exp.instances = exp.raids;
+      delete exp.raids;
+    },
+  });
+  try {
+    const r = await runSnapshot(outDir, api, oauth);
+    assert.equal(r.code, 0, r.stderr);
+    assert.ok(!r.stdout.includes('CATALOG_DISCOVERY_FAILED'), `discovery must succeed on the alternate shape: ${r.stdout}`);
+    assert.equal(readV2(outDir, 'raid-catalog.json').tiers[0].name, 'Liberation of Undermine');
+  } finally { oauth.server.close(); api.server.close(); fs.rmSync(outDir, { recursive: true, force: true }); }
+});
+
+test('the configured region threads through to identities and the manifest', async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-region-'));
+  const cfgDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-regioncfg-'));
+  const cfgPath = makeConfig(cfgDir, c => { c.region = 'eu'; });
+  const oauth = await startFakeOauth();
+  const api = await startFixtureApi();
+  try {
+    const r = await runSnapshot(outDir, api, oauth, { SNAPSHOT_CONFIG_PATH: cfgPath });
+    assert.equal(r.code, 0, r.stderr);
+    const manifest = readV2(outDir, 'manifest.json');
+    assert.equal(manifest.region, 'eu');
+    assert.ok(fs.existsSync(path.join(outDir, 'v2', 'characters/deaths-edge', 'eu-onyxia-207690001.json')),
+      'identity keys carry the configured region');
+    assert.deepEqual(validateV2Dir(path.join(outDir, 'v2')), []);
+  } finally { oauth.server.close(); api.server.close(); fs.rmSync(outDir, { recursive: true, force: true }); fs.rmSync(cfgDir, { recursive: true, force: true }); }
+});
+
 test('level-cap drift produces a loud warning in output and manifest', async () => {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-drift-'));
   const cfgDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr4-driftcfg-'));

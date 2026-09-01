@@ -24,7 +24,12 @@ const path = require('path');
 const crypto = require('crypto');
 
 const SCHEMA_VERSION = 2;
-const REGION = 'us';
+// Region comes from the central config (identity keys, filenames, and the
+// manifest all carry it); fallback keeps the module usable standalone.
+const REGION = (() => {
+  try { return require('./config').loadConfig().region || 'us'; }
+  catch (_) { return 'us'; }
+})();
 const EXPECTED_REFRESH_MINUTES = 60;
 // Fallback only — config/dashboard-config.json `limits` is authoritative and
 // is passed in via mergeGuild opts.
@@ -238,11 +243,14 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
       : 'carried_forward';
 
     // --- collections ---
-    // Not attempted + previous data + within cadence → deliberate reuse (fresh,
-    // not degradation). Attempted-and-failed → carry forward (degraded).
+    // Previous data is reused/carried ONLY for members still eligible for
+    // expensive fetches: a character removed from tracking must drop to
+    // not_tracked, not republish stale data as carried_forward forever.
+    // Eligible + not attempted + within cadence → deliberate reuse (fresh);
+    // attempted-and-failed → carry forward (degraded).
     let col = m.collections;
     let colStatus = col ? 'fresh' : 'unavailable';
-    if (!col && prevGuild) {
+    if (!col && prevGuild && m.expensiveEligible) {
       const prevCol = prevGuild.readCollection(key);
       if (prevCol && !m.collectionsAttempted && reuse.collections) {
         col = prevCol; colStatus = 'fresh'; counts.reusedWithinCadence += 1;
@@ -252,10 +260,10 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     }
     if (!col && m.collectionsAttempted) guildDegraded = true;
 
-    // --- raids ---
+    // --- raids (same eligibility rule) ---
     let raid = m.raid && !m.raid.error ? m.raid : null;
     let raidStatus = raid ? 'fresh' : 'unavailable';
-    if (!raid && prevGuild?.raids) {
+    if (!raid && prevGuild?.raids && m.expensiveEligible) {
       const prevRaid = (prevGuild.raids.members || []).find(r => r.id === m.id);
       if (prevRaid && !m.raidAttempted && reuse.raids) {
         raid = prevRaid; raidStatus = 'fresh'; counts.reusedWithinCadence += 1;

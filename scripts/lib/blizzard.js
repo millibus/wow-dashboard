@@ -25,7 +25,14 @@ function intEnv(name, dflt) {
   const v = parseInt(process.env[name], 10);
   return Number.isFinite(v) && v > 0 ? v : dflt;
 }
-const apiBase = () => process.env.BLIZZARD_API_BASE || 'https://us.api.blizzard.com';
+// Region is config-driven (config/dashboard-config.json → setRegion at build
+// start); BLIZZARD_REGION is a test seam. Everything regional derives from it.
+let regionValue = process.env.BLIZZARD_REGION || 'us';
+function setRegion(r) { if (r) regionValue = r; }
+function region() { return regionValue; }
+const profileNs = () => `profile-${regionValue}`;
+const staticNs = () => `static-${regionValue}`;
+const apiBase = () => process.env.BLIZZARD_API_BASE || `https://${regionValue}.api.blizzard.com`;
 const oauthUrl = () => process.env.BLIZZARD_OAUTH_URL || 'https://oauth.battle.net/token';
 const cfg = () => ({
   timeoutMs: intEnv('BLIZZARD_TIMEOUT_MS', 15000),
@@ -314,11 +321,11 @@ async function fetchCharacter(realm, name, opts = {}) {
   const slug = realmSlug(realm);
 
   const [profile, equipment, stats, media, achStats] = await Promise.allSettled([
-    bnet(`/profile/wow/character/${slug}/${encoded}?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/equipment?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/statistics?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/character-media?namespace=profile-us`),
-    bnet(`/profile/wow/character/${slug}/${encoded}/achievements/statistics?namespace=profile-us`),
+    bnet(`/profile/wow/character/${slug}/${encoded}?namespace=${profileNs()}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/equipment?namespace=${profileNs()}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/statistics?namespace=${profileNs()}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/character-media?namespace=${profileNs()}`),
+    bnet(`/profile/wow/character/${slug}/${encoded}/achievements/statistics?namespace=${profileNs()}`),
   ]);
 
   if (profile.status === 'rejected') return null;
@@ -430,10 +437,15 @@ function deriveShort(name) {
 }
 
 async function fetchRaidCatalog(expansionId, tierOverrides = {}) {
-  const ns = `static-${process.env.BLIZZARD_REGION || 'us'}`;
+  const ns = staticNs();
   const expansion = await bnet(`/data/wow/journal-expansion/${expansionId}?namespace=${ns}`);
+  // Blizzard's journal-expansion payload lists raids under `raids` (alongside
+  // `dungeons`); accept `instances` too in case the shape differs — and if
+  // neither matches, resolveCatalog's carry-forward keeps the previous
+  // catalog with a loud CATALOG_EMPTY warning rather than failing silently.
+  const raidList = expansion.raids || expansion.instances || [];
   const tiers = [];
-  for (const raid of (expansion.raids || [])) {
+  for (const raid of raidList) {
     const inst = await bnet(`/data/wow/journal-instance/${raid.id}?namespace=${ns}`);
     const override = tierOverrides[String(raid.id)] || {};
     tiers.push({
@@ -454,7 +466,7 @@ async function fetchRaidCatalog(expansionId, tierOverrides = {}) {
 async function fetchPets(realm, name) {
   const encoded = encodeURIComponent(name.toLowerCase());
   const slug = realmSlug(realm);
-  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/pets?namespace=profile-us`);
+  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/pets?namespace=${profileNs()}`);
 
   const pets = (data.pets || []).map(p => ({
     name: p.species?.name || '?',
@@ -484,7 +496,7 @@ async function fetchPets(realm, name) {
 async function fetchMounts(realm, name) {
   const encoded = encodeURIComponent(name.toLowerCase());
   const slug = realmSlug(realm);
-  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/mounts?namespace=profile-us`);
+  const data = await bnet(`/profile/wow/character/${slug}/${encoded}/collections/mounts?namespace=${profileNs()}`);
 
   const mounts = (data.mounts || []).map(m => ({
     name: m.mount?.name || '?',
@@ -537,7 +549,7 @@ async function fetchRaidProgress(realm, name, catalog = RAID_TIERS) {
   const encoded = encodeURIComponent(name.toLowerCase());
   const { safeCode } = require('./safe-error');
   try {
-    const data = await bnet(`/profile/wow/character/${slug}/${encoded}/encounters/raids?namespace=profile-us`);
+    const data = await bnet(`/profile/wow/character/${slug}/${encoded}/encounters/raids?namespace=${profileNs()}`);
     const expansions = data.expansions || [];
     const result = { name, realm, tiers: [] };
 
@@ -586,6 +598,8 @@ async function batched(arr, concurrency, fn, spacingMs = 0) {
 module.exports = {
   bnet,
   getToken,
+  setRegion,
+  region,
   invalidateToken,
   getMetrics,
   formatMetrics,
