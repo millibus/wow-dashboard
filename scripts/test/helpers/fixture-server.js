@@ -2,7 +2,7 @@
 // Serves scripts/fixtures/blizzard-fixtures.json as a fake Blizzard API for
 // tests: lookup is by decoded pathname (query strings ignored), unknown paths
 // 404. Also provides a fake OAuth endpoint. Used with the BLIZZARD_API_BASE /
-// BLIZZARD_OAUTH_URL env seams in api/blizzard.js.
+// BLIZZARD_OAUTH_URL env seams in scripts/lib/blizzard.js.
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');

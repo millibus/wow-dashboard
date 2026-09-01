@@ -1,17 +1,196 @@
-// Shared Blizzard API client.
-// Used by both api/server.js (live VPS proxy) and scripts/build-snapshot.js
-// (hourly GitHub Actions snapshot builder). Keep this file framework-free —
-// no Express, no NodeCache — so it imports cleanly from anywhere.
+'use strict';
+// Shared Blizzard API client — native fetch, no axios.
+// Used by scripts/build-snapshot.js (hourly GitHub Actions), scripts/capture-fixtures.js,
+// and api/server.js (legacy VPS proxy, until retired). Keep framework-free.
+//
+// Transport policy:
+// - 15s per-request timeout (AbortController) and a 60s overall deadline per call.
+// - Global concurrency limiter — character fetches fan out several parallel
+//   requests each, so batching alone cannot bound Blizzard-side pressure.
+// - One shared in-flight token promise (no token-refresh stampedes).
+// - Token endpoint 401/403 → fatal AUTH_BAD_CREDENTIALS, never retried.
+// - Resource 401 → invalidate token, re-auth, retry once.
+// - 404 / other 4xx → no retry. Timeout, network reset, 408, 429, 500/502/503/504
+//   → bounded exponential backoff with jitter; Retry-After honored (seconds or
+//   HTTP-date), capped.
+// - Errors are wrapped into a safe axios-compatible shape ({response:{status},
+//   config:{method,url}}) so scripts/lib/safe-error.js classifies them; nothing
+//   here may log or throw raw fetch internals with headers attached.
+//
+// Env overrides exist for tests only — production sets none of them:
+//   BLIZZARD_API_BASE, BLIZZARD_OAUTH_URL, BLIZZARD_TIMEOUT_MS,
+//   BLIZZARD_RETRY_BASE_MS, BLIZZARD_DEADLINE_MS, BLIZZARD_MAX_CONCURRENT
 
-const axios = require('axios');
-const { safeCode } = require('../scripts/lib/safe-error');
+function intEnv(name, dflt) {
+  const v = parseInt(process.env[name], 10);
+  return Number.isFinite(v) && v > 0 ? v : dflt;
+}
+const apiBase = () => process.env.BLIZZARD_API_BASE || 'https://us.api.blizzard.com';
+const oauthUrl = () => process.env.BLIZZARD_OAUTH_URL || 'https://oauth.battle.net/token';
+const cfg = () => ({
+  timeoutMs: intEnv('BLIZZARD_TIMEOUT_MS', 15000),
+  retryBaseMs: intEnv('BLIZZARD_RETRY_BASE_MS', 1000),
+  deadlineMs: intEnv('BLIZZARD_DEADLINE_MS', 60000),
+  maxConcurrent: intEnv('BLIZZARD_MAX_CONCURRENT', 8),
+  maxRetries: 3,
+  retryAfterCapMs: 30000,
+});
 
-// Env overrides exist only so tests can point at a local fake server —
-// production never sets them.
-const BASE = process.env.BLIZZARD_API_BASE || 'https://us.api.blizzard.com';
-const OAUTH_URL = process.env.BLIZZARD_OAUTH_URL || 'https://oauth.battle.net/token';
+// --- Safe error shapes -------------------------------------------------------
+
+// axios-compatible shape so safe-error.js extracts status/method/pathname.
+class HttpError extends Error {
+  constructor(status, method, url) {
+    super(`HTTP ${status}`);
+    this.name = 'HttpError';
+    this.response = { status };
+    this.config = { method, url };
+  }
+}
+
+class AuthBadCredentialsError extends Error {
+  constructor(status) {
+    super(`Blizzard rejected the OAuth client credentials (HTTP ${status})`);
+    this.name = 'AuthBadCredentialsError';
+    this.safeCode = 'AUTH_BAD_CREDENTIALS';
+    this.response = { status };
+    this.config = { method: 'POST', url: oauthUrl() };
+  }
+}
+
+function wrapNetworkError(err, method, url) {
+  // fetch failures nest the useful code in err.cause; surface a clean error
+  // that never carries headers/bodies.
+  // Only string codes are meaningful (DOMException carries a numeric legacy code).
+  const cand = [err?.cause?.code, err?.code].find(c => typeof c === 'string');
+  const code = cand || ((err?.name === 'AbortError' || err?.name === 'TimeoutError') ? 'ETIMEDOUT' : undefined);
+  const out = new Error(code ? `request failed (${code})` : 'request failed');
+  if (code) out.code = code;
+  out.config = { method, url };
+  return out;
+}
+
+// --- Metrics -----------------------------------------------------------------
+
+const metrics = { requests: 0, retries: 0, rateLimited: 0, failures: 0, maxConcurrent: 0 };
+function getMetrics() { return { ...metrics }; }
+function formatMetrics() {
+  return `requests=${metrics.requests} retries=${metrics.retries} 429s=${metrics.rateLimited} ` +
+         `failures=${metrics.failures} maxConcurrency=${metrics.maxConcurrent}`;
+}
+
+// --- Global concurrency limiter ---------------------------------------------
+
+let active = 0;
+const waiters = [];
+async function withSlot(fn) {
+  if (active >= cfg().maxConcurrent) {
+    await new Promise(resolve => waiters.push(resolve));
+  }
+  active += 1;
+  metrics.maxConcurrent = Math.max(metrics.maxConcurrent, active);
+  try {
+    return await fn();
+  } finally {
+    active -= 1;
+    const next = waiters.shift();
+    if (next) next();
+  }
+}
+
+// --- Retry helpers -----------------------------------------------------------
+
+const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504]);
+
+function parseRetryAfter(header, capMs) {
+  if (!header) return null;
+  const secs = Number(header);
+  if (Number.isFinite(secs) && secs >= 0) return Math.min(secs * 1000, capMs);
+  const date = Date.parse(header);
+  if (!Number.isNaN(date)) return Math.min(Math.max(date - Date.now(), 0), capMs);
+  return null;
+}
+
+function backoffDelay(attempt, baseMs) {
+  const exp = baseMs * Math.pow(3, attempt);
+  return Math.round(exp * (0.5 + Math.random()));
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Core request loop. `onUnauthorized` (optional) is called once on a 401 to
+// refresh credentials; returning true retries the request once.
+async function request(method, url, buildOptions, { onUnauthorized } = {}) {
+  const c = cfg();
+  const deadline = Date.now() + c.deadlineMs;
+  let attempt = 0;
+  let reauthed = false;
+  let lastErr;
+
+  while (true) {
+    metrics.requests += 1;
+    let res;
+    try {
+      res = await fetchWithTimeout(url, await buildOptions(), c.timeoutMs);
+    } catch (err) {
+      lastErr = wrapNetworkError(err, method, url);
+      res = null;
+    }
+
+    if (res) {
+      if (res.ok) {
+        try { return await res.json(); }
+        catch (err) { lastErr = wrapNetworkError(err, method, url); }
+      } else if (res.status === 401 && onUnauthorized && !reauthed) {
+        reauthed = true;
+        if (await onUnauthorized()) continue; // one immediate retry with a fresh token
+        metrics.failures += 1;
+        throw new HttpError(res.status, method, url);
+      } else if (RETRYABLE_STATUS.has(res.status)) {
+        if (res.status === 429) metrics.rateLimited += 1;
+        lastErr = new HttpError(res.status, method, url);
+        const retryAfter = parseRetryAfter(res.headers.get('retry-after'), c.retryAfterCapMs);
+        if (attempt < c.maxRetries && Date.now() < deadline) {
+          metrics.retries += 1;
+          await sleep(Math.max(retryAfter ?? 0, backoffDelay(attempt, c.retryBaseMs)));
+          attempt += 1;
+          continue;
+        }
+        metrics.failures += 1;
+        throw lastErr;
+      } else {
+        // Non-retryable HTTP error (404 and other 4xx).
+        metrics.failures += 1;
+        throw new HttpError(res.status, method, url);
+      }
+    }
+
+    // Network failure / timeout / body-parse failure path.
+    if (lastErr && attempt < c.maxRetries && Date.now() < deadline) {
+      metrics.retries += 1;
+      await sleep(backoffDelay(attempt, c.retryBaseMs));
+      attempt += 1;
+      continue;
+    }
+    metrics.failures += 1;
+    throw lastErr;
+  }
+}
+
+// --- OAuth -------------------------------------------------------------------
 
 let tokenData = null;
+let tokenPromise = null;
 
 function clientCreds() {
   const id = process.env.BLIZZARD_CLIENT_ID;
@@ -22,28 +201,58 @@ function clientCreds() {
   return { id, secret };
 }
 
-async function getToken() {
-  if (tokenData && tokenData.expires > Date.now()) return tokenData.token;
+function invalidateToken() { tokenData = null; }
+
+async function fetchToken() {
   const { id, secret } = clientCreds();
-  const res = await axios.post(
-    OAUTH_URL,
-    new URLSearchParams({ grant_type: 'client_credentials' }),
-    { auth: { username: id, password: secret } }
-  );
+  const url = oauthUrl();
+  const basic = Buffer.from(`${id}:${secret}`).toString('base64');
+  const data = await request('POST', url, () => ({
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${basic}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: 'grant_type=client_credentials',
+  }), {
+    // A 401 on the token endpoint means the credentials are bad — fatal,
+    // never retried (request() only calls this once, and we do not retry).
+    onUnauthorized: async () => false,
+  }).catch(err => {
+    const status = err?.response?.status;
+    if (status === 401 || status === 403) throw new AuthBadCredentialsError(status);
+    throw err;
+  });
   tokenData = {
-    token: res.data.access_token,
-    expires: Date.now() + (res.data.expires_in - 60) * 1000,
+    token: data.access_token,
+    expires: Date.now() + (data.expires_in - 60) * 1000,
   };
   return tokenData.token;
 }
 
+async function getToken() {
+  if (tokenData && tokenData.expires > Date.now()) return tokenData.token;
+  if (!tokenPromise) {
+    tokenPromise = fetchToken().finally(() => { tokenPromise = null; });
+  }
+  return tokenPromise;
+}
+
+// --- Public API --------------------------------------------------------------
+
 async function bnet(path) {
-  const token = await getToken();
-  const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}locale=en_US`;
-  const res = await axios.get(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return res.data;
+  const url = `${apiBase()}${path}${path.includes('?') ? '&' : '?'}locale=en_US`;
+  return withSlot(() => request('GET', url, async () => ({
+    method: 'GET',
+    headers: { Authorization: `Bearer ${await getToken()}` },
+  }), {
+    onUnauthorized: async () => {
+      // Token revoked server-side before its stated expiry: refresh once.
+      invalidateToken();
+      await getToken();
+      return true;
+    },
+  }));
 }
 
 function calcAvgIlvl(items) {
@@ -238,6 +447,7 @@ const RAID_TIERS = [
 async function fetchRaidProgress(realm, name) {
   const slug = realmSlug(realm);
   const encoded = encodeURIComponent(name.toLowerCase());
+  const { safeCode } = require('./safe-error');
   try {
     const data = await bnet(`/profile/wow/character/${slug}/${encoded}/encounters/raids?namespace=profile-us`);
     const expansions = data.expansions || [];
@@ -288,6 +498,9 @@ async function batched(arr, concurrency, fn, spacingMs = 0) {
 module.exports = {
   bnet,
   getToken,
+  invalidateToken,
+  getMetrics,
+  formatMetrics,
   calcAvgIlvl,
   realmSlug,
   fetchCharacter,
@@ -296,4 +509,6 @@ module.exports = {
   fetchRaidProgress,
   batched,
   RAID_TIERS,
+  AuthBadCredentialsError,
+  HttpError,
 };

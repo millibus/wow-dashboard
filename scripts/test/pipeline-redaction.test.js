@@ -39,6 +39,7 @@ function runSnapshot(env) {
           ...process.env,
           BLIZZARD_CLIENT_ID: SENTINEL_ID,
           BLIZZARD_CLIENT_SECRET: SENTINEL_SECRET,
+          BLIZZARD_RETRY_BASE_MS: '20',
           GITHUB_OUTPUT: '',
           ...env,
         },

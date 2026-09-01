@@ -13,7 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { bnet, realmSlug } = require('../api/blizzard');
+const { bnet, realmSlug } = require('./lib/blizzard');
 const { redact } = require('./lib/safe-error');
 
 const CHARS_PER_GUILD = 2;

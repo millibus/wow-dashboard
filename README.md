@@ -33,7 +33,7 @@ docs/app.js  (reads JSON, no API at runtime)
 - **Frontend** — Static HTML/CSS/JS in `docs/`, served via GitHub Pages.
 - **Data** — JSON snapshots in `docs/data/` (`guild-{slug}.json`, `raid-{slug}.json`, `collections-{slug}.json`, `generated-at.json`), regenerated hourly by `.github/workflows/refresh-data.yml`. The frontend reads these files directly — no runtime API calls.
 - **Live API (optional)** — `api/server.js` is a Node/Express proxy over the Blizzard API. Used for local development and as the runtime path when serving the dashboard from the VPS. Not required by the public Pages site.
-- **Shared client** — `api/blizzard.js` exports OAuth + fetch helpers. Imported by both `api/server.js` and `scripts/build-snapshot.js` so there's one source of truth for the data shape.
+- **Shared client** — `scripts/lib/blizzard.js` exports OAuth + fetch helpers (timeouts, retries, rate-limit handling, token locking). Imported by both `api/server.js` and `scripts/build-snapshot.js` so there's one source of truth for the data shape.
 
 ## Setup
 

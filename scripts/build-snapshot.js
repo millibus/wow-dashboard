@@ -16,7 +16,8 @@ const {
   fetchRaidProgress,
   batched,
   RAID_TIERS,
-} = require('../api/blizzard');
+  formatMetrics,
+} = require('./lib/blizzard');
 const { toSafeError, logSafeError, redact } = require('./lib/safe-error');
 
 // Load env from api/.env if present (local dev convenience)
@@ -146,7 +147,8 @@ async function main() {
   }
 
   writeJson('generated-at.json', { ts: new Date().toISOString() });
-  console.log('\nDone.');
+  console.log(`\nAPI metrics: ${formatMetrics()}`);
+  console.log('Done.');
 }
 
 main().catch(err => {
