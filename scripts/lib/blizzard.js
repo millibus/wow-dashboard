@@ -141,7 +141,9 @@ async function request(method, url, buildOptions, { onUnauthorized } = {}) {
     metrics.requests += 1;
     let res;
     try {
-      res = await fetchWithTimeout(url, await buildOptions(), c.timeoutMs);
+      // Never let a single attempt run past the overall deadline.
+      const attemptTimeout = Math.min(c.timeoutMs, Math.max(deadline - Date.now(), 1));
+      res = await fetchWithTimeout(url, await buildOptions(), attemptTimeout);
     } catch (err) {
       lastErr = wrapNetworkError(err, method, url);
       res = null;
@@ -160,9 +162,11 @@ async function request(method, url, buildOptions, { onUnauthorized } = {}) {
         if (res.status === 429) metrics.rateLimited += 1;
         lastErr = new HttpError(res.status, method, url);
         const retryAfter = parseRetryAfter(res.headers.get('retry-after'), c.retryAfterCapMs);
-        if (attempt < c.maxRetries && Date.now() < deadline) {
+        const wait = Math.max(retryAfter ?? 0, backoffDelay(attempt, c.retryBaseMs));
+        // Retry only if the wait AND another attempt still fit inside the deadline.
+        if (attempt < c.maxRetries && Date.now() + wait < deadline) {
           metrics.retries += 1;
-          await sleep(Math.max(retryAfter ?? 0, backoffDelay(attempt, c.retryBaseMs)));
+          await sleep(wait);
           attempt += 1;
           continue;
         }
@@ -176,9 +180,10 @@ async function request(method, url, buildOptions, { onUnauthorized } = {}) {
     }
 
     // Network failure / timeout / body-parse failure path.
-    if (lastErr && attempt < c.maxRetries && Date.now() < deadline) {
+    const netWait = backoffDelay(attempt, c.retryBaseMs);
+    if (lastErr && attempt < c.maxRetries && Date.now() + netWait < deadline) {
       metrics.retries += 1;
-      await sleep(backoffDelay(attempt, c.retryBaseMs));
+      await sleep(netWait);
       attempt += 1;
       continue;
     }

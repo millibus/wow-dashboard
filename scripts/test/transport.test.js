@@ -147,7 +147,9 @@ test('429 honors an HTTP-date Retry-After', async () => {
     if (hits === 2) gapMs = now - last;
     last = now;
     if (hits === 1) {
-      res.writeHead(429, { 'Retry-After': new Date(Date.now() + 1000).toUTCString() });
+      // HTTP dates truncate milliseconds, so +2500ms can parse as little as
+      // ~1501ms in the future — the assertion below must stay under that floor.
+      res.writeHead(429, { 'Retry-After': new Date(Date.now() + 2500).toUTCString() });
       res.end('{}');
       return;
     }
@@ -159,8 +161,7 @@ test('429 honors an HTTP-date Retry-After', async () => {
       BLIZZARD_API_BASE: `http://127.0.0.1:${api.address().port}`,
     });
     assert.ok(stdout.includes('RESULT:{"ok":true}'), `got: ${stdout}`);
-    // HTTP dates have 1s resolution, so the wait can round down; just prove a real delay happened.
-    assert.ok(gapMs >= 400, `waited only ${gapMs}ms after an HTTP-date Retry-After`);
+    assert.ok(gapMs >= 1200, `waited only ${gapMs}ms after an HTTP-date Retry-After`);
   } finally { oauth.close(); api.close(); }
 });
 
@@ -191,6 +192,28 @@ test('retries exhaust after 3 attempts on persistent 500s, and 404 never retries
     const r2 = await runClient("return await blizzard.bnet('/gone');", env);
     assert.ok(r2.stdout.includes('"status":404'), `got: ${r2.stdout}`);
     assert.equal(hits404, 1, '404 must not be retried');
+  } finally { oauth.close(); api.close(); }
+});
+
+test('a Retry-After beyond the overall deadline fails fast instead of sleeping past it', async () => {
+  const oauth = await listen((req, res) => okJson(res, TOKEN_OK));
+  let hits = 0;
+  const api = await listen((req, res) => {
+    hits += 1;
+    res.writeHead(429, { 'Retry-After': '30' });
+    res.end('{}');
+  });
+  try {
+    const started = Date.now();
+    const { stdout } = await runClient("return await blizzard.bnet('/swamped');", {
+      BLIZZARD_OAUTH_URL: `http://127.0.0.1:${oauth.address().port}/token`,
+      BLIZZARD_API_BASE: `http://127.0.0.1:${api.address().port}`,
+      BLIZZARD_DEADLINE_MS: '300',
+    });
+    const elapsed = Date.now() - started;
+    assert.ok(stdout.includes('"status":429'), `should fail with the 429, got: ${stdout}`);
+    assert.equal(hits, 1, 'no retry may start when the wait cannot fit the deadline');
+    assert.ok(elapsed < 5000, `failed fast (took ${elapsed}ms) instead of sleeping 30s`);
   } finally { oauth.close(); api.close(); }
 });
 
