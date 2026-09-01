@@ -72,6 +72,27 @@ test('token-endpoint 401 is fatal AUTH_BAD_CREDENTIALS with no retries', async (
   } finally { oauth.close(); }
 });
 
+test('bad credentials surfacing through bnet() stay fatal — no retries, no API hits', async () => {
+  let tokenRequests = 0;
+  const oauth = await listen((req, res) => {
+    tokenRequests += 1;
+    res.writeHead(401, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'unauthorized' }));
+  });
+  let apiHits = 0;
+  const api = await listen((req, res) => { apiHits += 1; okJson(res, {}); });
+  try {
+    const { stdout } = await runClient("return await blizzard.bnet('/x');", {
+      BLIZZARD_OAUTH_URL: `http://127.0.0.1:${oauth.address().port}/token`,
+      BLIZZARD_API_BASE: `http://127.0.0.1:${api.address().port}`,
+    });
+    assert.ok(stdout.includes('"code":"AUTH_BAD_CREDENTIALS"'),
+      `token failure inside a resource call must keep its classification, got: ${stdout}`);
+    assert.equal(tokenRequests, 1, 'the fatal token failure must not be retried by the resource call');
+    assert.equal(apiHits, 0, 'no API request may be attempted without a token');
+  } finally { oauth.close(); api.close(); }
+});
+
 test('resource 401 re-auths once and retries once', async () => {
   let tokens = 0;
   const oauth = await listen((req, res) => { tokens += 1; okJson(res, { access_token: `tok-${tokens}`, expires_in: 3600 }); });

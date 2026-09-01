@@ -138,12 +138,20 @@ async function request(method, url, buildOptions, { onUnauthorized } = {}) {
   let lastErr;
 
   while (true) {
+    // buildOptions() failures (e.g. getToken() throwing AUTH_BAD_CREDENTIALS)
+    // are NOT transport errors: they propagate untouched and are never
+    // retried or re-wrapped, or a fatal credential failure would be
+    // reclassified as a network blip and hammered.
+    let options;
+    try { options = await buildOptions(); }
+    catch (err) { metrics.failures += 1; throw err; }
+
     metrics.requests += 1;
     let res;
     try {
       // Never let a single attempt run past the overall deadline.
       const attemptTimeout = Math.min(c.timeoutMs, Math.max(deadline - Date.now(), 1));
-      res = await fetchWithTimeout(url, await buildOptions(), attemptTimeout);
+      res = await fetchWithTimeout(url, options, attemptTimeout);
     } catch (err) {
       lastErr = wrapNetworkError(err, method, url);
       res = null;
