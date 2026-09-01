@@ -99,8 +99,9 @@ function validateV2Dir(dir) {
     } catch (_) { err(`guilds/${slug}.json`, 'missing or unparsable'); continue; }
     // Performance budget: the roster summary is the initial page load — it
     // must stay small without opening detail files.
-    if (rosterRaw.length > 200000) {
-      err(`guilds/${slug}.json`, `roster summary is ${rosterRaw.length} bytes — exceeds the 200KB initial-load budget`);
+    const rosterBytes = Buffer.byteLength(rosterRaw, 'utf8');
+    if (rosterBytes > 200000) {
+      err(`guilds/${slug}.json`, `roster summary is ${rosterBytes} bytes — exceeds the 200KB initial-load budget`);
     }
     if (!Array.isArray(roster.members) || roster.members.length < 1) {
       err(`guilds/${slug}.json`, 'members must be a non-empty array');

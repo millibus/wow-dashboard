@@ -356,6 +356,10 @@ function buildStaging(outRoot, guildOutputs) {
       continue;
     }
     writeFile(`guilds/${slug}.json`, g.roster);
+    // The staged roster may be the REUSED previous bytes — read the timestamp
+    // back from what was actually staged so sourceUpdatedAt keeps meaning
+    // "when the roster data last changed", not "last run".
+    const stagedRoster = JSON.parse(fs.readFileSync(path.join(stagingDir, `guilds/${slug}.json`), 'utf8'));
     writeFile(`raids/${slug}.json`, g.raids);
     writeFile(`collections/${slug}/index.json`, g.collectionsIndex);
     for (const [key, char] of g.characters) writeFile(`characters/${slug}/${key}.json`, char);
@@ -364,7 +368,7 @@ function buildStaging(outRoot, guildOutputs) {
       status: g.status,
       counts: g.counts,
       errors: g.errors.slice(0, 10),
-      sourceUpdatedAt: g.roster.updatedAt || g.roster.carriedForwardAt || null,
+      sourceUpdatedAt: stagedRoster.updatedAt || stagedRoster.carriedForwardAt || null,
       componentFetchedAt: g.fetchedAt || {},
       files: {
         roster: `guilds/${slug}.json`,

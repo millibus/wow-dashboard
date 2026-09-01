@@ -80,9 +80,13 @@ test('an unchanged second run produces byte-identical data files in both layers'
       'generated-at.json is the freshness signal and always updates');
     assert.ok(r.stdout.includes('unchanged — not rewritten'), 'legacy writes are skipped when unchanged');
 
-    // The manifest's per-file hashes must match the reused bytes exactly.
+    // The manifest's per-file hashes must match the reused bytes exactly, and
+    // sourceUpdatedAt must not advance when the roster data did not change.
     const manifest = JSON.parse(fs.readFileSync(path.join(outDir, 'v2/manifest.json'), 'utf8'));
     assert.equal(manifest.files['guilds/deaths-edge.json'].sha256, before['v2/guilds/deaths-edge.json']);
+    const roster = JSON.parse(fs.readFileSync(path.join(outDir, 'v2/guilds/deaths-edge.json'), 'utf8'));
+    assert.equal(manifest.guilds['deaths-edge'].sourceUpdatedAt, roster.updatedAt,
+      'manifest sourceUpdatedAt must reflect the staged (reused) roster, not the current run');
   } finally { fs.rmSync(outDir, { recursive: true, force: true }); }
 });
 
