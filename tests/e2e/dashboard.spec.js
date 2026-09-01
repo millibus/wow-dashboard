@@ -88,6 +88,48 @@ test.describe('readiness', () => {
     await expect(page.locator('.readiness-card')).toHaveCount(2);
     await expect(page).toHaveURL(/risk=risk/);
   });
+
+  // Scoring semantics, exercised directly: a failed upstream fetch must never
+  // cost a character points, and must never be scored as a real zero.
+  test('unavailable components are never scored as zeros', async ({ page }) => {
+    await page.goto(`${ALL}&tab=readiness`);
+    const results = await page.evaluate(async () => {
+      const { readinessOf } = await import('/v2/js/views/readiness.js');
+      const manifest = { config: { readiness: {
+        minLevel: 80, ilvlFloor: 520, ilvlTarget: 610,
+        belowLevelPenalty: 25, readyScore: 80, watchScore: 60,
+      } } };
+      const base = {
+        level: 80, ilvl: 640,
+        equipmentSummary: { count: 16, emptySockets: 0, unenchanted: 0 },
+        lifeStats: { dungeonsEntered: 800, raidsEntered: 100, delvesCompleted: 100, bossesDefeated: 300 },
+        components: { equipment: 'fresh', achievements: 'fresh' },
+      };
+      const withActivity = readinessOf(base, manifest);
+      const noActivity = readinessOf({
+        ...base, lifeStats: null,
+        components: { equipment: 'fresh', achievements: 'unavailable' },
+      }, manifest);
+      const noGear = readinessOf({
+        ...base, ilvl: null, equipmentSummary: null,
+        components: { equipment: 'unavailable', achievements: 'fresh' },
+      }, manifest);
+      const noIlvl = readinessOf({ ...base, ilvl: null }, manifest);
+      return { withActivity, noActivity, noGear, noIlvl };
+    });
+
+    // A well-geared character stays ready when only the activity feed is gone.
+    expect(results.withActivity.risk).toBe('ready');
+    expect(results.noActivity.risk).toBe('ready');
+    expect(results.noActivity.score).toBeGreaterThanOrEqual(results.withActivity.score - 2);
+    expect(results.noActivity.note).toContain('Activity data unavailable');
+
+    // Missing gear or item level is unknown, never a bad score.
+    expect(results.noGear.risk).toBe('unknown');
+    expect(results.noGear.score).toBeNull();
+    expect(results.noIlvl.risk).toBe('unknown');
+    expect(results.noIlvl.score).toBeNull();
+  });
 });
 
 test.describe('leaderboard', () => {
@@ -145,6 +187,17 @@ test.describe('collections', () => {
     await page.getByRole('button', { name: 'Mounts' }).click();
     await expect(page).toHaveURL(/kind=mounts/);
     await expect(page.locator('.collection-name').first()).toHaveText('Invincible');
+  });
+
+  test('a slow index shows loading, never "nothing was published"', async ({ page }) => {
+    await page.route('**/collections/deaths-edge/index.json*', async route => {
+      await new Promise(r => setTimeout(r, 1200));
+      await route.continue();
+    });
+    await page.goto(`${ALL}&tab=collections`);
+    await expect(page.locator('.empty-state')).toContainText('Loading collections');
+    await expect(page.locator('.empty-state')).not.toContainText('No collection data');
+    await expect(page.locator('.collection-item').first()).toBeVisible();
   });
 });
 

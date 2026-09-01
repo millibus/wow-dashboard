@@ -24,44 +24,65 @@ function rules(manifest) {
   return { ...READINESS_DEFAULTS, ...(manifest?.config?.readiness || {}) };
 }
 
-// Returns { risk: 'ready'|'watch'|'risk'|'unknown', score, actions, reason }
+// Component weights. When a component is unavailable its points are removed
+// from BOTH the score and the maximum, and the result is rescaled — a failed
+// upstream request must never cost a character points it would have earned.
+const GEAR_MAX = 45;   // item level
+const PREP_MAX = 35;   // sockets + enchants
+const ACTIVITY_MAX = 20; // dungeons / raids / delves / boss kills
+
+// Returns { risk: 'ready'|'watch'|'risk'|'unknown', score, actions, reason, note }
 export function readinessOf(member, manifest) {
   const r = rules(manifest);
   const eq = member.equipmentSummary;
-  const gearKnown = member.components?.equipment !== 'unavailable' && eq && eq.count > 0;
+  const ilvl = member.ilvl;
+  // Gear is the scoring floor: without a real item level and an equipment
+  // summary there is nothing to score, and a fabricated 0 would read as "at
+  // risk" for what is really "we don't know".
+  const gearKnown = member.components?.equipment !== 'unavailable'
+    && eq && eq.count > 0
+    && typeof ilvl === 'number' && ilvl > 0;
 
   if (!gearKnown) {
     return {
-      risk: 'unknown', score: null,
-      reason: member.components?.equipment === 'carried_forward'
-        ? 'Gear data is from an earlier refresh'
-        : 'Gear data unavailable — cannot score',
+      risk: 'unknown', score: null, note: null,
+      reason: member.components?.equipment === 'unavailable'
+        ? 'Gear data unavailable — cannot score'
+        : 'No item level recorded — cannot score',
       actions: [],
     };
   }
 
-  const ilvl = member.ilvl || 0;
+  const activityKnown = member.components?.achievements !== 'unavailable' && !!member.lifeStats;
   const ls = member.lifeStats || {};
   const enchantRatio = (eq.count - eq.unenchanted) / eq.count;
   const content = (ls.dungeonsEntered || 0) + (ls.raidsEntered || 0) + (ls.delvesCompleted || 0);
   const bossKills = ls.bossesDefeated || 0;
 
-  const ilvlScore = Math.min(45, Math.max(0, (ilvl - r.ilvlFloor) / 3));
-  const prepScore = Math.max(0, 25 - eq.emptySockets * 8) + Math.round(enchantRatio * 10);
-  const activityScore = Math.min(20, Math.round(content / 40) + Math.round(bossKills / 15));
+  const ilvlScore = Math.min(GEAR_MAX, Math.max(0, (ilvl - r.ilvlFloor) / 3));
+  const prepScore = Math.min(PREP_MAX, Math.max(0, 25 - eq.emptySockets * 8) + Math.round(enchantRatio * 10));
+  const activityScore = activityKnown
+    ? Math.min(ACTIVITY_MAX, Math.round(content / 40) + Math.round(bossKills / 15))
+    : 0;
+
+  const earned = ilvlScore + prepScore + activityScore;
+  const possible = GEAR_MAX + PREP_MAX + (activityKnown ? ACTIVITY_MAX : 0);
   const penalty = (member.level || 0) >= r.minLevel ? 0 : r.belowLevelPenalty;
-  const score = Math.max(0, Math.min(100, Math.round(ilvlScore + prepScore + activityScore - penalty)));
+  const score = Math.max(0, Math.min(100, Math.round((earned / possible) * 100) - penalty));
 
   const actions = [];
   if ((member.level || 0) < r.minLevel) actions.push(`Level to ${r.minLevel} first (${member.level || 0}/${r.minLevel})`);
-  if (ilvl && ilvl < r.ilvlTarget) actions.push(`Gear up: average item level ${Math.round(ilvl)} of ${r.ilvlTarget}`);
+  if (ilvl < r.ilvlTarget) actions.push(`Gear up: average item level ${Math.round(ilvl)} of ${r.ilvlTarget}`);
   if (eq.emptySockets) actions.push(`${eq.emptySockets} empty socket${eq.emptySockets > 1 ? 's' : ''}`);
   if (enchantRatio < 0.25) actions.push('Missing enchants on most gear');
-  if (!content && member.components?.achievements !== 'unavailable') actions.push('No dungeon, raid, or delve activity recorded');
+  if (activityKnown && !content) actions.push('No dungeon, raid, or delve activity recorded');
   if (!actions.length) actions.push('Ready — check raid boss gaps next');
 
   const risk = score >= r.readyScore ? 'ready' : score >= r.watchScore ? 'watch' : 'risk';
-  return { risk, score, actions, reason: null };
+  return {
+    risk, score, actions, reason: null,
+    note: activityKnown ? null : 'Activity data unavailable — scored on gear alone',
+  };
 }
 
 export function renderReadinessFilters(container, state, actions) {
@@ -129,6 +150,7 @@ export function renderReadiness(container, state, onOpen) {
         ? el('span', { class: 'piece-note', text: readiness.reason })
         : el('ul', { class: 'readiness-actions' },
             ...readiness.actions.map(a => el('li', { text: a }))),
+      readiness.note ? el('span', { class: 'piece-note', text: readiness.note }) : null,
     );
     grid.append(card);
   }

@@ -74,7 +74,13 @@ export async function ensureCollection(state, setState) {
 
 export function renderCollections(container, state) {
   clear(container);
-  const index = state.collectionsIndex?.characters || {};
+  // A null index means the fetch is still in flight — saying "nothing was
+  // published" before it lands would report a data gap that does not exist.
+  if (!state.collectionsIndex || state.collectionsIndex.slug !== state.guild) {
+    container.append(el('div', { class: 'empty-state' }, el('p', { text: 'Loading collections…' })));
+    return;
+  }
+  const index = state.collectionsIndex.characters || {};
   if (!Object.keys(index).length) {
     container.append(el('div', { class: 'empty-state' },
       el('p', { text: 'No collection data was published for this guild.' })));

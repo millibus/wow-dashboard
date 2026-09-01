@@ -65,11 +65,14 @@ export function renderRaids(container, state, onOpen) {
 
   const tier = tiers.find(t => t.id === state.tierId) || tiers[0];
   const bosses = tier.bosses || [];
-  const rosterByName = new Map((state.roster?.members || []).map(m => [m.name, m]));
+  // Join on the stable Blizzard character id, never the display name: two
+  // characters in one guild can share a name across realms, and a name join
+  // would give one of them the other's owner, class, and detail link.
+  const rosterById = new Map((state.roster?.members || []).map(m => [m.id, m]));
   // Only owned characters, matching every other view's scoping.
   const raiders = (state.raids.members || [])
-    .filter(r => rosterByName.get(r.name)?.owner)
-    .map(r => ({ raid: r, member: rosterByName.get(r.name), kills: killsByBoss(r, tier.id) }));
+    .map(r => ({ raid: r, member: rosterById.get(r.id), kills: killsByBoss(r, tier.id) }))
+    .filter(row => row.member?.owner);
 
   container.append(renderTierHeader(tier, bosses, raiders));
 

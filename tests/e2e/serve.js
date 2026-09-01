@@ -29,7 +29,16 @@ function resolveWithin(root, rel) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  let pathname = decodeURIComponent(url.pathname);
+  let pathname;
+  try {
+    // Malformed percent-encoding throws; an uncaught throw here would take the
+    // server down and fail the whole Playwright run.
+    pathname = decodeURIComponent(url.pathname);
+  } catch (_) {
+    res.writeHead(400, { 'content-type': 'text/plain' });
+    res.end('bad request');
+    return;
+  }
   if (pathname.endsWith('/')) pathname += 'index.html';
 
   const isData = pathname.startsWith('/data/');
