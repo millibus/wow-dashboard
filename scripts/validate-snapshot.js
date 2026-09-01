@@ -14,10 +14,17 @@
 const fs = require('fs');
 const path = require('path');
 
-// The frontend requests these fixed slugs; a snapshot missing any of the three
-// files for either guild would break the public site. Moves to
-// config/dashboard-config.json in a later PR.
-const EXPECTED_GUILDS = ['deaths-edge', 'riot-act'];
+// The frontend requests fixed per-guild files; a snapshot missing any of the
+// triplet would break the public site. The guild list comes from
+// config/dashboard-config.json (fallback keeps the validator usable
+// standalone if the config is unreadable).
+let EXPECTED_GUILDS = ['deaths-edge', 'riot-act'];
+try {
+  EXPECTED_GUILDS = require('./lib/config').loadConfig().guilds.map(g => g.slug);
+} catch (err) {
+  // Loud fallback: a broken config must not silently shrink the guild list.
+  console.error(`WARNING: dashboard config unreadable (${err.message}); validating against fallback guild list ${EXPECTED_GUILDS.join(', ')}`);
+}
 
 function isStr(v) { return typeof v === 'string' && v.length > 0; }
 function isNum(v) { return typeof v === 'number' && Number.isFinite(v); }

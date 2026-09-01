@@ -15,7 +15,15 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const EXPECTED_GUILDS = ['deaths-edge', 'riot-act']; // → config/dashboard-config.json in PR4
+// Guild list comes from config/dashboard-config.json (fallback keeps the
+// validator usable standalone if the config is unreadable).
+let EXPECTED_GUILDS = ['deaths-edge', 'riot-act'];
+try {
+  EXPECTED_GUILDS = require('./lib/config').loadConfig().guilds.map(g => g.slug);
+} catch (err) {
+  // Loud fallback: a broken config must not silently shrink the guild list.
+  console.error(`WARNING: dashboard config unreadable (${err.message}); validating against fallback guild list ${EXPECTED_GUILDS.join(', ')}`);
+}
 const FORBIDDEN = [/authorization/i, /bearer /i, /client_secret/i, /access_token/i];
 const STATUSES = new Set(['fresh', 'degraded', 'carried_forward', 'unavailable']);
 

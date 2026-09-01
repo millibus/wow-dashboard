@@ -24,26 +24,30 @@ const {
   fetchPets,
   fetchMounts,
   fetchRaidProgress,
+  fetchRaidCatalog,
   batched,
   RAID_TIERS,
   formatMetrics,
+  getLifeStatFallbacks,
   realmSlug,
 } = require('./lib/blizzard');
 const { toSafeError, logSafeError, redact, safeCode } = require('./lib/safe-error');
 const v2 = require('./lib/snapshot-v2');
 const { validateV2Dir } = require('./validate-snapshot-v2');
+const { loadConfig } = require('./lib/config');
 
 // Load env from api/.env if present (local dev convenience)
 try { require('dotenv').config({ path: path.join(__dirname, '..', 'api', '.env') }); } catch (_) {}
 
-const GUILDS = {
-  'deaths-edge': { slug: 'deaths-edge', realm: 'onyxia', faction: 'horde' },
-  'riot-act':    { slug: 'riot-act',    realm: 'onyxia', faction: 'alliance' },
-};
+const CONFIG = loadConfig();
+require('./lib/blizzard').setRegion(CONFIG.region);
+const GUILDS = Object.fromEntries(CONFIG.guilds.map(g => [g.slug, g]));
 
 // SNAPSHOT_OUT_DIR is a test seam (write into a temp dir); production never sets it.
 const OUT_DIR = process.env.SNAPSHOT_OUT_DIR || path.join(__dirname, '..', 'docs', 'data');
-const OWNER_CONFIG = path.join(__dirname, '..', 'config', 'tracked-characters.json');
+// SNAPSHOT_TRACKED_PATH is a test seam; production never sets it.
+const OWNER_CONFIG = process.env.SNAPSHOT_TRACKED_PATH
+  || path.join(__dirname, '..', 'config', 'tracked-characters.json');
 
 function writeJson(filename, data) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -53,9 +57,39 @@ function writeJson(filename, data) {
   console.log(`  wrote ${filename} (${sizeKb} KB)`);
 }
 
+// Discover the current expansion's raid catalog, on its own cadence, carrying
+// forward the previous catalog on failure or catastrophic shrink. With neither
+// a fresh discovery nor a previous catalog, the built-in fallback keeps the
+// raid feature limping instead of silently empty.
+async function resolveCatalog(prev, warnings) {
+  const cadenceMs = CONFIG.cadencesHours.catalog * 3600e3;
+  const prevCatalog = prev?.catalog || null;
+  if (prevCatalog?.fetchedAt && Date.now() - Date.parse(prevCatalog.fetchedAt) < cadenceMs) {
+    return { ...prevCatalog, status: 'fresh' }; // within cadence — reuse is not degradation
+  }
+  try {
+    const c = await fetchRaidCatalog(CONFIG.activeExpansionId, CONFIG.tierOverrides);
+    if (!c.tiers.length) throw new Error('CATALOG_EMPTY');
+    if (prevCatalog?.tiers?.length && c.tiers.length < prevCatalog.tiers.length * 0.5) {
+      warnings.push(`CATALOG_SHRINK: discovery returned ${c.tiers.length} tiers vs previous ${prevCatalog.tiers.length}; carrying previous catalog forward`);
+      return { ...prevCatalog, status: 'carried_forward' };
+    }
+    return { ...c, status: 'fresh', fetchedAt: new Date().toISOString() };
+  } catch (err) {
+    if (prevCatalog) {
+      warnings.push(`CATALOG_DISCOVERY_FAILED (${safeCode(err)}): carrying previous catalog forward`);
+      return { ...prevCatalog, status: 'carried_forward' };
+    }
+    warnings.push(`CATALOG_DISCOVERY_FAILED (${safeCode(err)}): no previous catalog; using built-in fallback tiers`);
+    return { expansionId: CONFIG.activeExpansionId, tiers: RAID_TIERS, status: 'carried_forward', fetchedAt: null };
+  }
+}
+
 // Fetch everything for one guild. Performs NO writes — returns a structured
 // result the two writers consume. Throws only propagate as roster_failed.
-async function fetchGuild(slug) {
+// `reuse` marks components whose previous data is still within its cadence:
+// those members are not refetched (unless they have no previous data at all).
+async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
   const cfg = GUILDS[slug];
   if (!cfg) throw new Error(`Unknown guild slug: ${slug}`);
 
@@ -83,7 +117,7 @@ async function fetchGuild(slug) {
 
   console.log(`[${slug}] fetching ${members.length} character details…`);
   await batched(members, 5, async (m) => {
-    const full = await fetchCharacter(cfg.realm, m.name);
+    const full = await fetchCharacter(cfg.realm, m.name, { lifeStatDefs: CONFIG.lifeStatDefs });
     if (full) {
       m.detail = full;
       if (!m.id && full.id) m.id = full.id;
@@ -91,14 +125,34 @@ async function fetchGuild(slug) {
   }, 200);
   console.log(`[${slug}] ${members.filter(m => m.detail).length} characters populated`);
 
-  // Raid + collections for level-80+ (member cap and cadence policy → PR4).
-  const raidEligible = members.filter(m => (m.detail?.level ?? m.level) >= 80).slice(0, 35);
-  console.log(`[${slug}] fetching raid progress + collections for ${raidEligible.length} members…`);
-  await batched(raidEligible, 5, async (m) => {
+  // Expensive components (raids, collections) only for TRACKED characters at
+  // raid level, capped loudly — never a silent slice.
+  const tracked = m => !CONFIG.expensive.trackedOnly || v2.resolveOwner(ownerCfg, m) !== null;
+  let expensive = members.filter(m => (m.detail?.level ?? m.level) >= CONFIG.raidMinLevel && tracked(m));
+  if (expensive.length > CONFIG.limits.raidMemberCap) {
+    console.log(`[${slug}] WARNING: ${expensive.length} eligible members exceed raidMemberCap=${CONFIG.limits.raidMemberCap}; truncating`);
+    expensive = expensive.slice(0, CONFIG.limits.raidMemberCap);
+  }
+
+  // Cadence: within a component's window, only members with no previous data
+  // are fetched (a new tracked member should not wait a day for collections).
+  const needsFetch = (m, kind) => {
+    if (!reuse[kind] || !prevGuild) return true;
+    const key = v2.identityKey(m);
+    if (kind === 'raids') return !(prevGuild.raids?.members || []).some(r => r.id === m.id);
+    return !prevGuild.readCollection(key);
+  };
+
+  const raidTargets = expensive.filter(m => needsFetch(m, 'raids'));
+  console.log(`[${slug}] fetching raid progress for ${raidTargets.length}/${expensive.length} tracked members${reuse.raids ? ' (within cadence: reusing the rest)' : ''}…`);
+  await batched(raidTargets, 5, async (m) => {
     m.raidAttempted = true;
-    m.raid = await fetchRaidProgress(cfg.realm, m.name);
+    m.raid = await fetchRaidProgress(cfg.realm, m.name, catalog);
   }, 200);
-  await batched(raidEligible, 5, async (m) => {
+
+  const colTargets = expensive.filter(m => needsFetch(m, 'collections'));
+  console.log(`[${slug}] fetching collections for ${colTargets.length}/${expensive.length} tracked members${reuse.collections ? ' (within cadence: reusing the rest)' : ''}…`);
+  await batched(colTargets, 5, async (m) => {
     m.collectionsAttempted = true;
     const [pets, mounts] = await Promise.allSettled([
       fetchPets(cfg.realm, m.name),
@@ -108,6 +162,7 @@ async function fetchGuild(slug) {
       m.collections = { pets: pets.value, mounts: mounts.value };
     }
   }, 200);
+  for (const m of expensive) m.expensiveEligible = true;
 
   return {
     status: 'ok',
@@ -122,7 +177,7 @@ async function fetchGuild(slug) {
 // Legacy writer — derives the old file shapes from the MERGED view, so
 // carry-forward protects the legacy frontend too (no more silently-emptied
 // equipment overwriting good data).
-function writeLegacy(slug, merged, guildName, faction) {
+function writeLegacy(slug, merged, guildName, faction, catalogTiers) {
   const legacyMembers = [];
   for (const summary of merged.roster.members) {
     const key = v2.identityKey(summary);
@@ -147,7 +202,7 @@ function writeLegacy(slug, merged, guildName, faction) {
     lastUpdated: new Date().toISOString(),
   });
   writeJson(`raid-${slug}.json`, {
-    tiers: RAID_TIERS,
+    tiers: catalogTiers,
     members: merged.raids.members.map(r => ({ name: r.name, realm: 'Onyxia', tiers: r.tiers })),
   });
   const legacyCollections = {};
@@ -203,24 +258,50 @@ async function main() {
   if (!prev) console.log('No valid previous V2 snapshot — carry-forward unavailable this run.');
   const ownerCfg = v2.loadOwnerConfig(OWNER_CONFIG);
 
-  const guildOutputs = { startedAt, guilds: {} };
+  const warnings = [];
+  const catalog = await resolveCatalog(prev, warnings);
+  console.log(`Raid catalog: ${catalog.status}, ${catalog.tiers.length} tiers (expansion ${catalog.expansionId ?? '?'})`);
+
+  const guildOutputs = { startedAt, guilds: {}, warnings, catalog };
   const legacyPlan = [];
   for (const slug of slugs) {
+    const prevGuild = prev?.guilds?.[slug] || null;
+    // A component's previous data within its cadence is reused, not refetched.
+    const withinCadence = kind => {
+      const at = prevGuild?.meta?.componentFetchedAt?.[kind];
+      return Boolean(at && Date.now() - Date.parse(at) < CONFIG.cadencesHours[kind] * 3600e3);
+    };
+    const reuse = { raids: withinCadence('raids'), collections: withinCadence('collections') };
+
     let result;
     try {
-      result = await fetchGuild(slug);
+      result = await fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg);
     } catch (err) {
       logSafeError(`[${slug}] fetch failed`, err);
       result = { status: 'roster_failed', slug, error: safeCode(err) };
     }
-    const merged = v2.mergeGuild(slug, result, prev?.guilds?.[slug] || null, ownerCfg, { sanityOverride });
+    const merged = v2.mergeGuild(slug, result, prevGuild, ownerCfg, {
+      sanityOverride,
+      limits: CONFIG.limits,
+      reuse,
+      prevFetchedAt: prevGuild?.meta?.componentFetchedAt || {},
+    });
     if (merged.errors?.length) console.log(`[${slug}] status=${merged.status} errors=${merged.errors.join(',')}`);
     else console.log(`[${slug}] status=${merged.status}`);
+
+    // Level-cap drift guard: a new expansion raised the cap and the config
+    // was not updated — warn loudly instead of silently miscounting.
+    const maxLevel = Math.max(0, ...(merged.roster?.members || []).map(m => m.level || 0));
+    if (maxLevel > CONFIG.levelCap) {
+      warnings.push(`LEVEL_CAP_DRIFT: observed level ${maxLevel} in ${slug} exceeds configured levelCap ${CONFIG.levelCap} — update config/dashboard-config.json`);
+    }
+
     guildOutputs.guilds[slug] = merged;
     if (merged.status !== 'unavailable') {
       legacyPlan.push({ slug, merged, guildName: merged.roster.guild, faction: merged.roster.faction || GUILDS[slug].faction });
     }
   }
+  for (const w of warnings) console.log(`WARNING ${redact(w)}`);
 
   const anyPublishable = Object.values(guildOutputs.guilds).some(g => g.status !== 'unavailable');
   if (!anyPublishable) {
@@ -244,10 +325,14 @@ async function main() {
 
   // Legacy layer, derived from the same merged view.
   for (const { slug, merged, guildName, faction } of legacyPlan) {
-    writeLegacy(slug, merged, guildName, faction);
+    writeLegacy(slug, merged, guildName, faction, catalog.tiers);
   }
   writeJson('generated-at.json', { ts: new Date().toISOString() });
 
+  const fallbacks = getLifeStatFallbacks();
+  if (fallbacks.length) {
+    console.log(`WARNING LIFE_STAT_NAME_FALLBACK: matched by display name instead of id: ${fallbacks.join(', ')} — backfill ids in config/dashboard-config.json`);
+  }
   console.log(`\nAPI metrics: ${formatMetrics()}`);
   const degraded = Object.values(guildOutputs.guilds).some(g => g.status !== 'fresh');
   console.log(degraded ? 'Done (degraded — some components carried forward or unavailable).' : 'Done.');

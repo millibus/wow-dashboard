@@ -193,10 +193,12 @@
       {
         "statistics": [
           {
+            "id": 60,
             "name": "Total deaths",
             "quantity": 123
           },
           {
+            "id": 98,
             "name": "Quests completed",
             "quantity": 2500
           }
@@ -205,6 +207,7 @@
           {
             "statistics": [
               {
+                "id": 114,
                 "name": "Deaths from falling",
                 "quantity": 7
               },
@@ -477,10 +480,12 @@
       {
         "statistics": [
           {
+            "id": 60,
             "name": "Total deaths",
             "quantity": 123
           },
           {
+            "id": 98,
             "name": "Quests completed",
             "quantity": 2500
           }
@@ -489,6 +494,7 @@
           {
             "statistics": [
               {
+                "id": 114,
                 "name": "Deaths from falling",
                 "quantity": 7
               },
@@ -761,10 +767,12 @@
       {
         "statistics": [
           {
+            "id": 60,
             "name": "Total deaths",
             "quantity": 123
           },
           {
+            "id": 98,
             "name": "Quests completed",
             "quantity": 2500
           }
@@ -773,6 +781,7 @@
           {
             "statistics": [
               {
+                "id": 114,
                 "name": "Deaths from falling",
                 "quantity": 7
               },
@@ -1074,10 +1083,12 @@
       {
         "statistics": [
           {
+            "id": 60,
             "name": "Total deaths",
             "quantity": 123
           },
           {
+            "id": 98,
             "name": "Quests completed",
             "quantity": 2500
           }
@@ -1086,6 +1097,7 @@
           {
             "statistics": [
               {
+                "id": 114,
                 "name": "Deaths from falling",
                 "quantity": 7
               },
@@ -1358,10 +1370,12 @@
       {
         "statistics": [
           {
+            "id": 60,
             "name": "Total deaths",
             "quantity": 123
           },
           {
+            "id": 98,
             "name": "Quests completed",
             "quantity": 2500
           }
@@ -1370,6 +1384,7 @@
           {
             "statistics": [
               {
+                "id": 114,
                 "name": "Deaths from falling",
                 "quantity": 7
               },
@@ -1496,6 +1511,38 @@
             ]
           }
         ]
+      }
+    ]
+  },
+  "/data/wow/journal-expansion/index": {
+    "tiers": [
+      {
+        "id": 505,
+        "name": "The War Within"
+      }
+    ]
+  },
+  "/data/wow/journal-expansion/505": {
+    "id": 505,
+    "name": "The War Within",
+    "raids": [
+      {
+        "id": 1296,
+        "name": "Liberation of Undermine"
+      }
+    ]
+  },
+  "/data/wow/journal-instance/1296": {
+    "id": 1296,
+    "name": "Liberation of Undermine",
+    "encounters": [
+      {
+        "id": 2639,
+        "name": "Vexie and the Geargrinders"
+      },
+      {
+        "id": 2640,
+        "name": "Cauldron of Carnage"
       }
     ]
   }

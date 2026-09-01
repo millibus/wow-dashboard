@@ -20,11 +20,13 @@ async function startFixtureApi(opts = {}) {
   const { fixturesPath = DEFAULT_FIXTURES, mutate, overrides = {} } = opts;
   let fixtures = JSON.parse(fs.readFileSync(fixturesPath, 'utf8'));
   if (mutate) fixtures = mutate(fixtures) || fixtures;
+  const hits = {}; // decoded pathname → request count, for cadence assertions
   const server = http.createServer((req, res) => {
     let pathname;
     try { pathname = new URL(req.url, 'http://x').pathname; }
     catch (_) { pathname = String(req.url).split('?')[0]; }
     try { pathname = decodeURIComponent(pathname); } catch (_) { /* keep encoded */ }
+    hits[pathname] = (hits[pathname] || 0) + 1;
     const override = overrides[pathname];
     if (override) {
       res.writeHead(override.status || 500, { 'Content-Type': 'application/json' });
@@ -41,7 +43,7 @@ async function startFixtureApi(opts = {}) {
     res.end(JSON.stringify(body));
   });
   await listen(server);
-  return { server, base: `http://127.0.0.1:${server.address().port}` };
+  return { server, base: `http://127.0.0.1:${server.address().port}`, hits };
 }
 
 async function startFakeOauth() {

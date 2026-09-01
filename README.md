@@ -113,8 +113,14 @@ gh workflow run refresh-data.yml -R millibus/wow-dashboard
 gh run watch -R millibus/wow-dashboard
 ```
 
+## Configuration (`config/dashboard-config.json`)
+
+Single source of truth for everything expansion- or guild-shaped: region, `activeExpansionId`, `levelCap` (the drift guard warns when the roster outgrows it), guild list, sanity limits, per-component fetch cadences, raid tier overrides, and life-stat definitions (id-first matching; keys that fall back to name matching are logged as `LIFE_STAT_NAME_FALLBACK` so ids can be backfilled). Raid tiers themselves are discovered from the Blizzard journal API each day — a new raid appears without a code change.
+
+**When a new expansion ships:** update `activeExpansionId` and `levelCap` here. Nothing else.
+
 ## Adding a guild
-Edit `GUILDS` in `api/server.js` and `scripts/build-snapshot.js`, plus `currentGuildSlug` defaults / titles in `docs/app.js`.
+Edit `guilds` in `config/dashboard-config.json`, plus `currentGuildSlug` defaults / titles in `docs/app.js` (legacy UI). `api/server.js` still carries its own `GUILDS` map until the VPS is retired.
 
 ## Adding an owner mapping
 Edit `OWNER_MAP` in `docs/app.js`.
