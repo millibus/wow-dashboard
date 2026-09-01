@@ -34,7 +34,7 @@ function loadConfig() {
   if (cached && cachedPath === p) return cached;
   let raw = {};
   try { raw = JSON.parse(fs.readFileSync(p, 'utf8')); }
-  catch (err) { throw new Error(`dashboard config unreadable at ${p}`); }
+  catch (err) { throw new Error(`dashboard config unreadable at ${p}: ${err.message}`); }
   cached = {
     ...DEFAULTS,
     ...raw,

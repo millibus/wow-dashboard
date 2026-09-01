@@ -21,7 +21,10 @@ const path = require('path');
 let EXPECTED_GUILDS = ['deaths-edge', 'riot-act'];
 try {
   EXPECTED_GUILDS = require('./lib/config').loadConfig().guilds.map(g => g.slug);
-} catch (_) { /* keep fallback */ }
+} catch (err) {
+  // Loud fallback: a broken config must not silently shrink the guild list.
+  console.error(`WARNING: dashboard config unreadable (${err.message}); validating against fallback guild list ${EXPECTED_GUILDS.join(', ')}`);
+}
 
 function isStr(v) { return typeof v === 'string' && v.length > 0; }
 function isNum(v) { return typeof v === 'number' && Number.isFinite(v); }
