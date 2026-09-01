@@ -99,6 +99,28 @@ h1 {
   font-size: 0.72rem;
   color: var(--text-dim);
 }
+.last-updated.is-stale { color: #f6cd85; font-weight: 600; }
+.last-updated.is-alert { color: #ff6b5c; font-weight: 700; }
+
+/* Stale-data banner — the loud counterpart to the small header timestamp. */
+.stale-banner {
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  text-align: center;
+  line-height: 1.4;
+}
+.stale-banner[hidden] { display: none; }
+.stale-banner.is-warn {
+  background: rgba(240, 179, 78, 0.12);
+  border-bottom: 1px solid rgba(240, 179, 78, 0.4);
+  color: #f6cd85;
+}
+.stale-banner.is-alert {
+  background: rgba(231, 76, 60, 0.14);
+  border-bottom: 1px solid rgba(231, 76, 60, 0.45);
+  color: #ff8a7d;
+}
+.stale-banner a { color: inherit; font-weight: 700; }
 
 /* Guild stats bar in header */
 .guild-stats {
