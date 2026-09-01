@@ -2,11 +2,12 @@ name: Refresh dashboard data
 
 on:
   schedule:
-    - cron: '0 * * * *'  # hourly
+    - cron: '17 * * * *'  # hourly at :17 — off GitHub's congested :00 spike
   workflow_dispatch:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: refresh-data
@@ -17,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: api/package-lock.json
 
@@ -29,7 +30,11 @@ jobs:
         working-directory: api
         run: npm ci
 
+      - name: Run tests
+        run: node --test scripts/test/*.test.js
+
       - name: Build snapshot
+        id: build
         env:
           BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
           BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
@@ -42,3 +47,20 @@ jobs:
           commit_user_name: 'wow-dashboard-bot'
           commit_user_email: 'wow-dashboard-bot@users.noreply.github.com'
           file_pattern: 'docs/data/*.json'
+
+      - name: Report pipeline failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAILURE_CODE: ${{ steps.build.outputs.failure_code || 'UNKNOWN' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/report-failure.sh
+
+      - name: Close incident on recovery
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/scripts/close-failure-issue.sh

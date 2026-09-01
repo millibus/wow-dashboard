@@ -4,9 +4,12 @@
 // no Express, no NodeCache — so it imports cleanly from anywhere.
 
 const axios = require('axios');
+const { safeCode } = require('../scripts/lib/safe-error');
 
-const BASE = 'https://us.api.blizzard.com';
-const OAUTH_URL = 'https://oauth.battle.net/token';
+// Env overrides exist only so tests can point at a local fake server —
+// production never sets them.
+const BASE = process.env.BLIZZARD_API_BASE || 'https://us.api.blizzard.com';
+const OAUTH_URL = process.env.BLIZZARD_OAUTH_URL || 'https://oauth.battle.net/token';
 
 let tokenData = null;
 
@@ -265,7 +268,7 @@ async function fetchRaidProgress(realm, name) {
 
     return result;
   } catch (err) {
-    return { name, realm, tiers: [], error: err.message };
+    return { name, realm, tiers: [], error: safeCode(err) };
   }
 }
 

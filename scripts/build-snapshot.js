@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const {
   bnet,
+  getToken,
   fetchCharacter,
   fetchPets,
   fetchMounts,
@@ -16,6 +17,7 @@ const {
   batched,
   RAID_TIERS,
 } = require('../api/blizzard');
+const { toSafeError, logSafeError, redact } = require('./lib/safe-error');
 
 // Load env from api/.env if present (local dev convenience)
 try { require('dotenv').config({ path: path.join(__dirname, '..', 'api', '.env') }); } catch (_) {}
@@ -100,7 +102,41 @@ async function buildGuildSnapshot(slug) {
   writeJson(`collections-${slug}.json`, collections);
 }
 
+// Expose the failure class to the workflow's alert step (used as the
+// incident-issue fingerprint). No-op outside GitHub Actions.
+function recordFailureCode(code) {
+  if (process.env.GITHUB_OUTPUT) {
+    fs.appendFileSync(process.env.GITHUB_OUTPUT, `failure_code=${code}\n`);
+  }
+}
+
+// One token request before any data fetch. A 401/403 here means the client
+// credentials themselves are bad — fail immediately with a compact code
+// instead of hammering every endpoint and leaking failure details per call.
+async function oauthPreflight() {
+  try {
+    await getToken();
+    console.log('OAuth preflight: ok');
+  } catch (err) {
+    const status = err?.response?.status;
+    if (status === 401 || status === 403) {
+      recordFailureCode('AUTH_BAD_CREDENTIALS');
+      console.error(redact(
+        `ERROR AUTH_BAD_CREDENTIALS: Blizzard rejected the OAuth client credentials (HTTP ${status}). ` +
+        'Rotate BLIZZARD_CLIENT_ID / BLIZZARD_CLIENT_SECRET (see README) and re-run the workflow.'
+      ));
+    } else {
+      const code = toSafeError(err).code;
+      recordFailureCode(code);
+      logSafeError('ERROR OAuth preflight failed before any data was fetched', err);
+    }
+    process.exit(1);
+  }
+}
+
 async function main() {
+  await oauthPreflight();
+
   const slugs = Object.keys(GUILDS);
   console.log(`Building snapshots for: ${slugs.join(', ')}`);
 
@@ -113,6 +149,7 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error('Snapshot build failed:', err);
+  recordFailureCode(toSafeError(err).code);
+  logSafeError('Snapshot build failed', err);
   process.exit(1);
 });
