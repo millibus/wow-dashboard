@@ -5,18 +5,20 @@ on:
     - cron: '17 * * * *'  # hourly at :17 — off GitHub's congested :00 spike
   workflow_dispatch:
 
-permissions:
-  contents: write
-  issues: write
-
 concurrency:
   group: refresh-data
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  # Build and validate with read-only permissions; the snapshot travels to the
+  # commit/deploy jobs as an artifact so only they need write scopes.
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      failure_code: ${{ steps.build.outputs.failure_code }}
     steps:
       - uses: actions/checkout@v5
 
@@ -31,7 +33,7 @@ jobs:
         run: npm ci
 
       - name: Run tests
-        run: node --test scripts/test/*.test.js
+        run: npm test
 
       - name: Build snapshot
         id: build
@@ -40,25 +42,117 @@ jobs:
           BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
         run: node scripts/build-snapshot.js
 
-      - name: Commit snapshot
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'chore(data): refresh snapshot [skip ci]'
-          commit_user_name: 'wow-dashboard-bot'
-          commit_user_email: 'wow-dashboard-bot@users.noreply.github.com'
-          file_pattern: 'docs/data/*.json'
+      - name: Validate snapshot
+        run: node scripts/validate-snapshot.js docs/data
 
-      - name: Report pipeline failure
-        if: failure()
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-data
+          path: docs/data/*.json
+          retention-days: 3
+          if-no-files-found: error
+
+  commit:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download validated snapshot
+        uses: actions/download-artifact@v4
+        with:
+          name: snapshot-data
+          path: docs/data
+
+      - name: Commit snapshot if changed
+        run: |
+          git config user.name 'wow-dashboard-bot'
+          git config user.email 'wow-dashboard-bot@users.noreply.github.com'
+          git add -A docs/data
+          if git diff --cached --quiet; then
+            echo "Snapshot unchanged; nothing to commit."
+            exit 0
+          fi
+          git commit -m 'chore(data): refresh snapshot [skip ci]'
+          # Another run may have pushed between checkout and now; rebase once.
+          git push || (git pull --rebase origin "${GITHUB_REF_NAME}" && git push)
+
+  # Deploys the exact validated artifact. No-ops (with a notice) until the
+  # repository's Pages source is switched to "GitHub Actions" in Settings →
+  # Pages — a user-gated change; until then the site keeps serving from the
+  # branch as before.
+  deploy:
+    needs: [build, commit]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check Pages source mode
+        id: pages
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          FAILURE_CODE: ${{ steps.build.outputs.failure_code || 'UNKNOWN' }}
+        run: |
+          mode=$(gh api "repos/${GH_REPO}/pages" --jq .build_type 2>/dev/null || echo "unknown")
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          if [ "$mode" != "workflow" ]; then
+            echo "Pages source is '${mode}', not 'workflow' — skipping deploy." \
+                 "Flip Settings → Pages → Source to 'GitHub Actions' to enable atomic deploys."
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.pages.outputs.mode == 'workflow'
+
+      - name: Download validated snapshot
+        if: steps.pages.outputs.mode == 'workflow'
+        uses: actions/download-artifact@v4
+        with:
+          name: snapshot-data
+          path: docs/data
+
+      - name: Upload Pages artifact
+        if: steps.pages.outputs.mode == 'workflow'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy to GitHub Pages
+        if: steps.pages.outputs.mode == 'workflow'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  alert:
+    needs: [build, commit, deploy]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Report pipeline failure
+        if: needs.build.result == 'failure' || needs.commit.result == 'failure' || needs.deploy.result == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAILURE_CODE: ${{ needs.build.outputs.failure_code || 'UNKNOWN' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: bash .github/scripts/report-failure.sh
 
       - name: Close incident on recovery
-        if: success()
+        if: needs.build.result == 'success' && needs.commit.result == 'success'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}

@@ -27,7 +27,8 @@ const GUILDS = {
   'riot-act':    { slug: 'riot-act',    realm: 'onyxia', faction: 'alliance' },
 };
 
-const OUT_DIR = path.join(__dirname, '..', 'docs', 'data');
+// SNAPSHOT_OUT_DIR is a test seam (write into a temp dir); production never sets it.
+const OUT_DIR = process.env.SNAPSHOT_OUT_DIR || path.join(__dirname, '..', 'docs', 'data');
 
 function writeJson(filename, data) {
   fs.mkdirSync(OUT_DIR, { recursive: true });
