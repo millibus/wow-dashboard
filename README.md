@@ -75,6 +75,26 @@ pm2 start ecosystem.config.js
 
 The VPS path is independent of the public GitHub Pages site — both can run simultaneously, and the frontend prefers snapshots when present.
 
+### When the refresh pipeline fails
+
+Failures open (and update) a single GitHub issue labeled `pipeline-failure`; it closes itself on the next successful run. The most common failure:
+
+- **`AUTH_BAD_CREDENTIALS`** — Blizzard rejected the OAuth client. Regenerate the client secret at <https://develop.battle.net/access/clients>, verify it works:
+
+  ```bash
+  curl -u "$CLIENT_ID:$CLIENT_SECRET" -d grant_type=client_credentials https://oauth.battle.net/token
+  ```
+
+  then update both secrets and re-run:
+
+  ```bash
+  gh secret set BLIZZARD_CLIENT_ID -R millibus/wow-dashboard
+  gh secret set BLIZZARD_CLIENT_SECRET -R millibus/wow-dashboard
+  gh workflow run refresh-data.yml -R millibus/wow-dashboard
+  ```
+
+Pipeline logs are sanitized: errors are reduced to a safe code/status/path line (`scripts/lib/safe-error.js`) — never log raw error, request, or config objects in pipeline code.
+
 ### Manually trigger a refresh
 
 ```bash
