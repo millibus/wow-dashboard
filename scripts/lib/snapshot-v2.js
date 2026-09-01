@@ -26,7 +26,9 @@ const crypto = require('crypto');
 const SCHEMA_VERSION = 2;
 const REGION = 'us';
 const EXPECTED_REFRESH_MINUTES = 60;
-const LIMITS = { minMembers: 2, maxShrinkPercent: 40 }; // → config/dashboard-config.json in PR4
+// Fallback only — config/dashboard-config.json `limits` is authoritative and
+// is passed in via mergeGuild opts.
+const LIMITS = { minMembers: 2, maxShrinkPercent: 40 };
 
 function identityKey(m) { return `${REGION}-${m.realmSlug}-${m.id}`; }
 function sha256(buf) { return crypto.createHash('sha256').update(buf).digest('hex'); }
@@ -83,7 +85,11 @@ function loadPrevSnapshot(v2Root) {
         readCollection: key => readJson(`collections/${slug}/${key}.json`),
       };
     }
-    return { manifest, guilds };
+    const catalogFile = readJson('raid-catalog.json');
+    const catalog = catalogFile
+      ? { ...catalogFile, fetchedAt: manifest.catalog?.fetchedAt || catalogFile.fetchedAt || null }
+      : null;
+    return { manifest, guilds, catalog };
   } catch (_) {
     return null;
   }
@@ -125,7 +131,10 @@ function summarizeMember(m, detail, owner) {
 //           Map<key, file>, collectionsIndex, raids, counts, errors }
 function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
   const now = new Date().toISOString();
-  const counts = { attempted: 0, succeeded: 0, failed: 0, carriedForward: 0 };
+  const limits = opts.limits || LIMITS;
+  const reuse = opts.reuse || {};
+  const prevFetchedAt = opts.prevFetchedAt || {};
+  const counts = { attempted: 0, succeeded: 0, failed: 0, carriedForward: 0, reusedWithinCadence: 0 };
   const errors = [];
 
   // Roster failed entirely → carry the whole previous guild forward.
@@ -149,6 +158,7 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
       characters, collections,
       collectionsIndex: prevGuild.collectionsIndex || { characters: {} },
       raids: prevGuild.raids || { members: [] },
+      fetchedAt: { ...prevFetchedAt },
       counts, errors: [result.error || 'ROSTER_FAILED'],
     };
   }
@@ -156,11 +166,11 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
   // Sanity guards against a catastrophically shrunken fresh roster.
   const freshCount = result.members.length;
   const prevCount = prevGuild ? prevGuild.roster.members.length : null;
-  const floorBroken = freshCount < LIMITS.minMembers;
-  const shrinkBroken = prevCount !== null && freshCount < prevCount * (1 - LIMITS.maxShrinkPercent / 100);
+  const floorBroken = freshCount < limits.minMembers;
+  const shrinkBroken = prevCount !== null && freshCount < prevCount * (1 - limits.maxShrinkPercent / 100);
   if ((floorBroken || shrinkBroken) && !opts.sanityOverride) {
     const reason = floorBroken
-      ? `SANITY_MEMBER_FLOOR (${freshCount} < ${LIMITS.minMembers})`
+      ? `SANITY_MEMBER_FLOOR (${freshCount} < ${limits.minMembers})`
       : `SANITY_ROSTER_SHRINK (${freshCount} vs previous ${prevCount})`;
     if (prevGuild) {
       const carried = mergeGuild(slug, { status: 'roster_failed', error: reason }, prevGuild, ownerCfg, opts);
@@ -228,11 +238,17 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
       : 'carried_forward';
 
     // --- collections ---
+    // Not attempted + previous data + within cadence → deliberate reuse (fresh,
+    // not degradation). Attempted-and-failed → carry forward (degraded).
     let col = m.collections;
     let colStatus = col ? 'fresh' : 'unavailable';
     if (!col && prevGuild) {
       const prevCol = prevGuild.readCollection(key);
-      if (prevCol) { col = prevCol; colStatus = 'carried_forward'; counts.carriedForward += 1; guildDegraded = true; }
+      if (prevCol && !m.collectionsAttempted && reuse.collections) {
+        col = prevCol; colStatus = 'fresh'; counts.reusedWithinCadence += 1;
+      } else if (prevCol) {
+        col = prevCol; colStatus = 'carried_forward'; counts.carriedForward += 1; guildDegraded = true;
+      }
     }
     if (!col && m.collectionsAttempted) guildDegraded = true;
 
@@ -241,7 +257,11 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     let raidStatus = raid ? 'fresh' : 'unavailable';
     if (!raid && prevGuild?.raids) {
       const prevRaid = (prevGuild.raids.members || []).find(r => r.id === m.id);
-      if (prevRaid) { raid = prevRaid; raidStatus = 'carried_forward'; counts.carriedForward += 1; guildDegraded = true; }
+      if (prevRaid && !m.raidAttempted && reuse.raids) {
+        raid = prevRaid; raidStatus = 'fresh'; counts.reusedWithinCadence += 1;
+      } else if (prevRaid) {
+        raid = prevRaid; raidStatus = 'carried_forward'; counts.carriedForward += 1; guildDegraded = true;
+      }
     }
     if (m.raid?.error) { errors.push(m.raid.error); guildDegraded = true; }
 
@@ -276,7 +296,18 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     if (raid) raids.members.push({ id: m.id, name: m.name, status: raidStatus, tiers: raid.tiers || [] });
   }
 
-  return { status: guildDegraded ? 'degraded' : 'fresh', roster, characters, collections, collectionsIndex, raids, counts, errors };
+  return {
+    status: guildDegraded ? 'degraded' : 'fresh',
+    roster, characters, collections, collectionsIndex, raids,
+    // Per-component fetch times drive the cadence policy on the next run: a
+    // within-cadence reuse keeps the previous timestamp, a real fetch stamps now.
+    fetchedAt: {
+      roster: now,
+      raids: reuse.raids ? (prevFetchedAt.raids || now) : now,
+      collections: reuse.collections ? (prevFetchedAt.collections || now) : now,
+    },
+    counts, errors,
+  };
 }
 
 // Build the staging tree and return { stagingDir, manifest }.
@@ -311,12 +342,18 @@ function buildStaging(outRoot, guildOutputs) {
       counts: g.counts,
       errors: g.errors.slice(0, 10),
       sourceUpdatedAt: g.roster.updatedAt || g.roster.carriedForwardAt || null,
+      componentFetchedAt: g.fetchedAt || {},
       files: {
         roster: `guilds/${slug}.json`,
         raids: `raids/${slug}.json`,
         collectionsIndex: `collections/${slug}/index.json`,
       },
     };
+  }
+
+  if (guildOutputs.catalog) {
+    const { status, ...catalogFile } = guildOutputs.catalog;
+    writeFile('raid-catalog.json', catalogFile);
   }
 
   const statuses = Object.values(manifestGuilds).map(g => g.status);
@@ -332,6 +369,13 @@ function buildStaging(outRoot, guildOutputs) {
     overallStatus,
     expectedRefreshMinutes: EXPECTED_REFRESH_MINUTES,
     region: REGION,
+    warnings: guildOutputs.warnings || [],
+    catalog: guildOutputs.catalog ? {
+      status: guildOutputs.catalog.status,
+      fetchedAt: guildOutputs.catalog.fetchedAt || null,
+      expansionId: guildOutputs.catalog.expansionId ?? null,
+      tiers: guildOutputs.catalog.tiers.length,
+    } : null,
     guilds: manifestGuilds,
     files,
   };
@@ -351,6 +395,6 @@ function publishStaging(outRoot, stagingDir) {
 
 module.exports = {
   SCHEMA_VERSION, REGION, LIMITS,
-  identityKey, loadOwnerConfig, loadPrevSnapshot,
+  identityKey, loadOwnerConfig, resolveOwner, loadPrevSnapshot,
   mergeGuild, buildStaging, publishStaging,
 };

@@ -284,7 +284,32 @@ function realmSlug(realm) {
   return realm.toLowerCase().replace(/'/g, '').replace(/\s+/g, '-');
 }
 
-async function fetchCharacter(realm, name) {
+// Life stats are matched by statistic ID when configured (stable across
+// Blizzard renames/localization) and by English display name otherwise; keys
+// that had to fall back to a name match are recorded so the build can log one
+// aggregate warning instead of failing silently when Blizzard renames one.
+const DEFAULT_LIFE_STAT_DEFS = [
+  { key: 'totalDeaths', id: null, name: 'Total deaths' },
+  { key: 'deathsFromFalling', id: null, name: 'Deaths from falling' },
+  { key: 'deathsFromPlayers', id: null, name: 'Total deaths from other players' },
+  { key: 'deathsInDungeons', id: null, name: 'Total deaths in dungeons' },
+  { key: 'deathsInRaids', id: null, name: 'Total deaths in raids' },
+  { key: 'killingBlows', id: null, name: 'Total Killing Blows' },
+  { key: 'creaturesKilled', id: null, name: 'Creatures killed' },
+  { key: 'crittersKilled', id: null, name: 'Critters killed' },
+  { key: 'questsCompleted', id: null, name: 'Quests completed' },
+  { key: 'questsAbandoned', id: null, name: 'Quests abandoned' },
+  { key: 'flightPaths', id: null, name: 'Flight paths taken' },
+  { key: 'timesHearthed', id: null, name: 'Number of times hearthed' },
+  { key: 'honorableKills', id: null, name: 'Total Honorable Kills' },
+  { key: 'dungeonsEntered', id: null, name: 'Total 5-player dungeons entered' },
+  { key: 'delvesCompleted', id: null, name: 'Total delves completed' },
+];
+const lifeStatNameFallbacks = new Set();
+function getLifeStatFallbacks() { return [...lifeStatNameFallbacks]; }
+
+async function fetchCharacter(realm, name, opts = {}) {
+  const lifeStatDefs = opts.lifeStatDefs?.length ? opts.lifeStatDefs : DEFAULT_LIFE_STAT_DEFS;
   const encoded = encodeURIComponent(name.toLowerCase());
   const slug = realmSlug(realm);
 
@@ -306,15 +331,34 @@ async function fetchCharacter(realm, name) {
   const mainRawUrl = mediaAssets.find(a => a.key === 'main-raw')?.value || null;
 
   const achData = achStats.status === 'fulfilled' ? achStats.value : {};
-  const achMap = {};
+  const achByName = {};
+  const achById = {};
   (function extract(categories) {
     for (const cat of (categories || [])) {
       for (const stat of (cat.statistics || [])) {
-        if (stat.quantity > 0) achMap[stat.name] = stat.quantity;
+        if (stat.quantity > 0) {
+          achByName[stat.name] = stat.quantity;
+          if (stat.id !== undefined) achById[stat.id] = stat.quantity;
+        }
       }
       extract(cat.sub_categories || []);
     }
   })(achData.categories || []);
+
+  const lifeStat = def => {
+    if (def.id !== null && def.id !== undefined && achById[def.id] !== undefined) return achById[def.id];
+    if (achByName[def.name] !== undefined) {
+      if (def.id !== null && def.id !== undefined) lifeStatNameFallbacks.add(def.key);
+      return achByName[def.name];
+    }
+    return 0;
+  };
+  const lifeStats = {};
+  for (const def of lifeStatDefs) lifeStats[def.key] = lifeStat(def);
+  lifeStats.raidsEntered = (achByName['Total 10-player raids entered'] || 0) + (achByName['Total 25-player raids entered'] || 0);
+  lifeStats.bossesDefeated = Object.entries(achByName)
+    .filter(([k]) => /bosses defeated/i.test(k) && /player/i.test(k))
+    .reduce((sum, [, v]) => sum + v, 0);
 
   const items = (eq.equipped_items || []).map(item => ({
     slot: item.slot?.name || '?',
@@ -370,28 +414,41 @@ async function fetchCharacter(realm, name) {
       vers: parseFloat((st.versatility_damage_done_bonus || 0).toFixed(1)),
       armor: st.armor?.effective || 0,
     },
-    lifeStats: {
-      totalDeaths: achMap['Total deaths'] || 0,
-      deathsFromFalling: achMap['Deaths from falling'] || 0,
-      deathsFromPlayers: achMap['Total deaths from other players'] || 0,
-      deathsInDungeons: achMap['Total deaths in dungeons'] || 0,
-      deathsInRaids: achMap['Total deaths in raids'] || 0,
-      killingBlows: achMap['Total Killing Blows'] || 0,
-      creaturesKilled: achMap['Creatures killed'] || 0,
-      crittersKilled: achMap['Critters killed'] || 0,
-      questsCompleted: achMap['Quests completed'] || 0,
-      questsAbandoned: achMap['Quests abandoned'] || 0,
-      flightPaths: achMap['Flight paths taken'] || 0,
-      timesHearthed: achMap['Number of times hearthed'] || 0,
-      honorableKills: achMap['Total Honorable Kills'] || 0,
-      dungeonsEntered: achMap['Total 5-player dungeons entered'] || 0,
-      delvesCompleted: achMap['Total delves completed'] || 0,
-      raidsEntered: (achMap['Total 10-player raids entered'] || 0) + (achMap['Total 25-player raids entered'] || 0),
-      bossesDefeated: Object.entries(achMap)
-        .filter(([k]) => /bosses defeated/i.test(k) && /player/i.test(k))
-        .reduce((sum, [, v]) => sum + v, 0),
-    },
+    lifeStats,
   };
+}
+
+// --- Dynamic raid catalog (journal API) --------------------------------------
+// Discovers the raid instances + encounters of ONE configured expansion, so a
+// new tier appears without a code change. Overrides supply short names and
+// season labels per journal instance id; unknown tiers get derived shorts.
+
+function deriveShort(name) {
+  const words = name.split(/\s+/).filter(w => !/^(of|the|and|a|an)$/i.test(w));
+  if (words.length === 1) return words[0].slice(0, 8);
+  return words.map(w => w[0].toUpperCase()).join('');
+}
+
+async function fetchRaidCatalog(expansionId, tierOverrides = {}) {
+  const ns = `static-${process.env.BLIZZARD_REGION || 'us'}`;
+  const expansion = await bnet(`/data/wow/journal-expansion/${expansionId}?namespace=${ns}`);
+  const tiers = [];
+  for (const raid of (expansion.raids || [])) {
+    const inst = await bnet(`/data/wow/journal-instance/${raid.id}?namespace=${ns}`);
+    const override = tierOverrides[String(raid.id)] || {};
+    tiers.push({
+      id: raid.id,
+      name: raid.name,
+      short: override.short || deriveShort(raid.name),
+      season: override.season || null,
+      bosses: (inst.encounters || []).map(e => ({
+        id: e.id,
+        name: e.name,
+        short: e.name.split(/[,\s]+/)[0],
+      })),
+    });
+  }
+  return { expansionId, expansionName: expansion.name || null, tiers };
 }
 
 async function fetchPets(realm, name) {
@@ -474,7 +531,8 @@ const RAID_TIERS = [
   },
 ];
 
-async function fetchRaidProgress(realm, name) {
+async function fetchRaidProgress(realm, name, catalog = RAID_TIERS) {
+  const tierDefs = Array.isArray(catalog) ? catalog : (catalog.tiers || []);
   const slug = realmSlug(realm);
   const encoded = encodeURIComponent(name.toLowerCase());
   const { safeCode } = require('./safe-error');
@@ -485,7 +543,7 @@ async function fetchRaidProgress(realm, name) {
 
     for (const exp of expansions) {
       for (const inst of (exp.instances || [])) {
-        const tierDef = RAID_TIERS.find(t => t.id === inst.instance?.id);
+        const tierDef = tierDefs.find(t => t.id === inst.instance?.id);
         if (!tierDef) continue;
         const tierResult = {
           id: tierDef.id,
@@ -531,14 +589,16 @@ module.exports = {
   invalidateToken,
   getMetrics,
   formatMetrics,
+  getLifeStatFallbacks,
   calcAvgIlvl,
   realmSlug,
   fetchCharacter,
   fetchPets,
   fetchMounts,
   fetchRaidProgress,
+  fetchRaidCatalog,
   batched,
-  RAID_TIERS,
+  RAID_TIERS, // legacy fallback catalog; api/server.js still exports it
   AuthBadCredentialsError,
   HttpError,
 };
