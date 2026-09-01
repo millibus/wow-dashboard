@@ -128,7 +128,16 @@ function writeLegacy(slug, merged, guildName, faction) {
     const key = v2.identityKey(summary);
     const char = merged.characters.get(key);
     if (!char) continue; // details unavailable and nothing to carry: omit rather than fabricate
-    legacyMembers.push({ ...char.detail, rank: summary.rank });
+    // V2 uses null for explicitly-unavailable pieces; the legacy shape
+    // predates that distinction and expects arrays/objects.
+    const d = char.detail;
+    legacyMembers.push({
+      ...d,
+      equipment: Array.isArray(d.equipment) ? d.equipment : [],
+      stats: d.stats || {},
+      lifeStats: d.lifeStats || {},
+      rank: summary.rank,
+    });
   }
   writeJson(`guild-${slug}.json`, {
     guild: guildName,

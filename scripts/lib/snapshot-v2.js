@@ -55,6 +55,12 @@ function resolveOwner(ownerCfg, member) {
 // unreadable or inconsistent one is treated as absent, never trusted.
 function loadPrevSnapshot(v2Root) {
   try {
+    // Full validation — including manifest hash checks — before trusting
+    // anything as last-known-good: a corrupted-but-parsable file must never be
+    // carried forward and re-hashed into a valid-looking snapshot.
+    const { validateV2Dir } = require('../validate-snapshot-v2');
+    if (!fs.existsSync(v2Root) || validateV2Dir(v2Root).length > 0) return null;
+
     const manifest = JSON.parse(fs.readFileSync(path.join(v2Root, 'manifest.json'), 'utf8'));
     if (manifest.schemaVersion !== SCHEMA_VERSION || typeof manifest.guilds !== 'object') return null;
     const readJson = rel => {
@@ -63,6 +69,9 @@ function loadPrevSnapshot(v2Root) {
     };
     const guilds = {};
     for (const [slug, g] of Object.entries(manifest.guilds)) {
+      // A guild published as unavailable legitimately has no files — skip it
+      // rather than distrusting every OTHER guild's last-known-good data.
+      if (g.status === 'unavailable') continue;
       const roster = readJson(`guilds/${slug}.json`);
       if (!roster || !Array.isArray(roster.members)) return null; // inconsistent → distrust everything
       guilds[slug] = {
@@ -82,7 +91,7 @@ function loadPrevSnapshot(v2Root) {
 
 function summarizeMember(m, detail, owner) {
   const s = detail?.stats || {};
-  const eq = detail?.equipment || [];
+  const eq = Array.isArray(detail?.equipment) ? detail.equipment : null;
   return {
     id: m.id,
     name: m.name,
@@ -96,12 +105,14 @@ function summarizeMember(m, detail, owner) {
     faction: detail?.faction || null,
     ilvl: detail?.averageIlvl ?? null,
     lastLogin: detail?.lastLogin ?? null,
-    achievementPoints: detail?.achievementPoints ?? 0,
+    // null, not 0, when unknown — an unavailable member must never look like
+    // one with zero achievement points.
+    achievementPoints: detail?.achievementPoints ?? null,
     avatarUrl: detail?.avatarUrl ?? null,
     owner,
     stats: { crit: s.crit ?? null, haste: s.haste ?? null, mastery: s.mastery ?? null, vers: s.vers ?? null },
     lifeStats: detail?.lifeStats ?? null,
-    equipmentSummary: detail ? {
+    equipmentSummary: eq ? {
       count: eq.length,
       emptySockets: eq.filter(i => i.hasEmptySocket).length,
       unenchanted: eq.filter(i => i.enchantCount === 0).length,
@@ -166,54 +177,55 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
   const raids = { members: [] };
   let guildDegraded = false;
 
-  const prevByKey = new Map();
-  if (prevGuild) {
-    for (const pm of prevGuild.roster.members) prevByKey.set(identityKey(pm), pm);
-  }
-
   for (const m of result.members) {
     counts.attempted += 1;
     const key = identityKey(m);
     const owner = resolveOwner(ownerCfg, m);
     const prevChar = prevGuild ? prevGuild.readCharacter(key) : null;
 
-    // --- character detail (component-level carry-forward) ---
+    // --- character detail: each PIECE ends up fresh | carried_forward |
+    // unavailable. An unavailable piece with nothing to carry becomes null in
+    // the published detail — never a fabricated empty array or zeroed object.
+    const PIECES = {
+      equipment: { fields: ['equipment'], has: d => Array.isArray(d.equipment) },
+      statistics: { fields: ['stats'], has: d => !!d.stats },
+      media: { fields: ['avatarUrl', 'mainRawUrl'], has: d => d.avatarUrl !== undefined },
+      achievements: { fields: ['lifeStats'], has: d => !!d.lifeStats },
+    };
     let detail = m.detail;
-    let detailStatus = 'fresh';
+    const pieceStatus = { profile: 'unavailable' };
     if (detail) {
-      // Carry individual failed pieces forward from the previous detail file.
-      if (prevChar?.detail) {
-        for (const piece of ['equipment', 'statistics', 'media', 'achievements']) {
-          if (m.detail.sources?.[piece] === 'unavailable') {
-            if (piece === 'equipment' && Array.isArray(prevChar.detail.equipment)) {
-              detail = { ...detail, equipment: prevChar.detail.equipment, averageIlvl: detail.averageIlvl || prevChar.detail.averageIlvl };
-            } else if (piece === 'statistics' && prevChar.detail.stats) {
-              detail = { ...detail, stats: prevChar.detail.stats };
-            } else if (piece === 'media') {
-              detail = { ...detail, avatarUrl: detail.avatarUrl || prevChar.detail.avatarUrl, mainRawUrl: detail.mainRawUrl || prevChar.detail.mainRawUrl };
-            } else if (piece === 'achievements' && prevChar.detail.lifeStats) {
-              detail = { ...detail, lifeStats: prevChar.detail.lifeStats };
-            }
-            detailStatus = 'fresh_partial';
-            counts.carriedForward += 1;
-            guildDegraded = true;
-          }
-        }
-      } else if (Object.values(m.detail.sources || {}).includes('unavailable')) {
-        detailStatus = 'fresh_partial';
-        guildDegraded = true;
-      }
+      pieceStatus.profile = 'fresh';
       counts.succeeded += 1;
+      for (const [piece, spec] of Object.entries(PIECES)) {
+        if (m.detail.sources?.[piece] !== 'unavailable') {
+          pieceStatus[piece] = 'fresh';
+        } else if (prevChar?.detail && spec.has(prevChar.detail)) {
+          for (const f of spec.fields) detail = { ...detail, [f]: prevChar.detail[f] };
+          if (piece === 'equipment') detail.averageIlvl = detail.averageIlvl || prevChar.detail.averageIlvl;
+          pieceStatus[piece] = 'carried_forward';
+          counts.carriedForward += 1;
+          guildDegraded = true;
+        } else {
+          for (const f of spec.fields) detail = { ...detail, [f]: null };
+          pieceStatus[piece] = 'unavailable';
+          guildDegraded = true;
+        }
+      }
     } else if (prevChar?.detail) {
       detail = prevChar.detail;
-      detailStatus = 'carried_forward';
+      pieceStatus.profile = 'carried_forward';
+      for (const piece of Object.keys(PIECES)) pieceStatus[piece] = 'carried_forward';
       counts.carriedForward += 1;
       guildDegraded = true;
     } else {
-      detailStatus = 'unavailable';
+      for (const piece of Object.keys(PIECES)) pieceStatus[piece] = 'unavailable';
       counts.failed += 1;
       guildDegraded = true;
     }
+    const detailStatus = pieceStatus.profile === 'unavailable' ? 'unavailable'
+      : Object.values(pieceStatus).every(s => s === 'fresh') ? 'fresh'
+      : 'carried_forward';
 
     // --- collections ---
     let col = m.collections;
@@ -236,6 +248,7 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     const summary = summarizeMember(m, detail, owner);
     summary.components = {
       details: detailStatus,
+      ...pieceStatus,
       collections: m.collectionsAttempted || col ? colStatus : 'not_tracked',
       raids: m.raidAttempted || raid ? raidStatus : 'not_tracked',
     };
@@ -246,7 +259,8 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
       characters.set(key, {
         identity: { id: m.id, name: m.name, realmSlug: m.realmSlug, region: REGION },
         status: detailStatus,
-        sourceUpdatedAt: detailStatus === 'carried_forward' ? (prevChar?.sourceUpdatedAt || prevChar?.updatedAt || null) : now,
+        components: pieceStatus,
+        sourceUpdatedAt: pieceStatus.profile === 'carried_forward' ? (prevChar?.sourceUpdatedAt || null) : now,
         detail: detailClean,
       });
     }

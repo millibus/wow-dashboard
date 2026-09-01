@@ -187,6 +187,62 @@ test('a member removed from the roster is removed, and no orphan files survive',
   } finally { fs.rmSync(outDir, { recursive: true, force: true }); }
 });
 
+test('an unavailable piece with no previous data publishes null, never fabricated empties', async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'v2-null-'));
+  const oauth = await startFakeOauth();
+  const api = await startFixtureApi({
+    overrides: { '/profile/wow/character/onyxia/decillin/equipment': { status: 500 } },
+  });
+  try {
+    const r = await runSnapshot(outDir, api, oauth); // first run: no previous snapshot exists
+    assert.equal(r.code, 0, `degraded first run still publishes: ${r.stderr}`);
+    assert.deepEqual(validateV2Dir(path.join(outDir, 'v2')), []);
+
+    const char = readV2(outDir, `characters/deaths-edge/${DECILLIN}.json`);
+    assert.equal(char.detail.equipment, null, 'unfilled unavailable piece must be null, not []');
+    assert.equal(char.components.equipment, 'unavailable');
+    assert.equal(char.components.profile, 'fresh');
+
+    const roster = readV2(outDir, 'guilds/deaths-edge.json');
+    const decillin = roster.members.find(m => m.name === 'Decillin');
+    assert.equal(decillin.components.equipment, 'unavailable');
+    assert.equal(decillin.equipmentSummary, null, 'no gear summary fabricated from nothing');
+  } finally {
+    oauth.server.close(); api.server.close();
+    fs.rmSync(outDir, { recursive: true, force: true });
+  }
+});
+
+test('a previously-unavailable guild does not poison carry-forward for the others', async () => {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'v2-unavail-'));
+  try {
+    // Run 1: riot-act roster down with NO previous snapshot → published as unavailable.
+    let oauth = await startFakeOauth();
+    let api = await startFixtureApi({
+      overrides: { '/data/wow/guild/onyxia/riot-act/roster': { status: 500 } },
+    });
+    try {
+      const r1 = await runSnapshot(outDir, api, oauth);
+      assert.equal(r1.code, 0, `degraded run publishes: ${r1.stderr}`);
+    } finally { oauth.server.close(); api.server.close(); }
+    assert.equal(readV2(outDir, 'manifest.json').guilds['riot-act'].status, 'unavailable');
+    assert.deepEqual(validateV2Dir(path.join(outDir, 'v2')), []);
+
+    // Run 2: everything healthy — the previous snapshot must still be trusted.
+    oauth = await startFakeOauth();
+    api = await startFixtureApi();
+    let r2;
+    try { r2 = await runSnapshot(outDir, api, oauth); }
+    finally { oauth.server.close(); api.server.close(); }
+    assert.equal(r2.code, 0);
+    assert.ok(!r2.stdout.includes('No valid previous V2 snapshot'),
+      'one unavailable guild must not invalidate the whole previous snapshot');
+    const manifest = readV2(outDir, 'manifest.json');
+    assert.equal(manifest.guilds['deaths-edge'].status, 'fresh');
+    assert.equal(manifest.guilds['riot-act'].status, 'fresh');
+  } finally { fs.rmSync(outDir, { recursive: true, force: true }); }
+});
+
 test('a corrupt previous snapshot is distrusted, and a fresh build still succeeds', async () => {
   const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'v2-corrupt-'));
   try {

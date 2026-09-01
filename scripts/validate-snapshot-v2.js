@@ -23,12 +23,18 @@ function walkJsonFiles(root) {
   const out = [];
   (function walk(dir) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) continue; // never follow links out of the snapshot root
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
       else if (entry.name.endsWith('.json')) out.push(path.relative(root, full).split(path.sep).join('/'));
     }
   })(root);
   return out;
+}
+
+// A manifest path must stay inside the snapshot directory.
+function unsafeRel(rel) {
+  return path.isAbsolute(rel) || rel.split('/').includes('..');
 }
 
 function validateV2Dir(dir) {
@@ -58,6 +64,7 @@ function validateV2Dir(dir) {
   // tree must be listed (no orphans survive a publish).
   const listed = manifest.files || {};
   for (const [rel, meta] of Object.entries(listed)) {
+    if (unsafeRel(rel)) { err(rel, 'manifest path escapes the snapshot directory'); continue; }
     const full = path.join(dir, rel);
     if (!fs.existsSync(full)) { err(rel, 'listed in manifest but missing'); continue; }
     const buf = fs.readFileSync(full);
@@ -83,11 +90,17 @@ function validateV2Dir(dir) {
       err(`guilds/${slug}.json`, 'members must be a non-empty array');
       continue;
     }
+    const COMPONENT_STATES = new Set(['fresh', 'carried_forward', 'unavailable', 'not_tracked']);
     roster.members.forEach((m, i) => {
       if (typeof m.id !== 'number') err(`guilds/${slug}.json`, `members[${i}].id must be a number (stable identity)`);
       if (!m.name) err(`guilds/${slug}.json`, `members[${i}].name missing`);
       if (!m.realmSlug) err(`guilds/${slug}.json`, `members[${i}].realmSlug missing`);
-      if (!m.components) err(`guilds/${slug}.json`, `members[${i}].components missing`);
+      if (!m.components) { err(`guilds/${slug}.json`, `members[${i}].components missing`); return; }
+      for (const [comp, state] of Object.entries(m.components)) {
+        if (!COMPONENT_STATES.has(state)) {
+          err(`guilds/${slug}.json`, `members[${i}].components.${comp} has undocumented state '${state}'`);
+        }
+      }
     });
 
     for (const rel of Object.values(g.files || {})) {
@@ -102,7 +115,10 @@ function validateV2Dir(dir) {
         try { c = JSON.parse(fs.readFileSync(path.join(charDir, f), 'utf8')); }
         catch (_) { err(`characters/${slug}/${f}`, 'unparsable'); continue; }
         if (!c.identity || typeof c.identity.id !== 'number') err(`characters/${slug}/${f}`, 'identity.id missing');
-        if (!c.detail || !Array.isArray(c.detail.equipment)) err(`characters/${slug}/${f}`, 'detail.equipment must be an array');
+        // null = piece explicitly unavailable (never a fabricated empty array).
+        if (!c.detail || (c.detail.equipment !== null && !Array.isArray(c.detail.equipment))) {
+          err(`characters/${slug}/${f}`, 'detail.equipment must be an array or null');
+        }
         if (`${manifest.region}-${c.identity.realmSlug}-${c.identity.id}.json` !== f) {
           err(`characters/${slug}/${f}`, 'filename does not match identity key');
         }
