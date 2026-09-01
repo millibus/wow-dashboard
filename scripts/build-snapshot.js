@@ -274,7 +274,19 @@ async function main() {
   const catalog = await resolveCatalog(prev, warnings);
   console.log(`Raid catalog: ${catalog.status}, ${catalog.tiers.length} tiers (expansion ${catalog.expansionId ?? '?'})`);
 
-  const guildOutputs = { startedAt, guilds: {}, warnings, catalog };
+  const guildOutputs = {
+    startedAt,
+    guilds: {},
+    warnings,
+    catalog,
+    uiConfig: {
+      levelCap: CONFIG.levelCap,
+      raidMinLevel: CONFIG.raidMinLevel,
+      archiveThresholdDays: CONFIG.archiveThresholdDays,
+      guilds: CONFIG.guilds.map(g => ({ slug: g.slug, faction: g.faction })),
+      owners: (() => { try { return JSON.parse(fs.readFileSync(OWNER_CONFIG, 'utf8')).owners || []; } catch (_) { return []; } })(),
+    },
+  };
   const legacyPlan = [];
   for (const slug of slugs) {
     const prevGuild = prev?.guilds?.[slug] || null;

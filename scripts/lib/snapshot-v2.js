@@ -397,6 +397,9 @@ function buildStaging(outRoot, guildOutputs) {
     expectedRefreshMinutes: EXPECTED_REFRESH_MINUTES,
     region: REGION,
     warnings: guildOutputs.warnings || [],
+    // Projection of config the frontend needs — the UI reads this, never its
+    // own hardcoded constants.
+    config: guildOutputs.uiConfig || null,
     catalog: guildOutputs.catalog ? {
       status: guildOutputs.catalog.status,
       fetchedAt: guildOutputs.catalog.fetchedAt || null,

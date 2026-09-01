@@ -62,6 +62,14 @@ test('fresh run publishes a valid V2 snapshot with stable-identity files', async
     assert.equal(manifest.overallStatus, 'ok');
     assert.equal(manifest.guilds['deaths-edge'].status, 'fresh');
 
+    // The manifest carries the config projection the V2 frontend renders from
+    // — the UI must never hardcode these.
+    assert.ok(manifest.config, 'manifest.config projection present');
+    assert.equal(typeof manifest.config.levelCap, 'number');
+    assert.equal(typeof manifest.config.archiveThresholdDays, 'number');
+    assert.deepEqual(manifest.config.guilds.map(g => g.slug).sort(), ['deaths-edge', 'riot-act']);
+    assert.ok(Array.isArray(manifest.config.owners));
+
     const roster = readV2(outDir, 'guilds/deaths-edge.json');
     const decillin = roster.members.find(m => m.name === 'Decillin');
     assert.equal(decillin.id, 207690001);
