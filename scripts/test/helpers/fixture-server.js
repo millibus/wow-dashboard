@@ -13,13 +13,24 @@ function listen(server) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));
 }
 
-async function startFixtureApi(fixturesPath = DEFAULT_FIXTURES) {
-  const fixtures = JSON.parse(fs.readFileSync(fixturesPath, 'utf8'));
+// opts.mutate(fixtures) may edit the fixture map (its return value, if any,
+// replaces it); opts.overrides[pathname] = { status, body } forces a response
+// for that decoded pathname. Both exist so tests can simulate partial outages.
+async function startFixtureApi(opts = {}) {
+  const { fixturesPath = DEFAULT_FIXTURES, mutate, overrides = {} } = opts;
+  let fixtures = JSON.parse(fs.readFileSync(fixturesPath, 'utf8'));
+  if (mutate) fixtures = mutate(fixtures) || fixtures;
   const server = http.createServer((req, res) => {
     let pathname;
     try { pathname = new URL(req.url, 'http://x').pathname; }
     catch (_) { pathname = String(req.url).split('?')[0]; }
     try { pathname = decodeURIComponent(pathname); } catch (_) { /* keep encoded */ }
+    const override = overrides[pathname];
+    if (override) {
+      res.writeHead(override.status || 500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(override.body || { forced: true }));
+      return;
+    }
     const body = fixtures[pathname];
     if (body === undefined) {
       res.writeHead(404, { 'Content-Type': 'application/json' });

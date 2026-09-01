@@ -1,0 +1,287 @@
+{
+  "_comment": "Owner/tracked-character config, moved out of the frontend. id is the Blizzard character id - null entries fall back to case-insensitive name matching, and the snapshot builder records resolved ids in the V2 roster so this file can be backfilled over time.",
+  "region": "us",
+  "owners": [
+    "user1",
+    "user2",
+    "user3"
+  ],
+  "characters": [
+    {
+      "name": "Sanicon",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Harclive",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Phenis",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Blajarm",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Potac",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Wicken",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Llisp",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Quu",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Hemahroid",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Decillin",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Colonic",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Trashey",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Gorgis",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Babbang",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Flachewlance",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Thuun",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Chargar",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Asdan",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Wetseamen",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Apocalypsic",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Oathos",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Incantation",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Religious",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Zeison",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Stray",
+      "realm": "onyxia",
+      "owner": "user2",
+      "id": null
+    },
+    {
+      "name": "Hollyballs",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Darthfurball",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Revän",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Caedus",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Jacobyy",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Bbaronsamedi",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Holyrevan",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Krang",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Necronomican",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Pizo",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Jeetkundo",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Demonik",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Alduen",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Dendis",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Huejanus",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Lumian",
+      "realm": "onyxia",
+      "owner": "user1",
+      "id": null
+    },
+    {
+      "name": "Krisis",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Grrumpy",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Jacoby",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Wolfsbane",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    },
+    {
+      "name": "Mechaminime",
+      "realm": "onyxia",
+      "owner": "user3",
+      "id": null
+    }
+  ]
+}

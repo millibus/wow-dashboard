@@ -260,9 +260,13 @@ async function bnet(path) {
   }));
 }
 
+// Fallback only — Blizzard's equipped_item_level is authoritative. Cosmetic
+// slots must never drag the average down (a level-1 shirt is not gear).
+const COSMETIC_SLOTS = new Set(['Shirt', 'Tabard']);
 function calcAvgIlvl(items) {
   const ilvls = items
-    .map(i => i.level?.value || 0)
+    .filter(i => !COSMETIC_SLOTS.has(i.slot))
+    .map(i => i.ilvl ?? i.level?.value ?? 0)
     .filter(v => v > 0);
   if (!ilvls.length) return 0;
   return Math.round(ilvls.reduce((a, b) => a + b, 0) / ilvls.length);
@@ -318,6 +322,19 @@ async function fetchCharacter(realm, name) {
   }));
 
   return {
+    // Stable identity: Blizzard character id + realm slug (names change on
+    // renames/transfers; files and owner mapping key off these).
+    id: p.id || null,
+    realmSlug: p.realm?.slug || realmSlug(realm),
+    // Which endpoint responses this record was built from — the V2 snapshot
+    // layer carries components forward individually when one fetch fails.
+    sources: {
+      profile: 'fresh',
+      equipment: equipment.status === 'fulfilled' ? 'fresh' : 'unavailable',
+      statistics: stats.status === 'fulfilled' ? 'fresh' : 'unavailable',
+      media: media.status === 'fulfilled' ? 'fresh' : 'unavailable',
+      achievements: achStats.status === 'fulfilled' ? 'fresh' : 'unavailable',
+    },
     name: p.name || name,
     realm: p.realm?.name || realm,
     lastLogin: p.last_login_timestamp || null,
@@ -331,7 +348,7 @@ async function fetchCharacter(realm, name) {
     achievementPoints: p.achievement_points || 0,
     avatarUrl,
     mainRawUrl,
-    averageIlvl: calcAvgIlvl(items) || p.equipped_item_level || p.average_item_level || 0,
+    averageIlvl: p.equipped_item_level || calcAvgIlvl(items) || p.average_item_level || 0,
     equipment: items,
     stats: {
       health: st.health || 0,
