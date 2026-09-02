@@ -315,6 +315,26 @@ const DEFAULT_LIFE_STAT_DEFS = [
 const lifeStatNameFallbacks = new Set();
 function getLifeStatFallbacks() { return [...lifeStatNameFallbacks]; }
 
+// Run-wide life-stat bookkeeping so the build can report renames and offer
+// ids to backfill:
+// - matched: defs that resolved (by id or name) for at least one character;
+//   a def missing from EVERY character after a successful achievements fetch
+//   is almost certainly a Blizzard rename → LIFE_STAT_UNMATCHED.
+// - idHints: the statistic id observed for defs still matched by name, so
+//   config/dashboard-config.json can be backfilled from the run log.
+const lifeStatMatched = new Set();
+const lifeStatIdHints = {};
+let achievementsFetches = 0;
+function getLifeStatReport(defs) {
+  const unmatched = achievementsFetches > 0
+    ? defs.map(d => d.key).filter(k => !lifeStatMatched.has(k))
+    : [];
+  return { unmatched, idHints: { ...lifeStatIdHints }, achievementsFetches };
+}
+
+// Character endpoints take the member's OWN realm slug: guild rosters include
+// characters from connected realms, and looking one up on the guild's realm
+// would 404 — or worse, return a same-named stranger.
 async function fetchCharacter(realm, name, opts = {}) {
   const lifeStatDefs = opts.lifeStatDefs?.length ? opts.lifeStatDefs : DEFAULT_LIFE_STAT_DEFS;
   const encoded = encodeURIComponent(name.toLowerCase());
@@ -338,34 +358,43 @@ async function fetchCharacter(realm, name, opts = {}) {
   const mainRawUrl = mediaAssets.find(a => a.key === 'main-raw')?.value || null;
 
   const achData = achStats.status === 'fulfilled' ? achStats.value : {};
+  if (achStats.status === 'fulfilled') achievementsFetches += 1;
+  // Every statistic is indexed, INCLUDING zero quantities: "0 deaths" and
+  // "no such statistic" must stay distinguishable, or a Blizzard rename turns
+  // into a silent zero for every character.
   const achByName = {};
   const achById = {};
+  const idByName = {};
   (function extract(categories) {
     for (const cat of (categories || [])) {
       for (const stat of (cat.statistics || [])) {
-        if (stat.quantity > 0) {
-          achByName[stat.name] = stat.quantity;
-          if (stat.id !== undefined) achById[stat.id] = stat.quantity;
-        }
+        if (typeof stat.quantity !== 'number') continue;
+        achByName[stat.name] = stat.quantity;
+        if (stat.id !== undefined) { achById[stat.id] = stat.quantity; idByName[stat.name] = stat.id; }
       }
       extract(cat.sub_categories || []);
     }
   })(achData.categories || []);
 
+  // null = not present in this character's statistics (never fabricate 0).
   const lifeStat = def => {
-    if (def.id !== null && def.id !== undefined && achById[def.id] !== undefined) return achById[def.id];
+    const hasId = def.id !== null && def.id !== undefined;
+    if (hasId && achById[def.id] !== undefined) { lifeStatMatched.add(def.key); return achById[def.id]; }
     if (achByName[def.name] !== undefined) {
-      if (def.id !== null && def.id !== undefined) lifeStatNameFallbacks.add(def.key);
+      lifeStatMatched.add(def.key);
+      if (hasId) lifeStatNameFallbacks.add(def.key);
+      else if (idByName[def.name] !== undefined) lifeStatIdHints[def.key] = idByName[def.name];
       return achByName[def.name];
     }
-    return 0;
+    return null;
   };
   const lifeStats = {};
   for (const def of lifeStatDefs) lifeStats[def.key] = lifeStat(def);
-  lifeStats.raidsEntered = (achByName['Total 10-player raids entered'] || 0) + (achByName['Total 25-player raids entered'] || 0);
-  lifeStats.bossesDefeated = Object.entries(achByName)
-    .filter(([k]) => /bosses defeated/i.test(k) && /player/i.test(k))
-    .reduce((sum, [, v]) => sum + v, 0);
+  const raid10 = achByName['Total 10-player raids entered'];
+  const raid25 = achByName['Total 25-player raids entered'];
+  lifeStats.raidsEntered = raid10 === undefined && raid25 === undefined ? null : (raid10 || 0) + (raid25 || 0);
+  const bossStats = Object.entries(achByName).filter(([k]) => /bosses defeated/i.test(k) && /player/i.test(k));
+  lifeStats.bossesDefeated = bossStats.length ? bossStats.reduce((sum, [, v]) => sum + v, 0) : null;
 
   const items = (eq.equipped_items || []).map(item => ({
     slot: item.slot?.name || '?',
@@ -604,6 +633,9 @@ module.exports = {
   getMetrics,
   formatMetrics,
   getLifeStatFallbacks,
+  getLifeStatReport,
+  profileNs,
+  staticNs,
   calcAvgIlvl,
   realmSlug,
   fetchCharacter,

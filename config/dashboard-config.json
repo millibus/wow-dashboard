@@ -4,6 +4,7 @@
   "activeExpansionId": 505,
   "levelCap": 90,
   "raidMinLevel": 80,
+  "minMemberLevel": 10,
   "archiveThresholdDays": 30,
   "guilds": [
     { "slug": "deaths-edge", "realm": "onyxia", "faction": "horde" },

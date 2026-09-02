@@ -1,0 +1,56 @@
+name: Keepalive
+
+# GitHub disables scheduled workflows in a repository after 60 days without
+# activity. The hourly refresh normally keeps the repo active with its data
+# commits — but only while it SUCCEEDS. During an outage (bad credentials,
+# Blizzard downtime) nothing commits, and after 60 quiet days the refresh
+# schedule is switched off; rotating credentials then does nothing until
+# someone re-enables it by hand.
+#
+# This job checks weekly and, only when the default branch has been quiet
+# for 30+ days, commits a one-line marker. Quiet weeks make no commit.
+#
+# Residual blind spot, by design: this is a same-repo keepalive. If the
+# schedules are already disabled it cannot run either. True no-run detection
+# needs an external monitor that expects a heartbeat.
+
+on:
+  schedule:
+    - cron: '23 4 * * 1'  # Mondays 04:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Commit a marker if the branch has been quiet for 30 days
+        env:
+          QUIET_DAYS: '30'
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          age_days=$(( (now - last) / 86400 ))
+          echo "Last commit ${age_days} day(s) ago."
+          if [ "$age_days" -lt "$QUIET_DAYS" ]; then
+            echo "Repository is active; no keepalive needed."
+            exit 0
+          fi
+          git config user.name 'wow-dashboard-bot'
+          git config user.email 'wow-dashboard-bot@users.noreply.github.com'
+          date -u +%Y-%m-%dT%H:%M:%SZ > .github/keepalive
+          git add .github/keepalive
+          git commit -m 'chore: keepalive — repository quiet for '"${age_days}"' days [skip ci]'
+          git push
+          echo "Keepalive committed."

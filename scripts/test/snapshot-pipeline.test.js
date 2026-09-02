@@ -45,7 +45,7 @@ test('full pipeline against fixtures produces a valid snapshot', async () => {
 
     const guild = JSON.parse(fs.readFileSync(path.join(outDir, 'guild-deaths-edge.json'), 'utf8'));
     const names = guild.members.map(m => m.name).sort();
-    assert.deepEqual(names, ['Decillin', "Kel'thar", 'Revän'], 'level<10 members filtered, encoded names fetched');
+    assert.deepEqual(names, ['Decillin', 'Farshore', "Kel'thar", 'Revän'], 'level<10 members filtered, encoded names fetched');
     const decillin = guild.members.find(m => m.name === 'Decillin');
     assert.ok(decillin.equipment.length >= 3, 'equipment populated');
     assert.equal(decillin.lifeStats.totalDeaths, 123, 'achievement stats mapped');

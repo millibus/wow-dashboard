@@ -1,7 +1,11 @@
 {
   "/data/wow/guild/onyxia/deaths-edge/roster": {
     "guild": {
-      "name": "Death's Edge"
+      "name": "Death's Edge",
+      "realm": {
+        "name": "Onyxia",
+        "slug": "onyxia"
+      }
     },
     "members": [
       {
@@ -47,6 +51,17 @@
           }
         },
         "rank": 9
+      },
+      {
+        "character": {
+          "name": "Farshore",
+          "id": 207690005,
+          "level": 85,
+          "realm": {
+            "slug": "thrall"
+          }
+        },
+        "rank": 5
       }
     ]
   },
@@ -913,7 +928,11 @@
   },
   "/data/wow/guild/onyxia/riot-act/roster": {
     "guild": {
-      "name": "Riot Act"
+      "name": "Riot Act",
+      "realm": {
+        "name": "Onyxia",
+        "slug": "onyxia"
+      }
     },
     "members": [
       {
@@ -1543,6 +1562,131 @@
       {
         "id": 2640,
         "name": "Cauldron of Carnage"
+      }
+    ]
+  },
+  "/profile/wow/character/thrall/farshore": {
+    "id": 207690005,
+    "name": "Farshore",
+    "level": 85,
+    "realm": {
+      "name": "Thrall",
+      "slug": "thrall"
+    },
+    "race": {
+      "name": "Troll"
+    },
+    "character_class": {
+      "name": "Shaman"
+    },
+    "active_spec": {
+      "name": "Restoration"
+    },
+    "faction": {
+      "name": "Horde"
+    },
+    "guild": {
+      "name": "Death's Edge"
+    },
+    "achievement_points": 4200,
+    "last_login_timestamp": 1756000000000,
+    "equipped_item_level": 150,
+    "average_item_level": 148
+  },
+  "/profile/wow/character/thrall/farshore/equipment": {
+    "equipped_items": [
+      {
+        "slot": {
+          "name": "Head"
+        },
+        "name": "Tidecaller Hood",
+        "level": {
+          "value": 150
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": []
+      },
+      {
+        "slot": {
+          "name": "Chest"
+        },
+        "name": "Tidecaller Vest",
+        "level": {
+          "value": 150
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": [
+          {}
+        ]
+      },
+      {
+        "slot": {
+          "name": "Legs"
+        },
+        "name": "Tidecaller Kilt",
+        "level": {
+          "value": 150
+        },
+        "quality": {
+          "name": "Rare"
+        },
+        "sockets": [],
+        "enchantments": []
+      }
+    ]
+  },
+  "/profile/wow/character/thrall/farshore/statistics": {
+    "health": 90000,
+    "intellect": {
+      "effective": 4000
+    },
+    "stamina": {
+      "effective": 5000
+    },
+    "melee_crit": {
+      "value": 12.5
+    },
+    "melee_haste": {
+      "value": 9
+    },
+    "mastery": {
+      "value": 20
+    },
+    "versatility_damage_done_bonus": 3,
+    "armor": {
+      "effective": 900
+    }
+  },
+  "/profile/wow/character/thrall/farshore/character-media": {
+    "assets": [
+      {
+        "key": "avatar",
+        "value": "https://render.worldofwarcraft.com/us/character/thrall/5/207690005-avatar.jpg"
+      }
+    ]
+  },
+  "/profile/wow/character/thrall/farshore/achievements/statistics": {
+    "categories": [
+      {
+        "statistics": [
+          {
+            "id": 60,
+            "name": "Total deaths",
+            "quantity": 0
+          },
+          {
+            "id": 98,
+            "name": "Quests completed",
+            "quantity": 310
+          }
+        ],
+        "sub_categories": []
       }
     ]
   }

@@ -163,7 +163,7 @@ test('shrunken roster trips the sanity guard; the override accepts it but never 
     assert.equal(manifest.guilds['deaths-edge'].status, 'carried_forward');
     assert.ok(manifest.guilds['deaths-edge'].errors.some(e => e.includes('SANITY_')),
       `expected a sanity-guard error, got: ${manifest.guilds['deaths-edge'].errors}`);
-    assert.equal(readV2(outDir, 'guilds/deaths-edge.json').members.length, 3);
+    assert.equal(readV2(outDir, 'guilds/deaths-edge.json').members.length, 4);
 
     // With override: the 1-member roster is accepted and validated.
     oauth = await startFakeOauth();

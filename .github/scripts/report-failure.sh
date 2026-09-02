@@ -25,6 +25,8 @@ Run: ${RUN_URL}
 - \`AUTH_BAD_CREDENTIALS\` → the Blizzard OAuth client was rejected. Regenerate the client secret at https://develop.battle.net/access/clients, verify with \`curl -u "\$ID:\$SECRET" -d grant_type=client_credentials https://oauth.battle.net/token\`, then update both repo secrets (\`gh secret set BLIZZARD_CLIENT_ID\` / \`gh secret set BLIZZARD_CLIENT_SECRET\`) and re-run the workflow.
 - \`HTTP_429\` / \`NETWORK_*\` → likely transient; check whether the next scheduled run recovers.
 - \`HTTP_5xx\` → Blizzard API incident; check https://us.forums.blizzard.com/en/blizzard/c/support/api-discussion
+- \`COMMIT_FAILED\` → the snapshot built and validated but could not be pushed (usually a concurrent push); the next hourly run retries.
+- \`DEPLOY_FAILED\` → the GitHub Pages deploy step failed; the committed data is fine, check the Pages settings and the run log.
 - Anything else → open the run log above (it is sanitized) and investigate.
 
 This issue closes automatically when a refresh succeeds.

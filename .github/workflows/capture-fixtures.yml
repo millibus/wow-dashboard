@@ -1,0 +1,65 @@
+name: Capture API fixtures
+
+# One-click capture of REAL Blizzard responses as test fixtures, so the
+# synthetic set in scripts/fixtures/ can be replaced with the actual API
+# shapes once credentials work. Runs only on demand.
+#
+# The output is scanned for every credential form before upload and never
+# committed by this workflow: download the artifact, review the diff, and
+# commit it yourself.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Capture fixtures
+        env:
+          BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
+          BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+          FIXTURES_OUT: ${{ runner.temp }}/blizzard-fixtures.json
+        run: node scripts/capture-fixtures.js
+
+      - name: Scan output for credential-shaped strings
+        env:
+          FIXTURES_OUT: ${{ runner.temp }}/blizzard-fixtures.json
+        run: |
+          if grep -Eiq 'authorization|bearer |client_secret|access_token' "$FIXTURES_OUT"; then
+            echo "Refusing to upload: captured fixtures contain a forbidden string."
+            exit 1
+          fi
+          echo "Scan clean: $(wc -c < "$FIXTURES_OUT") bytes"
+
+      # The unit suite asserts the SYNTHETIC roster by name and id, so it can
+      # never pass against a live capture. This check is data-independent: it
+      # runs the real pipeline against the captured file and schema-validates
+      # both output layers. A failure here is informative (the artifact still
+      # uploads for inspection), but the job goes red.
+      - name: Verify the captured fixtures build a valid snapshot
+        id: verify
+        continue-on-error: true
+        run: node scripts/verify-fixtures.js "${{ runner.temp }}/blizzard-fixtures.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blizzard-fixtures
+          path: ${{ runner.temp }}/blizzard-fixtures.json
+          retention-days: 14
+
+      - name: Fail the job if verification failed
+        if: steps.verify.outcome == 'failure'
+        run: |
+          echo "The captured fixtures were uploaded but did not build a valid snapshot — inspect the artifact and the verify step above."
+          exit 1

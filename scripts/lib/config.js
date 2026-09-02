@@ -17,6 +17,7 @@ const DEFAULTS = {
   activeExpansionId: null,
   levelCap: 90,
   raidMinLevel: 80,
+  minMemberLevel: 10, // roster members below this are not fetched at all
   archiveThresholdDays: 30,
   guilds: [],
   limits: { minMembers: 2, maxShrinkPercent: 40, raidMemberCap: 60 },

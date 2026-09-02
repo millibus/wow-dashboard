@@ -186,7 +186,11 @@ function mergeGuild(slug, result, prevGuild, ownerCfg, opts) {
     return { status: 'unavailable', errors: [reason], counts };
   }
 
-  const roster = { guild: result.guildName, slug, faction: result.faction, region: REGION, updatedAt: now, members: [] };
+  const roster = {
+    guild: result.guildName, slug, faction: result.faction, region: REGION,
+    realm: result.realmName || null, // display name of the guild's home realm
+    updatedAt: now, members: [],
+  };
   const characters = new Map();
   const collections = new Map();
   const collectionsIndex = { characters: {} };
