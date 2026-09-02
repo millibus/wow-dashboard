@@ -12,7 +12,8 @@ export function readUrl() {
   const p = new URLSearchParams(location.search);
   const tierId = Number(p.get('tier'));
   const minLevel = Number(p.get('minlvl'));
-  const compareKeys = (p.get('compare') || '').split(',').filter(Boolean).slice(0, 2);
+  // De-duplicated: ?compare=k,k would otherwise open a self-comparison.
+  const compareKeys = [...new Set((p.get('compare') || '').split(',').filter(Boolean))].slice(0, 2);
   return {
     guild: p.get('guild') || null,
     tab: p.get('tab') || 'roster',

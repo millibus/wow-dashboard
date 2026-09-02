@@ -71,9 +71,12 @@ function once(key, fn) {
 }
 
 function loadRoster(slug) {
+  // Clear BEFORE joining any in-flight request: switching A → B → back to A
+  // while A's first request is still running must not keep showing B's
+  // roster under A's name until A resolves.
+  setState({ roster: null, loadError: null });
   return once(`roster:${slug}`, async () => {
     const { manifest } = getState();
-    setState({ roster: null, loadError: null });
     try {
       const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
       if (getState().guild !== slug) return; // superseded by another switch
@@ -477,6 +480,9 @@ async function boot() {
 
   const initialUrl = readUrl();
   setState({ manifest });
+  // Only meaningful once there is a manifest to compare against; the button
+  // ships disabled in the markup for exactly that reason.
+  ui.checkUpdates.disabled = false;
   renderTabs(getState());
   applyUrl(initialUrl, { load: true });
   urlReady = true;

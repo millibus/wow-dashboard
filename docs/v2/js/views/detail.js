@@ -132,10 +132,17 @@ function subLine(member, detail) {
   return parts.join(' · ');
 }
 
+// The character file carries ONE timestamp, sourceUpdatedAt, and it tracks
+// the profile: when the profile was fetched fresh this run but a single
+// component (gear, stats) was carried forward, that timestamp is "now" and
+// says nothing about how old the carried component is. So the date is shown
+// only when the whole record was carried forward; otherwise the note stays
+// generic rather than claiming "from just now" about genuinely old data.
 function sectionNote(state, charFile) {
   if (state === 'carried_forward') {
+    const wholeRecordCarried = charFile?.components?.profile === 'carried_forward';
     const src = Date.parse(charFile?.sourceUpdatedAt || '');
-    return Number.isFinite(src)
+    return wholeRecordCarried && Number.isFinite(src)
       ? `Older data (from ${relAge(Math.max(0, Date.now() - src))})`
       : 'Older data from a previous refresh';
   }

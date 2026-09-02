@@ -7,6 +7,14 @@ const { test, expect } = require('@playwright/test');
 
 const ALL = '/v2/?guild=deaths-edge&scope=all';
 
+// The page's Google Fonts stylesheet is render-blocking, and Chrome holds
+// script execution on it. Tests here gate on network timing, so a slow or
+// sandboxed font CDN must not be able to delay the app's own boot: fail the
+// font requests instantly and let the fallback stack render.
+test.beforeEach(async ({ page }) => {
+  await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+});
+
 test.describe('roster filters', () => {
   test('race pills narrow the grid and round-trip through the URL', async ({ page }) => {
     await page.goto(ALL);
@@ -66,6 +74,13 @@ test.describe('compare mode', () => {
     await expect(page.locator('#compare-dialog .compare-name')).toHaveCount(2);
   });
 
+  test('a duplicated key in the URL never opens a self-comparison', async ({ page }) => {
+    await page.goto(`${ALL}&compare=us-onyxia-207690001,us-onyxia-207690001`);
+    await expect(page.locator('.char-card').first()).toBeVisible();
+    await expect(page.locator('#compare-dialog')).not.toHaveAttribute('open', '');
+    await expect(page.locator('#compare-bar')).toContainText('Decillin selected');
+  });
+
   test('exit compare clears the selection and restores normal card clicks', async ({ page }) => {
     await page.goto(`${ALL}&compare=us-onyxia-207690001`);
     await page.getByRole('button', { name: 'Exit compare' }).click();
@@ -92,6 +107,23 @@ test.describe('character detail', () => {
 });
 
 test.describe('check for updates', () => {
+  test('is disabled until the initial manifest has loaded', async ({ page }) => {
+    // Hold the first manifest response so the pre-load window is observable.
+    let release;
+    const gate = new Promise(r => { release = r; });
+    let first = true;
+    await page.route('**/data/v2/manifest.json*', async route => {
+      if (first) { first = false; await gate; }
+      await route.continue();
+    });
+    await page.goto(ALL, { waitUntil: 'commit' });
+    const button = page.getByRole('button', { name: 'Check for updates' });
+    await expect(button).toBeDisabled();
+    release();
+    await expect(button).toBeEnabled();
+    await expect(page.locator('.roster-grid')).toBeVisible();
+  });
+
   test('reports up to date when the snapshot id is unchanged', async ({ page }) => {
     await page.goto(ALL);
     await page.getByRole('button', { name: 'Check for updates' }).click();
@@ -119,6 +151,31 @@ test.describe('check for updates', () => {
     expect(await page.evaluate(() => window.__beforeReload)).toBeUndefined();
     expect(calls).toBeGreaterThanOrEqual(2);
   });
+});
+
+test('switching back to a guild whose first load is still in flight never shows the other guild', async ({ page }) => {
+  // Hold deaths-edge's roster; let riot-act's through at once.
+  let release;
+  const gate = new Promise(r => { release = r; });
+  let held = 0;
+  await page.route('**/data/v2/guilds/deaths-edge.json*', async route => {
+    if (held === 0) { held += 1; await gate; }
+    await route.continue();
+  });
+  await page.goto(ALL, { waitUntil: 'commit' });
+  await expect(page.locator('#guild-switcher button').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Riot Act' }).click();
+  await expect(page.locator('#guild-title')).toContainText('Riot');
+  await expect(page.locator('.char-card').first()).toBeVisible();
+  await page.getByRole('button', { name: 'Deaths Edge' }).click();
+  // A's request is still held: the view must be a loading state, not B's cards.
+  // (The title is slug-derived until A's roster lands, hence the optional apostrophe.)
+  await expect(page.locator('#guild-title')).toHaveText(/Death'?s Edge/);
+  await expect(page.locator('.char-card')).toHaveCount(0);
+  await expect(page.locator('.empty-state')).toContainText('Loading roster');
+  release();
+  await expect(page.locator('.char-card')).toHaveCount(2);
+  await expect(page.locator('.char-name').first()).toHaveText('Decillin');
 });
 
 test('header realm and region come from the snapshot, not constants', async ({ page }) => {

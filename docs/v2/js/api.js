@@ -34,7 +34,11 @@ export async function fetchSnapshotFile(manifest, rel) {
 // nothing in the browser can ask Blizzard for anything.
 export async function checkForUpdates(current) {
   const latest = await fetchManifest();
-  return { updated: latest.snapshotId !== current?.snapshotId, manifest: latest };
+  // With no loaded manifest to compare against there is nothing to be
+  // "newer" than — reporting an update here would reload a page that has
+  // not finished loading, and keep doing so on every click.
+  const updated = !!current?.snapshotId && latest.snapshotId !== current.snapshotId;
+  return { updated, manifest: latest };
 }
 
 export function identityKey(member) {
