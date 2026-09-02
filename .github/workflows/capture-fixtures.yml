@@ -42,13 +42,24 @@ jobs:
           fi
           echo "Scan clean: $(wc -c < "$FIXTURES_OUT") bytes"
 
-      - name: Run the test suite against the captured fixtures
-        env:
-          FIXTURES_PATH: ${{ runner.temp }}/blizzard-fixtures.json
-        run: npm test
+      # The unit suite asserts the SYNTHETIC roster by name and id, so it can
+      # never pass against a live capture. This check is data-independent: it
+      # runs the real pipeline against the captured file and schema-validates
+      # both output layers. A failure here is informative (the artifact still
+      # uploads for inspection), but the job goes red.
+      - name: Verify the captured fixtures build a valid snapshot
+        id: verify
+        continue-on-error: true
+        run: node scripts/verify-fixtures.js "${{ runner.temp }}/blizzard-fixtures.json"
 
       - uses: actions/upload-artifact@v4
         with:
           name: blizzard-fixtures
           path: ${{ runner.temp }}/blizzard-fixtures.json
           retention-days: 14
+
+      - name: Fail the job if verification failed
+        if: steps.verify.outcome == 'failure'
+        run: |
+          echo "The captured fixtures were uploaded but did not build a valid snapshot — inspect the artifact and the verify step above."
+          exit 1

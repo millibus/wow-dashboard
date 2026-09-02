@@ -1656,7 +1656,7 @@ function renderRaids() {
 
     return `
       <div class="raid-row">
-        <div class="raid-char-name" onclick="openDetail(${jsArg(m.name)}, ${jsArg('onyxia')})" style="cursor:pointer" title="View character">
+        <div class="raid-char-name" onclick="openDetail(${jsArg(m.name)}, ${jsArg(m.realm || 'onyxia')})" style="cursor:pointer" title="View character">
           <span style="color:${ownerColor};font-size:0.7rem;margin-right:4px">${owner ? `[${owner}]` : ''}</span>
           ${m.name}
           <span class="raid-progress-text">${killCount}/${bossCount}</span>

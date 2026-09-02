@@ -3,9 +3,15 @@ name: CI
 on:
   pull_request:
   # Also on main, so a squash merge and Dependabot's weekly bumps are
-  # verified on the branch that actually ships.
+  # verified on the branch that actually ships. The hourly data commits and
+  # the keepalive marker cannot trigger this anyway (pushes made with
+  # GITHUB_TOKEN never start workflows, and they carry [skip ci]); the
+  # paths-ignore makes that intent explicit and independent of either rule.
   push:
     branches: [main]
+    paths-ignore:
+      - 'docs/data/**'
+      - '.github/keepalive'
 
 permissions:
   contents: read

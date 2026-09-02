@@ -210,8 +210,11 @@ function writeLegacy(slug, merged, guildName, faction, catalogTiers) {
     const char = merged.characters.get(key);
     if (!char) continue; // details unavailable and nothing to carry: omit rather than fabricate
     // V2 uses null for explicitly-unavailable pieces; the legacy shape
-    // predates that distinction and expects arrays/objects — and the legacy
-    // frontend reads life stats with `|| 0`, so null (unknown) stays null.
+    // predates that distinction and expects arrays/objects. Life-stat nulls
+    // pass through as-is: the legacy frontend hides them in its stat tiles
+    // (it filters on `> 0`) but coerces them to 0 in its readiness and
+    // leaderboard math — a known limitation of V1, which the V2 dashboard
+    // handles correctly and which goes away when V1 is retired.
     const d = char.detail;
     memberRealm.set(summary.id, d.realm || realmName);
     legacyMembers.push({
