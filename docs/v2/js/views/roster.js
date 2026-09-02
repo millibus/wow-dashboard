@@ -46,6 +46,8 @@ export function filterMembers(state) {
     .filter(m => inScope(m, state.scope, state.roster, state.manifest))
     .filter(m => !state.owners.size || state.owners.has(m.owner))
     .filter(m => !state.classes.size || state.classes.has(m.className))
+    .filter(m => !state.races.size || state.races.has(m.race))
+    .filter(m => !state.minLevel || (m.level || 0) >= state.minLevel)
     .filter(m => !q ||
       m.name.toLowerCase().includes(q) ||
       (m.className || '').toLowerCase().includes(q) ||
@@ -103,6 +105,26 @@ export function renderFilters(container, state, actions) {
   for (const cls of classes) {
     container.append(pill(cls, state.classes.has(cls), () => actions.toggleClass(cls), classColor(cls)));
   }
+
+  const races = [...new Set(members.map(m => m.race).filter(Boolean))].sort();
+  if (races.length > 1) {
+    container.append(el('span', { class: 'filter-group-label', text: 'Race' }));
+    for (const race of races) {
+      container.append(pill(race, state.races.has(race), () => actions.toggleRace(race)));
+    }
+  }
+
+  // Level thresholds come from config: the raid floor and the cap.
+  const cfg = state.manifest?.config || {};
+  const levels = [...new Set([cfg.raidMinLevel, cfg.levelCap].filter(n => Number.isFinite(n) && n > 0))].sort((a, b) => a - b);
+  if (levels.length) {
+    container.append(el('span', { class: 'filter-group-label', text: 'Level' }));
+    container.append(pill('Any', !state.minLevel, () => actions.setMinLevel(0)));
+    for (const lvl of levels) {
+      const label = lvl === cfg.levelCap ? `${lvl} (cap)` : `${lvl}+`;
+      container.append(pill(label, state.minLevel === lvl, () => actions.setMinLevel(state.minLevel === lvl ? 0 : lvl)));
+    }
+  }
 }
 
 // --- Stat strip ------------------------------------------------------------
@@ -155,7 +177,9 @@ function componentNote(member) {
   return null;
 }
 
-export function renderRoster(container, filtered, onOpen) {
+// `compare` (optional): { active, selected: Set<key> } — in compare mode the
+// cards become toggles and the selected ones are marked.
+export function renderRoster(container, filtered, onOpen, compare = null) {
   clear(container);
   if (!filtered.length) {
     container.append(el('div', { class: 'empty-state' },
@@ -166,10 +190,14 @@ export function renderRoster(container, filtered, onOpen) {
   const grid = el('div', { class: 'roster-grid' });
   for (const m of filtered) {
     const note = componentNote(m);
+    const key = identityKey(m);
+    const selected = !!compare?.active && compare.selected.has(key);
     const card = el('button', {
-      class: 'char-card', type: 'button',
+      class: selected ? 'char-card is-selected' : 'char-card', type: 'button',
       style: { '--class-color': classColor(m.className), '--class-ink': classInk(m.className) },
-      dataset: { key: identityKey(m) },
+      dataset: { key },
+      'aria-pressed': compare?.active ? String(selected) : null,
+      title: compare?.active ? (selected ? 'Selected for comparison' : 'Select for comparison') : null,
       onclick: () => onOpen(m),
     },
       el('span', { class: 'row' },

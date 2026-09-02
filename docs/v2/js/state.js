@@ -11,8 +11,17 @@ const state = {
   scope: 'active',      // active | archive | all (owned-character scoping)
   owners: new Set(),    // empty = all
   classes: new Set(),   // empty = all
+  races: new Set(),     // empty = all
+  minLevel: 0,          // 0 = any
   detailKey: null,      // identity key of the open character dialog
   loadError: null,
+
+  // Compare mode: pick two roster cards, see them side by side.
+  compareMode: false,
+  compareKeys: [],      // 0–2 identity keys; the dialog opens at 2
+
+  // "Check for updates" result, shown briefly next to the button.
+  updateNotice: null,
 
   // Readiness
   risk: null,           // null = all

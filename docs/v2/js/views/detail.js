@@ -91,12 +91,35 @@ function renderShell(dialog, member, charFile, statusText) {
     return;
   }
 
+  appendPortrait(body, member, detail);
   const components = charFile?.components || member.components || {};
-  appendStats(body, detail, components);
-  appendGear(body, detail, components);
+  appendStats(body, detail, components, charFile);
+  appendGear(body, detail, components, charFile);
   appendLifeStats(body, detail, components, charFile);
   dialog.append(body);
   restoreFocus();
+}
+
+// Full-body render from Blizzard's media endpoint, behind a toggle: it is a
+// large image, so it loads only when asked for.
+function appendPortrait(body, member, detail) {
+  const url = detail?.mainRawUrl;
+  if (!url) return;
+  const frame = el('div', { class: 'portrait-frame', hidden: true });
+  const toggle = el('button', {
+    class: 'btn btn-quiet portrait-toggle', type: 'button', 'aria-expanded': 'false',
+    text: 'Show full portrait',
+    onclick: () => {
+      const show = frame.hidden;
+      if (show && !frame.firstChild) {
+        frame.append(el('img', { src: url, alt: `Full-body render of ${member.name}`, loading: 'lazy' }));
+      }
+      frame.hidden = !show;
+      toggle.setAttribute('aria-expanded', String(show));
+      toggle.textContent = show ? 'Hide full portrait' : 'Show full portrait';
+    },
+  });
+  body.append(toggle, frame);
 }
 
 function subLine(member, detail) {
@@ -109,10 +132,17 @@ function subLine(member, detail) {
   return parts.join(' · ');
 }
 
+// The character file carries ONE timestamp, sourceUpdatedAt, and it tracks
+// the profile: when the profile was fetched fresh this run but a single
+// component (gear, stats) was carried forward, that timestamp is "now" and
+// says nothing about how old the carried component is. So the date is shown
+// only when the whole record was carried forward; otherwise the note stays
+// generic rather than claiming "from just now" about genuinely old data.
 function sectionNote(state, charFile) {
   if (state === 'carried_forward') {
+    const wholeRecordCarried = charFile?.components?.profile === 'carried_forward';
     const src = Date.parse(charFile?.sourceUpdatedAt || '');
-    return Number.isFinite(src)
+    return wholeRecordCarried && Number.isFinite(src)
       ? `Older data (from ${relAge(Math.max(0, Date.now() - src))})`
       : 'Older data from a previous refresh';
   }
@@ -126,8 +156,8 @@ function section(title, note) {
   return h;
 }
 
-function appendStats(body, detail, components) {
-  const note = sectionNote(components.statistics, null);
+function appendStats(body, detail, components, charFile) {
+  const note = sectionNote(components.statistics, charFile);
   const sec = section('Combat stats', note);
   const s = detail?.stats;
   if (s) {
@@ -150,8 +180,8 @@ function appendStats(body, detail, components) {
   body.append(sec);
 }
 
-function appendGear(body, detail, components) {
-  const note = sectionNote(components.equipment, null);
+function appendGear(body, detail, components, charFile) {
+  const note = sectionNote(components.equipment, charFile);
   const sec = section('Equipment', note);
   const items = Array.isArray(detail?.equipment) ? detail.equipment : null;
   if (items?.length) {

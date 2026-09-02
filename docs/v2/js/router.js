@@ -5,12 +5,15 @@
 // popstate applies the URL without writing history again.
 
 const NAV_KEYS = ['guild', 'tab', 'char'];
-const FILTER_KEYS = ['q', 'sort', 'scope', 'owners', 'classes', 'risk', 'metric',
-  'tier', 'diff', 'pc', 'kind', 'rarity', 'fav'];
+const FILTER_KEYS = ['q', 'sort', 'scope', 'owners', 'classes', 'races', 'minlvl', 'compare',
+  'risk', 'metric', 'tier', 'diff', 'pc', 'kind', 'rarity', 'fav'];
 
 export function readUrl() {
   const p = new URLSearchParams(location.search);
   const tierId = Number(p.get('tier'));
+  const minLevel = Number(p.get('minlvl'));
+  // De-duplicated: ?compare=k,k would otherwise open a self-comparison.
+  const compareKeys = [...new Set((p.get('compare') || '').split(',').filter(Boolean))].slice(0, 2);
   return {
     guild: p.get('guild') || null,
     tab: p.get('tab') || 'roster',
@@ -20,6 +23,10 @@ export function readUrl() {
     scope: p.get('scope') || 'active',
     owners: new Set((p.get('owners') || '').split(',').filter(Boolean)),
     classes: new Set((p.get('classes') || '').split(',').filter(Boolean)),
+    races: new Set((p.get('races') || '').split(',').filter(Boolean)),
+    minLevel: Number.isFinite(minLevel) && minLevel > 0 ? minLevel : 0,
+    compareMode: p.has('compare'),
+    compareKeys,
     risk: p.get('risk') || null,
     category: p.get('metric') || 'ilvl',
     tierId: Number.isFinite(tierId) && tierId > 0 ? tierId : null,
@@ -41,6 +48,11 @@ function buildQuery(s) {
   if (s.scope && s.scope !== 'active') p.set('scope', s.scope);
   if (s.owners?.size) p.set('owners', [...s.owners].sort().join(','));
   if (s.classes?.size) p.set('classes', [...s.classes].sort().join(','));
+  if (s.races?.size) p.set('races', [...s.races].sort().join(','));
+  if (s.minLevel) p.set('minlvl', String(s.minLevel));
+  // `compare` present = compare mode on; its value = the picked keys, so a
+  // two-character comparison is itself a shareable link.
+  if (s.tab === 'roster' && s.compareMode) p.set('compare', (s.compareKeys || []).join(','));
   // Per-view state is only carried in the URL while its own tab is open, so a
   // deep link stays about what the reader is actually looking at.
   if (s.tab === 'readiness' && s.risk) p.set('risk', s.risk);
@@ -66,7 +78,10 @@ export function syncUrl(state, changedKeys) {
   const query = buildQuery(state);
   if (query === location.search) return;
   const url = location.pathname + query;
-  const isNav = changedKeys.some(k => k === 'guild' || k === 'tab' || k === 'detailKey');
+  // Opening a comparison is navigation (Back should close it); picking the
+  // first of the two is not.
+  const isNav = changedKeys.some(k => k === 'guild' || k === 'tab' || k === 'detailKey')
+    || (changedKeys.includes('compareKeys') && (state.compareKeys || []).length === 2);
   if (isNav) history.pushState(null, '', url);
   else history.replaceState(null, '', url);
 }

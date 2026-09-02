@@ -540,6 +540,40 @@
 .collection-meta { display: flex; align-items: center; gap: 10px; font-size: 11.5px; color: var(--ink-3); }
 .collection-meta .fav { color: var(--gold-light); }
 
+/* ---------- Compare mode ---------- */
+.btn-quiet { border-color: var(--border-strong); color: var(--ink-2); }
+.btn-quiet[aria-pressed="true"] { border-color: var(--border-gold); color: var(--gold-light); background: var(--gold-dim); }
+.char-card.is-selected { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; background: var(--raised); }
+.compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 10px 28px 0;
+  font-size: 13px;
+  color: var(--gold-light);
+}
+.compare-bar .btn { margin-left: auto; }
+.compare-dialog { width: min(820px, calc(100vw - 32px)); }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 14px; }
+.compare-table th, .compare-table td { padding: 8px 10px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: left; }
+.compare-table thead th { border-top: 0; border-bottom: 1px solid var(--border-strong); vertical-align: bottom; }
+.compare-table tbody th { font-weight: 500; color: var(--ink-2); width: 40%; }
+.compare-table td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.compare-table td.is-best { color: var(--green-ink); background: var(--green-dim); }
+.compare-name { display: block; font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--class-ink, var(--gold-light)); }
+.compare-sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--ink-3); }
+
+/* ---------- Full portrait ---------- */
+.portrait-toggle { margin-top: 16px; }
+.portrait-frame { margin-top: 12px; text-align: center; }
+.portrait-frame img { max-height: 520px; border-radius: var(--radius); border: 1px solid var(--border); }
+
+/* ---------- Check for updates ---------- */
+.update-notice { font-size: 12px; color: var(--ink-2); }
+.update-notice:empty { display: none; }
+
 /* ---------- Bottom nav (mobile) ---------- */
 .bottom-nav { display: none; }
 
@@ -561,6 +595,8 @@
   .search-box { flex: 1; }
   .search-box input { width: 100%; }
   .filters { padding: 10px 16px 0; }
+  .compare-bar { padding: 10px 16px 0; }
+  #check-updates { display: none; } /* header is tight on phones; the pill still reports age */
   .stat-strip { gap: 8px; }
   .stat {
     background: var(--surface);
