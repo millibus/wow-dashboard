@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Death's Edge — Guild Dashboard</title>
-  <meta name="description" content="Deaths Edge and Riot Act guild dashboard — Onyxia-US">
+  <title>Guild Dashboard</title>
+  <meta name="description" content="World of Warcraft guild dashboard — roster, readiness, raids, and collections">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
   <link rel="preconnect" href="https://render.worldofwarcraft.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,13 +21,15 @@
     <div class="brand">
       <svg class="crest" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4 L15 15 M4 4 L4 8 M4 4 L8 4"></path><path d="M20 4 L9 15 M20 4 L20 8 M20 4 L16 4"></path><path d="M6.5 17.5 L9 15 M17.5 17.5 L15 15"></path><circle cx="12" cy="18.5" r="2.2"></circle></svg>
       <div class="brand-text">
-        <h1 id="guild-title" class="wordmark">Death's Edge</h1>
-        <p id="guild-subtitle" class="subtitle">Onyxia-US · Guild Dashboard</p>
+        <h1 id="guild-title" class="wordmark">Guild Dashboard</h1>
+        <p id="guild-subtitle" class="subtitle">Loading…</p>
       </div>
     </div>
     <div class="header-tools">
       <div id="guild-switcher" class="segmented" role="group" aria-label="Guild"></div>
       <div id="freshness" class="freshness" aria-live="polite"></div>
+      <button id="check-updates" class="btn btn-quiet" type="button" title="Refetch the published snapshot and reload if a newer one exists">Check for updates</button>
+      <span id="update-notice" class="update-notice" role="status" aria-live="polite"></span>
     </div>
   </header>
 
@@ -50,13 +52,15 @@
           <option value="class">Class</option>
         </select>
       </label>
+      <button id="compare-toggle" class="btn btn-quiet" type="button" aria-pressed="false">Compare</button>
     </div>
   </nav>
 
-  <div id="filters" class="filters" aria-label="Filters"></div>
+  <div id="filters" class="filters" role="group" aria-label="Filters"></div>
+  <div id="compare-bar" class="compare-bar" role="status" aria-live="polite" hidden></div>
 
   <main id="main">
-    <div id="stats" class="stat-strip" aria-label="Guild summary"></div>
+    <div id="stats" class="stat-strip" role="group" aria-label="Guild summary"></div>
     <p id="result-count" class="result-count" aria-live="polite"></p>
     <section id="view" class="view" role="tabpanel" aria-label="Current view"></section>
   </main>
@@ -64,6 +68,7 @@
   <nav id="bottom-nav" class="bottom-nav" aria-label="Views"></nav>
 
   <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"></dialog>
+  <dialog id="compare-dialog" class="detail-dialog compare-dialog" aria-labelledby="compare-title"></dialog>
 
   <script type="module" src="js/main.js"></script>
 </body>

@@ -29,6 +29,14 @@ export async function fetchSnapshotFile(manifest, rel) {
   return res.json();
 }
 
+// "Check for updates": refetch the manifest (no-store) and compare snapshot
+// ids. This can only ever discover a snapshot the pipeline already published;
+// nothing in the browser can ask Blizzard for anything.
+export async function checkForUpdates(current) {
+  const latest = await fetchManifest();
+  return { updated: latest.snapshotId !== current?.snapshotId, manifest: latest };
+}
+
 export function identityKey(member) {
   return `${member.region}-${member.realmSlug}-${member.id}`;
 }

@@ -3,7 +3,7 @@
 // snapshot (manifest first, everything else hash-busted through it).
 
 import { el, clear, icon } from './dom.js';
-import { fetchManifest, fetchSnapshotFile, identityKey } from './api.js';
+import { fetchManifest, fetchSnapshotFile, checkForUpdates, identityKey, relAge } from './api.js';
 import { getState, setState, subscribe } from './state.js';
 import { readUrl, syncUrl, onPopstate } from './router.js';
 import { renderFreshness, renderStaleBanner } from './views/banner.js';
@@ -13,6 +13,7 @@ import { renderLeaderboardFilters, renderLeaderboard } from './views/leaderboard
 import { renderRaidFilters, renderRaids } from './views/raids.js';
 import { renderCollectionFilters, renderCollections, ensureCollection } from './views/collections.js';
 import { setupDialog, openDetail } from './views/detail.js';
+import { setupCompareDialog, openCompare } from './views/compare.js';
 import { TABS } from './config.js';
 
 const $ = id => document.getElementById(id);
@@ -22,15 +23,20 @@ const ui = {
   switcher: $('guild-switcher'),
   freshness: $('freshness'),
   banner: $('stale-banner'),
+  checkUpdates: $('check-updates'),
+  updateNotice: $('update-notice'),
   tabs: $('tabs'),
   search: $('search'),
   sort: $('sort'),
+  compareToggle: $('compare-toggle'),
+  compareBar: $('compare-bar'),
   filters: $('filters'),
   stats: $('stats'),
   resultCount: $('result-count'),
   view: $('view'),
   bottomNav: $('bottom-nav'),
   dialog: $('detail-dialog'),
+  compareDialog: $('compare-dialog'),
 };
 
 const NAV_ICONS = {
@@ -48,50 +54,67 @@ function guildList(manifest) {
 }
 
 function titleFromSlug(slug) {
-  return slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+  return String(slug || '').split('-').filter(Boolean)
+    .map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
 }
 
 // --- Data loading -----------------------------------------------------------
 
-async function loadRoster(slug) {
-  const { manifest } = getState();
-  setState({ roster: null, loadError: null });
-  try {
-    const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
-    if (getState().guild !== slug) return; // superseded by another switch
-    setState({ roster });
-  } catch (err) {
-    if (getState().guild !== slug) return;
-    setState({ roster: null, loadError: String(err?.message || err) });
-  }
+// In-flight fetches keyed by "kind:slug" so a state change during a load
+// cannot start the same request twice.
+const inflight = new Map();
+function once(key, fn) {
+  if (inflight.has(key)) return inflight.get(key);
+  const p = fn().finally(() => inflight.delete(key));
+  inflight.set(key, p);
+  return p;
+}
+
+function loadRoster(slug) {
+  return once(`roster:${slug}`, async () => {
+    const { manifest } = getState();
+    setState({ roster: null, loadError: null });
+    try {
+      const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
+      if (getState().guild !== slug) return; // superseded by another switch
+      setState({ roster });
+    } catch (err) {
+      if (getState().guild !== slug) return;
+      setState({ roster: null, loadError: String(err?.message || err) });
+    }
+  });
 }
 
 // Raids and collections are fetched only when their tab is first opened, and
 // only for the active guild — the roster view never pays for them.
-async function loadRaids(slug) {
+function loadRaids(slug) {
   const state = getState();
-  if (state.raids && state.raids.slug === slug) return;
-  const [raids, catalog] = await Promise.all([
-    fetchSnapshotFile(state.manifest, `raids/${slug}.json`).catch(() => null),
-    state.catalog !== undefined
-      ? Promise.resolve(state.catalog)
-      : fetchSnapshotFile(state.manifest, 'raid-catalog.json').catch(() => null),
-  ]);
-  if (getState().guild !== slug) return;
-  const tiers = catalog?.tiers || [];
-  const tierId = tiers.some(t => t.id === getState().tierId) ? getState().tierId : (tiers[0]?.id ?? null);
-  setState({ raids: raids ? { ...raids, slug } : null, catalog: catalog ?? null, tierId });
+  if (state.raids && state.raids.slug === slug) return Promise.resolve();
+  return once(`raids:${slug}`, async () => {
+    const [raids, catalog] = await Promise.all([
+      fetchSnapshotFile(state.manifest, `raids/${slug}.json`).catch(() => null),
+      state.catalog !== undefined
+        ? Promise.resolve(state.catalog)
+        : fetchSnapshotFile(state.manifest, 'raid-catalog.json').catch(() => null),
+    ]);
+    if (getState().guild !== slug) return;
+    const tiers = catalog?.tiers || [];
+    const tierId = tiers.some(t => t.id === getState().tierId) ? getState().tierId : (tiers[0]?.id ?? null);
+    setState({ raids: raids ? { ...raids, slug } : null, catalog: catalog ?? null, tierId });
+  });
 }
 
-async function loadCollectionsIndex(slug) {
+function loadCollectionsIndex(slug) {
   const state = getState();
-  if (state.collectionsIndex && state.collectionsIndex.slug === slug) return;
-  const index = await fetchSnapshotFile(state.manifest, `collections/${slug}/index.json`)
-    .catch(() => ({ characters: {} }));
-  if (getState().guild !== slug) return;
-  const keys = Object.keys(index.characters || {});
-  const collectionKey = keys.includes(getState().collectionKey) ? getState().collectionKey : (keys[0] || null);
-  setState({ collectionsIndex: { ...index, slug }, collectionKey });
+  if (state.collectionsIndex && state.collectionsIndex.slug === slug) return Promise.resolve();
+  return once(`collections:${slug}`, async () => {
+    const index = await fetchSnapshotFile(state.manifest, `collections/${slug}/index.json`)
+      .catch(() => ({ characters: {} }));
+    if (getState().guild !== slug) return;
+    const keys = Object.keys(index.characters || {});
+    const collectionKey = keys.includes(getState().collectionKey) ? getState().collectionKey : (keys[0] || null);
+    setState({ collectionsIndex: { ...index, slug }, collectionKey });
+  });
 }
 
 // Kick off whatever the active tab needs; safe to call on every render.
@@ -120,10 +143,16 @@ function renderSwitcher(state) {
   }
 }
 
+// Guild name, realm, and region all come from the data — nothing here is a
+// constant that would go stale on a transfer or a second region.
 function renderHeaderText(state) {
   const name = state.roster?.guild || titleFromSlug(state.guild || '');
   if (name) ui.title.textContent = name;
-  ui.subtitle.textContent = 'Onyxia-US · Guild Dashboard';
+  const cfgGuild = (state.manifest?.config?.guilds || []).find(g => g.slug === state.guild);
+  const realm = state.roster?.realm || (cfgGuild?.realm ? titleFromSlug(cfgGuild.realm) : null);
+  const region = (state.manifest?.config?.region || state.manifest?.region || '').toUpperCase();
+  const where = [realm, region].filter(Boolean).join('-');
+  ui.subtitle.textContent = where ? `${where} · Guild Dashboard` : 'Guild Dashboard';
   document.title = `${name || 'Guild'} — Guild Dashboard`;
 }
 
@@ -160,13 +189,28 @@ function tabKeydown(e, index) {
 
 // --- Views ------------------------------------------------------------------
 
-const openMember = member => setState({ detailKey: identityKey(member) });
+// A roster card click opens the detail — or, in compare mode, toggles the
+// card's selection; the comparison opens itself at two.
+const openMember = member => {
+  const state = getState();
+  if (state.tab === 'roster' && state.compareMode) {
+    const key = identityKey(member);
+    const keys = state.compareKeys.includes(key)
+      ? state.compareKeys.filter(k => k !== key)
+      : [...state.compareKeys, key].slice(-2);
+    setState({ compareKeys: keys });
+    return;
+  }
+  setState({ detailKey: identityKey(member) });
+};
 
 const actions = {
   // Roster
   setScope: scope => setState({ scope }),
   toggleOwner: owner => setState({ owners: toggled(getState().owners, owner) }),
   toggleClass: cls => setState({ classes: toggled(getState().classes, cls) }),
+  toggleRace: race => setState({ races: toggled(getState().races, race) }),
+  setMinLevel: minLevel => setState({ minLevel }),
   // Readiness
   setRisk: risk => setState({ risk }),
   // Leaderboard
@@ -187,6 +231,27 @@ function toggled(set, value) {
   return next;
 }
 
+function renderCompareBar(state) {
+  const active = state.tab === 'roster' && state.compareMode;
+  ui.compareToggle.setAttribute('aria-pressed', String(!!state.compareMode));
+  ui.compareBar.hidden = !active;
+  clear(ui.compareBar);
+  if (!active) return;
+  const picked = state.compareKeys
+    .map(k => (state.roster?.members || []).find(m => identityKey(m) === k)?.name)
+    .filter(Boolean);
+  const text = picked.length === 0 ? 'Compare: pick two characters.'
+    : picked.length === 1 ? `Compare: ${picked[0]} selected — pick one more.`
+    : `Comparing ${picked[0]} and ${picked[1]}.`;
+  ui.compareBar.append(
+    el('span', { text }),
+    el('button', {
+      class: 'btn btn-quiet', type: 'button', text: 'Exit compare',
+      onclick: () => setState({ compareMode: false, compareKeys: [] }),
+    }),
+  );
+}
+
 function renderView(state) {
   // The search/sort toolbar and the summary strip belong to the roster only.
   const isRoster = state.tab === 'roster';
@@ -197,6 +262,7 @@ function renderView(state) {
     clear(ui.stats);
     ui.resultCount.textContent = '';
   }
+  renderCompareBar(state);
 
   // Every view is a projection of the roster, so its load state gates them all.
   if (state.loadError) {
@@ -238,12 +304,14 @@ function renderView(state) {
       renderStats(ui.stats, filtered);
       const scoped = (state.roster.members || []).filter(m => m.owner).length;
       ui.resultCount.textContent = `Showing ${filtered.length} of ${scoped} characters`;
-      renderRoster(ui.view, filtered, openMember);
+      renderRoster(ui.view, filtered, openMember, {
+        active: state.compareMode, selected: new Set(state.compareKeys),
+      });
     }
   }
 }
 
-// --- Detail dialog ----------------------------------------------------------
+// --- Dialogs ----------------------------------------------------------------
 
 function syncDialog(state) {
   if (!state.detailKey) {
@@ -256,17 +324,60 @@ function syncDialog(state) {
   openDetail(ui.dialog, member, state);
 }
 
+function syncCompareDialog(state) {
+  const keys = state.tab === 'roster' && state.compareMode ? state.compareKeys : [];
+  if (keys.length < 2) {
+    if (ui.compareDialog.open) ui.compareDialog.close();
+    return;
+  }
+  const members = keys.map(k => (state.roster?.members || []).find(m => identityKey(m) === k));
+  if (members.some(m => !m)) return;
+  if (ui.compareDialog.open && ui.compareDialog.dataset.keys === keys.join(',')) return;
+  openCompare(ui.compareDialog, members, state);
+}
+
+// --- Check for updates ------------------------------------------------------
+
+let noticeTimer = null;
+async function onCheckUpdates() {
+  ui.checkUpdates.disabled = true;
+  ui.updateNotice.textContent = 'Checking…';
+  try {
+    const { updated, manifest } = await checkForUpdates(getState().manifest);
+    if (updated) {
+      ui.updateNotice.textContent = 'New snapshot found — reloading…';
+      location.reload();
+      return;
+    }
+    const age = Date.parse(manifest.publishedAt || '');
+    ui.updateNotice.textContent = Number.isFinite(age)
+      ? `Up to date (published ${relAge(Math.max(0, Date.now() - age))}).`
+      : 'Up to date.';
+  } catch (_) {
+    ui.updateNotice.textContent = 'Could not reach the snapshot right now.';
+  } finally {
+    ui.checkUpdates.disabled = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { ui.updateNotice.textContent = ''; }, 8000);
+  }
+}
+
 // --- Wiring -----------------------------------------------------------------
+
+// Everything keyed to a guild, dropped whenever the guild changes — by the
+// switcher or by Back/Forward — so no view can show another guild's rows.
+function guildScopedReset() {
+  return {
+    detailKey: null, owners: new Set(), classes: new Set(), races: new Set(), minLevel: 0, search: '',
+    compareKeys: [],
+    raids: null, tierId: null,
+    collectionsIndex: null, collectionKey: null, collections: {},
+  };
+}
 
 function switchGuild(slug) {
   if (slug === getState().guild) return;
-  // Guild-scoped data must not leak across a switch: everything keyed to the
-  // old guild is dropped, and its tab reloads on the next render.
-  setState({
-    guild: slug, detailKey: null, owners: new Set(), classes: new Set(), search: '',
-    raids: null, tierId: null,
-    collectionsIndex: null, collectionKey: null, collections: {},
-  });
+  setState({ guild: slug, ...guildScopedReset() });
   ui.search.value = '';
   loadRoster(slug);
 }
@@ -276,6 +387,7 @@ function applyUrl(urlState, { load = false } = {}) {
   const guild = slugs.includes(urlState.guild) ? urlState.guild : slugs[0] || null;
   const guildChanged = guild !== getState().guild;
   setState({
+    ...(guildChanged ? guildScopedReset() : {}),
     guild,
     tab: TABS.some(t => t.id === urlState.tab) ? urlState.tab : 'roster',
     detailKey: urlState.detailKey,
@@ -284,6 +396,10 @@ function applyUrl(urlState, { load = false } = {}) {
     scope: ['active', 'archive', 'all'].includes(urlState.scope) ? urlState.scope : 'active',
     owners: urlState.owners,
     classes: urlState.classes,
+    races: urlState.races,
+    minLevel: urlState.minLevel,
+    compareMode: urlState.compareMode,
+    compareKeys: urlState.compareKeys,
     risk: urlState.risk,
     category: urlState.category,
     tierId: urlState.tierId,
@@ -302,9 +418,19 @@ async function boot() {
   setupDialog(ui.dialog, () => {
     if (getState().detailKey) setState({ detailKey: null });
   });
+  // Closing the comparison keeps compare mode on with nothing picked, so the
+  // reader can pick the next pair without re-entering the mode.
+  setupCompareDialog(ui.compareDialog, () => {
+    if (getState().compareKeys.length === 2) setState({ compareKeys: [] });
+  });
 
   ui.search.addEventListener('input', () => setState({ search: ui.search.value }));
   ui.sort.addEventListener('change', () => setState({ sort: ui.sort.value }));
+  ui.compareToggle.addEventListener('click', () => {
+    const on = !getState().compareMode;
+    setState({ compareMode: on, compareKeys: [] });
+  });
+  ui.checkUpdates.addEventListener('click', onCheckUpdates);
   onPopstate(urlState => applyUrl(urlState));
 
   // The initial URL must be read and applied to state BEFORE any state
@@ -318,13 +444,14 @@ async function boot() {
       renderFreshness(ui.freshness, state.manifest);
       renderStaleBanner(ui.banner, state.manifest, state.guild);
     }
-    if (changed.includes('roster') || changed.includes('guild')) renderHeaderText(state);
+    if (changed.includes('roster') || changed.includes('guild') || changed.includes('manifest')) renderHeaderText(state);
     if (changed.includes('tab')) renderTabs(state);
     // Re-render the view only when its inputs changed — a dialog open/close
     // must not rebuild it (that would detach the card focus returns to).
     const viewKeys = [
       'manifest', 'guild', 'roster', 'tab', 'loadError',
-      'search', 'sort', 'scope', 'owners', 'classes',
+      'search', 'sort', 'scope', 'owners', 'classes', 'races', 'minLevel',
+      'compareMode', 'compareKeys',
       'risk', 'category',
       'catalog', 'raids', 'tierId', 'difficulty',
       'collectionsIndex', 'collectionKey', 'collectionKind', 'rarity', 'favoritesOnly', 'collections',
@@ -332,6 +459,7 @@ async function boot() {
     if (changed.some(k => viewKeys.includes(k))) renderView(state);
     ensureTabData(state);
     syncDialog(state);
+    syncCompareDialog(state);
   });
 
   let manifest = null;
