@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
         run: node scripts/verify-fixtures.js "${{ runner.temp }}/blizzard-fixtures.json"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: blizzard-fixtures
           path: ${{ runner.temp }}/blizzard-fixtures.json
