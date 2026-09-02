@@ -29,6 +29,8 @@ const {
   RAID_TIERS,
   formatMetrics,
   getLifeStatFallbacks,
+  getLifeStatReport,
+  profileNs,
   realmSlug,
 } = require('./lib/blizzard');
 const { toSafeError, logSafeError, redact, safeCode } = require('./lib/safe-error');
@@ -108,17 +110,19 @@ async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
   console.log(`\n[${slug}] fetching roster…`);
   let rosterData;
   try {
-    rosterData = await bnet(`/data/wow/guild/${cfg.realm}/${slug}/roster?namespace=profile-us`);
+    rosterData = await bnet(`/data/wow/guild/${cfg.realm}/${slug}/roster?namespace=${profileNs()}`);
   } catch (err) {
     logSafeError(`[${slug}] roster fetch failed`, err);
     return { status: 'roster_failed', slug, error: safeCode(err) };
   }
-  const eligible = (rosterData.members || []).filter(m => (m.character?.level || 0) >= 10);
-  console.log(`[${slug}] ${eligible.length} members at level 10+`);
+  const eligible = (rosterData.members || []).filter(m => (m.character?.level || 0) >= CONFIG.minMemberLevel);
+  console.log(`[${slug}] ${eligible.length} members at level ${CONFIG.minMemberLevel}+`);
 
   const members = eligible.map(e => ({
     id: e.character?.id ?? null,
     name: e.character?.name,
+    // The member's OWN realm: connected-realm guilds mix realms, and every
+    // character endpoint below must be addressed to this slug, not cfg.realm.
     realmSlug: e.character?.realm?.slug || realmSlug(cfg.realm),
     rank: e.rank,
     level: e.character?.level || 0,
@@ -126,10 +130,12 @@ async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
     raid: null, raidAttempted: false,
     collections: null, collectionsAttempted: false,
   }));
+  const crossRealm = members.filter(m => m.realmSlug !== realmSlug(cfg.realm)).length;
+  if (crossRealm) console.log(`[${slug}] ${crossRealm} member(s) on connected realms`);
 
   console.log(`[${slug}] fetching ${members.length} character details…`);
   await batched(members, 5, async (m) => {
-    const full = await fetchCharacter(cfg.realm, m.name, { lifeStatDefs: CONFIG.lifeStatDefs });
+    const full = await fetchCharacter(m.realmSlug, m.name, { lifeStatDefs: CONFIG.lifeStatDefs });
     if (full) {
       m.detail = full;
       if (!m.id && full.id) m.id = full.id;
@@ -159,7 +165,7 @@ async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
   console.log(`[${slug}] fetching raid progress for ${raidTargets.length}/${expensive.length} tracked members${reuse.raids ? ' (within cadence: reusing the rest)' : ''}…`);
   await batched(raidTargets, 5, async (m) => {
     m.raidAttempted = true;
-    m.raid = await fetchRaidProgress(cfg.realm, m.name, catalog);
+    m.raid = await fetchRaidProgress(m.realmSlug, m.name, catalog);
   }, 200);
 
   const colTargets = expensive.filter(m => needsFetch(m, 'collections'));
@@ -167,8 +173,8 @@ async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
   await batched(colTargets, 5, async (m) => {
     m.collectionsAttempted = true;
     const [pets, mounts] = await Promise.allSettled([
-      fetchPets(cfg.realm, m.name),
-      fetchMounts(cfg.realm, m.name),
+      fetchPets(m.realmSlug, m.name),
+      fetchMounts(m.realmSlug, m.name),
     ]);
     if (pets.status === 'fulfilled' && mounts.status === 'fulfilled') {
       m.collections = { pets: pets.value, mounts: mounts.value };
@@ -182,22 +188,32 @@ async function fetchGuild(slug, catalog, prevGuild, reuse, ownerCfg) {
     guildName: rosterData.guild?.name || slug,
     faction: cfg.faction,
     realm: cfg.realm,
+    // Display name of the guild's home realm, from the API when it says so.
+    realmName: rosterData.guild?.realm?.name || titleCase(cfg.realm),
     members: members.filter(m => m.id !== null && m.name),
   };
+}
+
+function titleCase(slug) {
+  return String(slug).split('-').map(w => w ? w[0].toUpperCase() + w.slice(1) : w).join(' ');
 }
 
 // Legacy writer — derives the old file shapes from the MERGED view, so
 // carry-forward protects the legacy frontend too (no more silently-emptied
 // equipment overwriting good data).
 function writeLegacy(slug, merged, guildName, faction, catalogTiers) {
+  const realmName = merged.roster.realm || titleCase(GUILDS[slug].realm);
   const legacyMembers = [];
+  const memberRealm = new Map();
   for (const summary of merged.roster.members) {
     const key = v2.identityKey(summary);
     const char = merged.characters.get(key);
     if (!char) continue; // details unavailable and nothing to carry: omit rather than fabricate
     // V2 uses null for explicitly-unavailable pieces; the legacy shape
-    // predates that distinction and expects arrays/objects.
+    // predates that distinction and expects arrays/objects — and the legacy
+    // frontend reads life stats with `|| 0`, so null (unknown) stays null.
     const d = char.detail;
+    memberRealm.set(summary.id, d.realm || realmName);
     legacyMembers.push({
       ...d,
       equipment: Array.isArray(d.equipment) ? d.equipment : [],
@@ -208,14 +224,14 @@ function writeLegacy(slug, merged, guildName, faction, catalogTiers) {
   }
   writeJson(`guild-${slug}.json`, {
     guild: guildName,
-    realm: 'Onyxia',
+    realm: realmName,
     faction,
     members: legacyMembers,
     lastUpdated: new Date().toISOString(),
   });
   writeJson(`raid-${slug}.json`, {
     tiers: catalogTiers,
-    members: merged.raids.members.map(r => ({ name: r.name, realm: 'Onyxia', tiers: r.tiers })),
+    members: merged.raids.members.map(r => ({ name: r.name, realm: memberRealm.get(r.id) || realmName, tiers: r.tiers })),
   });
   const legacyCollections = {};
   for (const [, col] of merged.collections) {
@@ -284,7 +300,8 @@ async function main() {
       raidMinLevel: CONFIG.raidMinLevel,
       archiveThresholdDays: CONFIG.archiveThresholdDays,
       readiness: CONFIG.readiness,
-      guilds: CONFIG.guilds.map(g => ({ slug: g.slug, faction: g.faction })),
+      region: CONFIG.region,
+      guilds: CONFIG.guilds.map(g => ({ slug: g.slug, faction: g.faction, realm: g.realm })),
       owners: (() => {
         try {
           const parsed = JSON.parse(fs.readFileSync(OWNER_CONFIG, 'utf8')).owners;
@@ -362,6 +379,16 @@ async function main() {
   const fallbacks = getLifeStatFallbacks();
   if (fallbacks.length) {
     console.log(`WARNING LIFE_STAT_NAME_FALLBACK: matched by display name instead of id: ${fallbacks.join(', ')} — backfill ids in config/dashboard-config.json`);
+  }
+  // A definition that matched NO character after successful achievements
+  // fetches is almost certainly a Blizzard rename. It now publishes as null
+  // (unknown) rather than a silent 0, and this is the signal to fix config.
+  const report = getLifeStatReport(CONFIG.lifeStatDefs);
+  if (report.unmatched.length) {
+    console.log(`WARNING LIFE_STAT_UNMATCHED: no character had a statistic matching ${report.unmatched.join(', ')} (${report.achievementsFetches} achievements fetches) — the display name in config/dashboard-config.json is probably stale`);
+  }
+  if (Object.keys(report.idHints).length) {
+    console.log(`LIFE_STAT_ID_SUGGESTIONS: ids observed for name-matched keys — paste into lifeStatDefs to make matching rename-proof: ${JSON.stringify(report.idHints)}`);
   }
   console.log(`\nAPI metrics: ${formatMetrics()}`);
   const degraded = Object.values(guildOutputs.guilds).some(g => g.status !== 'fresh');

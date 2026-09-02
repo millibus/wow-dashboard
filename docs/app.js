@@ -104,6 +104,17 @@ function hideStaleBanner() {
   banner.className = 'stale-banner';
 }
 
+// Encode a value as a JS string literal that is safe INSIDE a double-quoted
+// HTML attribute (the inline onclick handlers below). A name like Kel'thar
+// used to break the handler outright; anything markup-shaped is escaped.
+function jsArg(value) {
+  return JSON.stringify(String(value))
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // ============================
 // OWNER MAP — edit this!
 // Map character names (exact, case-sensitive) to their owner.
@@ -592,8 +603,8 @@ function renderCard(m) {
     </div>`).join('');
 
   const clickAction = compareMode
-    ? `onclick="selectForCompare('${m.name}', '${m.realm}')"`
-    : `onclick="openDetail('${m.name}', '${m.realm}')"`;
+    ? `onclick="selectForCompare(${jsArg(m.name)}, ${jsArg(m.realm)})"`
+    : `onclick="openDetail(${jsArg(m.name)}, ${jsArg(m.realm)})"`;
 
   const portraitHtml = m.avatarUrl
     ? `<img src="${m.avatarUrl}" alt="${m.name}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'card-portrait-placeholder\\'>⚔</div>'">`
@@ -733,7 +744,7 @@ function renderReadiness() {
     const riskIcon = r.risk === 'ready' ? '✅' : r.risk === 'watch' ? '⚠️' : '🚨';
     const actions = r.actions.slice(0, 3).map(a => `<li>${a}</li>`).join('');
     return `
-      <div class="readiness-card readiness-${r.risk}" style="--class-color:${color}" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+      <div class="readiness-card readiness-${r.risk}" style="--class-color:${color}" onclick="openDetail(${jsArg(m.name)}, ${jsArg(m.realm || 'onyxia')})">
         <div class="readiness-score-ring"><span>${r.score}</span><small>/100</small></div>
         <div class="readiness-card-main">
           <div class="readiness-card-top">
@@ -823,7 +834,7 @@ function renderContentLeaderboard(members) {
       ? `<img src="${m.avatarUrl}" alt="" class="lb-avatar" loading="lazy">`
       : `<div class="lb-avatar-placeholder" style="color:${color}">⚔</div>`;
     return `
-      <tr class="lb-row" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+      <tr class="lb-row" onclick="openDetail(${jsArg(m.name)}, ${jsArg(m.realm || 'onyxia')})">
         <td class="lb-rank">${medal}</td>
         <td class="lb-char">
           ${portrait}
@@ -921,7 +932,7 @@ function renderLeaderboard() {
       : `<div class="lb-avatar-placeholder" style="color:${color}">⚔</div>`;
 
     return `
-      <tr class="lb-row" onclick="openDetail('${m.name}', '${m.realm || 'onyxia'}')">
+      <tr class="lb-row" onclick="openDetail(${jsArg(m.name)}, ${jsArg(m.realm || 'onyxia')})">
         <td class="lb-rank">${medal}</td>
         <td class="lb-char">
           ${portraitHtml}
@@ -1645,7 +1656,7 @@ function renderRaids() {
 
     return `
       <div class="raid-row">
-        <div class="raid-char-name" onclick="openDetail('${m.name}','onyxia')" style="cursor:pointer" title="View character">
+        <div class="raid-char-name" onclick="openDetail(${jsArg(m.name)}, ${jsArg('onyxia')})" style="cursor:pointer" title="View character">
           <span style="color:${ownerColor};font-size:0.7rem;margin-right:4px">${owner ? `[${owner}]` : ''}</span>
           ${m.name}
           <span class="raid-progress-text">${killCount}/${bossCount}</span>

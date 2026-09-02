@@ -27,15 +27,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # No install step on purpose: the pipeline and its tests are
+      # dependency-free, and this is the job that holds the Blizzard secrets —
+      # it should not pull in the legacy VPS server's dependency tree.
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-          cache: 'npm'
-          cache-dependency-path: api/package-lock.json
-
-      - name: Install dependencies
-        working-directory: api
-        run: npm ci
 
       - name: Run tests
         run: npm test
@@ -163,12 +160,17 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The fingerprint names the stage that failed, so a push conflict or a
+      # Pages deploy error files as itself rather than as UNKNOWN.
       - name: Report pipeline failure
         if: needs.build.result == 'failure' || needs.commit.result == 'failure' || needs.deploy.result == 'failure'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          FAILURE_CODE: ${{ needs.build.outputs.failure_code || 'UNKNOWN' }}
+          FAILURE_CODE: >-
+            ${{ needs.build.result == 'failure' && (needs.build.outputs.failure_code || 'BUILD_FAILED')
+             || needs.commit.result == 'failure' && 'COMMIT_FAILED'
+             || 'DEPLOY_FAILED' }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: bash .github/scripts/report-failure.sh
 

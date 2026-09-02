@@ -1,126 +1,112 @@
 # ⚔️ Deaths Edge — WoW Guild Dashboard
 
-Live dashboard for the Deaths Edge (Horde) and Riot Act (Alliance) guilds on Onyxia-US.
+Dashboard for the Deaths Edge (Horde) and Riot Act (Alliance) guilds on Onyxia-US.
 
-## Live Site
-[https://millibus.github.io/wow-dashboard](https://millibus.github.io/wow-dashboard)
+- **Live site:** <https://wow.nwpremier.net/> (GitHub Pages; also at <https://millibus.github.io/wow-dashboard/>)
+- **New dashboard (V2):** <https://wow.nwpremier.net/v2/> — becomes the default in the cutover PR
 
-## Features
-- 📊 All guild members with ilvl, class, spec, stat bars
-- 🔍 Filter by owner, class, race, or name
-- ↕️ Sort by ilvl, level, name, or class
-- 🔬 Click any character for full gear + stats detail
-- ⚔️ Compare any two characters side-by-side
-- 🐎 Mount and 🐾 pet collections per character
-- ⚔️ Raid progress (Liberation of Undermine, Nerub-ar Palace)
-- 🎨 WoW class color coding
-
-## Architecture
+## How it works
 
 ```
-GitHub Actions (hourly cron)
-        │
-        ▼
-scripts/build-snapshot.js  ──► Blizzard API (OAuth)
-        │
-        ▼
-docs/data/*.json   ──►  GitHub Pages auto-deploy
-        │
-        ▼
-docs/app.js  (reads JSON, no API at runtime)
+GitHub Actions, hourly (.github/workflows/refresh-data.yml)
+  build   ─ contents:read ─► scripts/build-snapshot.js ──► Blizzard API (OAuth)
+                                │  one fetch pass, two output layers
+                                ├─► docs/data/v2/**      transactional V2 snapshot
+                                └─► docs/data/*.json     legacy files (until V2 is default)
+                                validate both → upload as artifact
+  commit  ─ contents:write ─► commits the validated artifact
+  deploy  ─ pages:write   ──► deploys the exact artifact (once Pages source = GitHub Actions)
+  alert   ─ issues:write  ──► one deduplicated incident issue on failure, auto-closed on recovery
+
+Browser: docs/v2/ (ES modules) reads docs/data/v2/ — no API calls at runtime.
 ```
 
-- **Frontend** — Static HTML/CSS/JS in `docs/`, served via GitHub Pages.
-- **Data** — JSON snapshots in `docs/data/` (`guild-{slug}.json`, `raid-{slug}.json`, `collections-{slug}.json`, `generated-at.json`), regenerated hourly by `.github/workflows/refresh-data.yml`. The frontend reads these files directly — no runtime API calls.
-- **Live API (optional)** — `api/server.js` is a Node/Express proxy over the Blizzard API. Used for local development and as the runtime path when serving the dashboard from the VPS. Not required by the public Pages site.
-- **Shared client** — `scripts/lib/blizzard.js` exports OAuth + fetch helpers (timeouts, retries, rate-limit handling, token locking). Imported by both `api/server.js` and `scripts/build-snapshot.js` so there's one source of truth for the data shape.
-- **V2 snapshot (transactional)** — `docs/data/v2/` is built alongside the legacy files by the same fetch pass: a `manifest.json` (snapshot id, per-component status/counts, file hashes) plus per-guild rosters and per-character files keyed by stable identity (`region-realmSlug-characterId`). Failed components are carried forward from the previous published snapshot (`fresh` / `carried_forward` / `unavailable` — never silently emptied), rosters are guarded against catastrophic shrinkage (override via the workflow's `sanity_override` input; schema validation is never bypassed), and the tree is staged + validated before an atomic publish. V2 owner labels come from `config/tracked-characters.json`; the legacy frontend keeps its own `OWNER_MAP` until the V2 UI ships.
+**Design rules the whole pipeline follows:**
+
+- **Unknown is never zero.** A failed fetch produces `carried_forward` (last good data, labeled) or `unavailable` (`null`), never an empty array or a fabricated 0. The UI renders unknowns as `—`.
+- **Stable identity.** Characters are keyed by `region-realmSlug-characterId`; names change, ids don't. Connected-realm members are fetched on their own realm.
+- **Config, not constants.** Everything expansion- or guild-shaped lives in `config/dashboard-config.json`.
+- **Logs are safe.** Errors reduce to a code/status/path line (`scripts/lib/safe-error.js`); credentials cannot reach logs, issues, or data files.
+- **Failures are loud.** A stale snapshot is announced on the site itself; a failing pipeline opens an issue and emails you.
+
+## Repository layout
+
+| Path | What it is |
+| --- | --- |
+| `scripts/build-snapshot.js` | The hourly pipeline: fetch → merge with previous snapshot → stage → validate → publish |
+| `scripts/lib/blizzard.js` | Blizzard client: native fetch, timeouts, retries, rate-limit handling, token lock |
+| `scripts/lib/snapshot-v2.js` | Transactional V2 snapshot: component-level carry-forward, sanity guards, atomic publish |
+| `scripts/lib/config.js`, `config/` | Central config + owner/tracked-character mapping |
+| `scripts/validate-snapshot*.js` | Schema and sanity gates; a failed validation commits nothing |
+| `scripts/test/` | `node:test` suite, runs the real pipeline against `scripts/fixtures/` |
+| `tests/e2e/` | Playwright + axe browser tests for the V2 dashboard |
+| `docs/v2/` | The V2 dashboard (no framework, no `innerHTML`) |
+| `docs/index.html`, `docs/app.js` | Legacy V1 dashboard, still the default until the cutover |
+| `api/` | Legacy VPS Express proxy, retired after the cutover soak |
+
+## Configuration
+
+**`config/dashboard-config.json`** — region, guilds, `activeExpansionId`, `levelCap`, `minMemberLevel`, `raidMinLevel`, `archiveThresholdDays`, `readiness` thresholds, sanity `limits`, per-component fetch `cadencesHours`, raid `tierOverrides`, and `lifeStatDefs`.
+
+- **New expansion:** update `activeExpansionId` and `levelCap`. The `LEVEL_CAP_DRIFT` warning fires if the roster outgrows the cap. Raid tiers are discovered from the journal API; nothing else to edit.
+- **Adding a guild:** add it to `guilds`. (The legacy `docs/app.js` and `api/server.js` still carry their own lists until retired.)
+- **Life stats:** matched by statistic `id` when set, by display name otherwise. Every run logs `LIFE_STAT_ID_SUGGESTIONS` with the ids it observed — paste them into `lifeStatDefs` to make matching rename-proof. `LIFE_STAT_UNMATCHED` means a display name no longer exists on Blizzard's side; the stat publishes as unknown until the config is fixed.
+
+**`config/tracked-characters.json`** — which characters belong to which owner. Expensive fetches (raids, collections) run only for tracked characters. Entries match by `id` when set, by name otherwise; the V2 roster records resolved ids so this file can be backfilled.
 
 ## Setup
 
-### Repo secrets (one-time, for the workflow)
+### Repo secrets (one-time)
 
-The hourly workflow needs Blizzard OAuth credentials as repo secrets. Create an app at <https://develop.battle.net/access/clients> for the values, then:
+Create a client at <https://develop.battle.net/access/clients>, then:
 
 ```bash
 gh secret set BLIZZARD_CLIENT_ID -R millibus/wow-dashboard
 gh secret set BLIZZARD_CLIENT_SECRET -R millibus/wow-dashboard
+gh workflow run refresh-data.yml -R millibus/wow-dashboard
 ```
+
+### Repo settings (one-time, cannot be automated)
+
+- **Settings → Pages → Source → GitHub Actions.** Until then the `deploy` job prints a notice and skips; the site keeps serving from the branch.
 
 ### Local development
 
 ```bash
-cd api
-cp .env.example .env       # fill in BLIZZARD_CLIENT_ID / BLIZZARD_CLIENT_SECRET
-npm install
+npm test                 # pipeline + unit tests against fixtures; no credentials, no installs
+npm run validate         # schema-check docs/data
 
-# Option A — regenerate static snapshots and serve them locally
-node ../scripts/build-snapshot.js
-cd ../docs && python3 -m http.server 8000   # open http://localhost:8000
+# Run the pipeline for real (writes docs/data)
+BLIZZARD_CLIENT_ID=… BLIZZARD_CLIENT_SECRET=… npm run snapshot
 
-# Option B — run the live Express server (proxies Blizzard at request time)
-npm start                  # serves /api/* AND the /docs frontend on port 3002
+# Serve the site locally
+cd docs && python3 -m http.server 8000     # http://localhost:8000 and /v2/
+
+# Browser tests (installs Playwright + Chromium)
+npm ci && npx playwright install chromium && npm run test:e2e
 ```
 
-When running via Option B, set `API_BASE = ''` in `docs/app.js` (the default) — `fetchData` falls back to the live `/api/*` endpoints if a snapshot file is missing.
+### Replacing the synthetic fixtures with real captures
 
-### VPS deployment (live API)
+The committed fixtures are hand-written. Once credentials work, run **Actions → Capture API fixtures → Run workflow**: it records real responses, scans them for credential-shaped strings, runs the test suite against them, and uploads the file as an artifact. Download it, review the diff against `scripts/fixtures/blizzard-fixtures.json`, and commit.
 
-The Express server runs on the Hostinger VPS under PM2 from `/root/clawd/projects/wow-dashboard/api`:
+## When something breaks
 
-```bash
-cd api
-npm install
-pm2 start ecosystem.config.js
-```
+**The site says the data is old.** Both dashboards show a banner past 24 hours. Check the open issue labeled `pipeline-failure` — it names the failure code and links the run.
 
-The VPS path is independent of the public GitHub Pages site — both can run simultaneously, and the frontend prefers snapshots when present.
+| Code | Meaning | What to do |
+| --- | --- | --- |
+| `AUTH_BAD_CREDENTIALS` | Blizzard rejected the OAuth client | Rotate the secrets (above). Verify first: `curl -u "$ID:$SECRET" -d grant_type=client_credentials https://oauth.battle.net/token` |
+| `HTTP_429`, `NETWORK_*` | Transient | Wait for the next hourly run |
+| `HTTP_5xx` | Blizzard incident | Check the API forums; wait |
+| `SNAPSHOT_VALIDATION_FAILED` | Built data failed the schema gate | Open the (sanitized) run log |
+| `SANITY_*` in the manifest | Roster shrank past the guard | If the change is real, re-run with the `sanity_override` input |
+| `COMMIT_FAILED` / `DEPLOY_FAILED` | Data was fine; push or Pages deploy failed | Next run retries; check Pages settings |
 
-### Testing
+The issue closes itself on the next successful run.
 
-```bash
-cd api && npm ci && cd ..
-npm test        # unit tests + a full pipeline run against scripts/fixtures/ (no credentials needed)
-npm run validate  # schema/sanity-check docs/data
-```
+**The hourly schedule stopped entirely.** GitHub disables scheduled workflows after 60 days without repository activity. `keepalive.yml` commits a marker if the branch is quiet for 30 days, which prevents this while it can run — but it is a same-repo keepalive and cannot recover schedules that are already disabled. If runs have stopped, re-enable the workflow under Actions.
 
-The fixtures in `scripts/fixtures/blizzard-fixtures.json` are synthetic. To replace them with real (credential-free) captures, run locally with valid credentials: `npm run capture-fixtures`.
+## Cutover plan
 
-### When the refresh pipeline fails
-
-Failures open (and update) a single GitHub issue labeled `pipeline-failure`; it closes itself on the next successful run. The most common failure:
-
-- **`AUTH_BAD_CREDENTIALS`** — Blizzard rejected the OAuth client. Regenerate the client secret at <https://develop.battle.net/access/clients>, verify it works:
-
-  ```bash
-  curl -u "$CLIENT_ID:$CLIENT_SECRET" -d grant_type=client_credentials https://oauth.battle.net/token
-  ```
-
-  then update both secrets and re-run:
-
-  ```bash
-  gh secret set BLIZZARD_CLIENT_ID -R millibus/wow-dashboard
-  gh secret set BLIZZARD_CLIENT_SECRET -R millibus/wow-dashboard
-  gh workflow run refresh-data.yml -R millibus/wow-dashboard
-  ```
-
-Pipeline logs are sanitized: errors are reduced to a safe code/status/path line (`scripts/lib/safe-error.js`) — never log raw error, request, or config objects in pipeline code.
-
-### Manually trigger a refresh
-
-```bash
-gh workflow run refresh-data.yml -R millibus/wow-dashboard
-gh run watch -R millibus/wow-dashboard
-```
-
-## Configuration (`config/dashboard-config.json`)
-
-Single source of truth for everything expansion- or guild-shaped: region, `activeExpansionId`, `levelCap` (the drift guard warns when the roster outgrows it), guild list, sanity limits, per-component fetch cadences, raid tier overrides, and life-stat definitions (id-first matching; keys that fall back to name matching are logged as `LIFE_STAT_NAME_FALLBACK` so ids can be backfilled). Raid tiers themselves are discovered from the Blizzard journal API each day — a new raid appears without a code change.
-
-**When a new expansion ships:** update `activeExpansionId` and `levelCap` here. Nothing else.
-
-## Adding a guild
-Edit `guilds` in `config/dashboard-config.json`, plus `currentGuildSlug` defaults / titles in `docs/app.js` (legacy UI). `api/server.js` still carries its own `GUILDS` map until the VPS is retired.
-
-## Adding an owner mapping
-Edit `OWNER_MAP` in `docs/app.js`.
+V1 remains the default until V2 is verified on a real snapshot. The cutover PR makes `/v2/` the root, then the custom domain moves to Pages (repo setting + DNS verification), with the VPS kept as rollback for a 7-day soak. `api/`, `docs/app.js`, and the legacy data files are deleted after the soak.

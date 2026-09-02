@@ -7,7 +7,10 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DEFAULT_FIXTURES = path.join(__dirname, '..', '..', 'fixtures', 'blizzard-fixtures.json');
+// FIXTURES_PATH lets the capture workflow run the whole suite against a
+// freshly captured file before it is committed.
+const DEFAULT_FIXTURES = process.env.FIXTURES_PATH
+  || path.join(__dirname, '..', '..', 'fixtures', 'blizzard-fixtures.json');
 
 function listen(server) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server)));

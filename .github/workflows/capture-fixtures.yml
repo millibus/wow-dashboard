@@ -1,0 +1,54 @@
+name: Capture API fixtures
+
+# One-click capture of REAL Blizzard responses as test fixtures, so the
+# synthetic set in scripts/fixtures/ can be replaced with the actual API
+# shapes once credentials work. Runs only on demand.
+#
+# The output is scanned for every credential form before upload and never
+# committed by this workflow: download the artifact, review the diff, and
+# commit it yourself.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Capture fixtures
+        env:
+          BLIZZARD_CLIENT_ID: ${{ secrets.BLIZZARD_CLIENT_ID }}
+          BLIZZARD_CLIENT_SECRET: ${{ secrets.BLIZZARD_CLIENT_SECRET }}
+          FIXTURES_OUT: ${{ runner.temp }}/blizzard-fixtures.json
+        run: node scripts/capture-fixtures.js
+
+      - name: Scan output for credential-shaped strings
+        env:
+          FIXTURES_OUT: ${{ runner.temp }}/blizzard-fixtures.json
+        run: |
+          if grep -Eiq 'authorization|bearer |client_secret|access_token' "$FIXTURES_OUT"; then
+            echo "Refusing to upload: captured fixtures contain a forbidden string."
+            exit 1
+          fi
+          echo "Scan clean: $(wc -c < "$FIXTURES_OUT") bytes"
+
+      - name: Run the test suite against the captured fixtures
+        env:
+          FIXTURES_PATH: ${{ runner.temp }}/blizzard-fixtures.json
+        run: npm test
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: blizzard-fixtures
+          path: ${{ runner.temp }}/blizzard-fixtures.json
+          retention-days: 14
