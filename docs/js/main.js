@@ -568,10 +568,10 @@ async function boot() {
     clear(ui.view);
     ui.view.append(el('div', { class: 'empty-state' },
       el('p', { class: 'empty-title', text: 'Dashboard data is unavailable right now.' }),
-      el('p', { class: 'empty-hint', text: 'The current dashboard still has the last published data.' }),
+      el('p', { class: 'empty-hint', text: 'The previous dashboard may still load the last published data.' }),
       el('div', { class: 'empty-actions' },
         el('button', { class: 'btn', type: 'button', text: 'Retry', onclick: () => location.reload() }),
-        el('a', { class: 'btn btn-quiet', href: '../', text: 'Open the current dashboard' }),
+        el('a', { class: 'btn btn-quiet', href: 'v1/', text: 'Open the previous dashboard' }),
       ),
     ));
     return;

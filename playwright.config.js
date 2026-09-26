@@ -1,4 +1,4 @@
-// Browser tests for the V2 dashboard. They run against the real docs/v2
+// Browser tests for the dashboard. They run against the real docs/
 // sources plus a snapshot built by the real pipeline from fixtures, served
 // exactly the way GitHub Pages serves it.
 
@@ -40,7 +40,7 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: 'node tests/e2e/serve.js',
-    url: `http://127.0.0.1:${PORT}/v2/`,
+    url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
   },

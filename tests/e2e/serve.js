@@ -1,7 +1,8 @@
 'use strict';
 // Static server for the browser tests. Serves the REAL docs/ tree at / (so
-// /v2/ is the shipped source, not a copy) and the fixture-built snapshot at
-// /data/, which is exactly the layout GitHub Pages publishes.
+// the dashboard at / and V1 at /v1/ are the shipped sources, not copies) and
+// the fixture-built snapshot at /data/, which is exactly the layout GitHub
+// Pages publishes.
 
 const http = require('node:http');
 const fs = require('node:fs');

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚔️ Death's Edge — Guild Dashboard (previous version)</title>
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Death's Edge guild dashboard — character roster, ilvl leaderboard, pets and mounts for Onyxia-US.">
+  <meta property="og:title" content="⚔️ Death's Edge — Guild Dashboard">
+  <meta property="og:description" content="Character roster, ilvl leaderboard, stats, pets and mounts for Death's Edge on Onyxia-US.">
+  <meta property="og:url" content="https://wow.nwpremier.net/v1/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="legacy-notice">You're viewing the previous version of the dashboard. <a href="../">Open the new dashboard →</a></div>
+
+<!-- Raised by setSnapshotTimestamp() when the snapshot stops being refreshed. -->
+<div id="stale-banner" class="stale-banner" hidden></div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <span class="sword">⚔️</span>
+      <div>
+        <h1>Death's Edge</h1>
+        <p class="subtitle">Guild Dashboard — Onyxia-US</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="guild-toggle">
+        <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Death's Edge</button>
+        <button class="guild-toggle-btn" data-slug="riot-act" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
+      </div>
+      <span id="last-updated" class="last-updated" aria-live="polite"></span>
+      <button id="btn-refresh" class="btn-refresh" type="button" onclick="refreshData()" title="Reload the latest snapshot now (also checked automatically every 5 minutes)"><span class="refresh-glyph" aria-hidden="true">↻</span> Refresh</button>
+    </div>
+  </div>
+  <div class="guild-stats" id="guild-stats"></div>
+</header>
+
+<!-- FILTER BAR -->
+<div class="filter-bar" id="filter-bar">
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Search</div>
+    <input type="text" id="search" class="filter-search" placeholder="Name, class, race..." oninput="onSearch(this.value)">
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Status</div>
+    <div class="filter-bar-pills" id="filter-status"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Owner</div>
+    <div class="filter-bar-pills" id="filter-owners"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Class</div>
+    <div class="filter-bar-pills" id="filter-classes"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Race</div>
+    <div class="filter-bar-pills" id="filter-races"></div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Level</div>
+    <div class="filter-bar-pills">
+      <button class="level-btn active" data-val="0" onclick="onLevelFilter('0', this)">All</button>
+      <button class="level-btn" data-val="70" onclick="onLevelFilter('70', this)">70+</button>
+      <button class="level-btn" data-val="80" onclick="onLevelFilter('80', this)">80+</button>
+    </div>
+  </div>
+  <div class="filter-bar-section">
+    <div class="filter-bar-label">Sort by</div>
+    <select id="sort-select" class="sort-select" onchange="onSortChange(this.value)">
+      <option value="ilvl">Item Level ↓</option>
+      <option value="level">Level ↓</option>
+      <option value="name">Name A–Z</option>
+      <option value="class">Class</option>
+      <option value="race">Race</option>
+      <option value="owner">Owner</option>
+    </select>
+  </div>
+  <div class="filter-bar-section" style="justify-content:flex-end;margin-left:auto;align-self:flex-end">
+    <button class="btn-compare-mode" id="btn-compare-mode" onclick="toggleCompareMode()">⚔ Compare</button>
+  </div>
+</div>
+
+<!-- COMPARE BAR -->
+<div id="compare-bar" class="compare-bar hidden">
+  <div class="compare-bar-inner">
+    <span id="compare-char1" class="compare-name">— Pick a character</span>
+    <span class="vs">VS</span>
+    <span id="compare-char2" class="compare-name">— Pick a character</span>
+    <button class="btn-compare-go" id="btn-compare-go" onclick="doCompare()" disabled>Compare ▶</button>
+    <button class="btn-cancel" onclick="cancelCompare()">✕ Cancel</button>
+  </div>
+</div>
+
+<!-- VIEW TABS -->
+<div class="view-tabs">
+  <button class="view-tab active" id="tab-roster" onclick="switchView('roster')">⚔ Roster</button>
+  <button class="view-tab" id="tab-readiness" onclick="switchView('readiness')">🎯 Readiness</button>
+  <button class="view-tab" id="tab-leaderboard" onclick="switchView('leaderboard')">🏆 Leaderboard</button>
+  <button class="view-tab" id="tab-raids" onclick="switchView('raids')">⚔ Raids</button>
+  <button class="view-tab" id="tab-pets" onclick="switchView('pets')">🐾 Pets</button>
+  <button class="view-tab" id="tab-mounts" onclick="switchView('mounts')">🐎 Mounts</button>
+</div>
+
+<!-- RESULTS / CHIPS (roster only) -->
+<div class="results-bar" id="active-chips"></div>
+
+<!-- MAIN GRID -->
+<div class="main-content" id="view-roster">
+  <div id="character-grid" class="character-grid"></div>
+</div>
+
+<!-- READINESS VIEW -->
+<div class="main-content hidden" id="view-readiness">
+  <div class="readiness-hero">
+    <div>
+      <div class="readiness-kicker">Raid Night Prep</div>
+      <h2>Readiness Radar</h2>
+      <p>Ranks guild members by gear, gems/enchants, raid activity, and quick-fix opportunities.</p>
+    </div>
+    <div id="readiness-summary" class="readiness-summary"></div>
+  </div>
+  <div class="leaderboard-controls readiness-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="readiness-owner-filter"></div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Risk</label>
+      <div class="filter-bar-pills" id="readiness-risk-filter">
+        <button class="filter-pill active" onclick="setReadinessRisk('',this)">All</button>
+        <button class="filter-pill" style="--pill-color:#34d399" onclick="setReadinessRisk('ready',this)">Ready</button>
+        <button class="filter-pill" style="--pill-color:#f59e0b" onclick="setReadinessRisk('watch',this)">Watch</button>
+        <button class="filter-pill" style="--pill-color:#e74c3c" onclick="setReadinessRisk('risk',this)">At risk</button>
+      </div>
+    </div>
+  </div>
+  <div id="readiness-grid" class="readiness-grid"></div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="main-content hidden" id="view-leaderboard">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Category</label>
+      <select id="lb-category" class="sort-select" onchange="renderLeaderboard();updateURL()">
+        <optgroup label="⚔ Gear">
+          <option value="ilvl">⚔ Avg Item Level</option>
+          <option value="level">📊 Character Level</option>
+          <option value="achievement">🏅 Achievement Points</option>
+        </optgroup>
+        <optgroup label="📊 Combat Stats">
+          <option value="health">❤️ Health Pool</option>
+          <option value="crit">🎯 Crit %</option>
+          <option value="haste">⚡ Haste %</option>
+          <option value="mastery">🔵 Mastery %</option>
+          <option value="vers">🛡 Versatility %</option>
+          <option value="armor">🪖 Armor</option>
+        </optgroup>
+        <optgroup label="⚔️ Content Cleared">
+          <option value="content">📊 Content Cleared (Dungeons + Raids + Delves)</option>
+        </optgroup>
+        <optgroup label="💀 Life Stats (click character to load)">
+          <option value="totalDeaths">💀 Total Deaths</option>
+          <option value="killingBlows">⚔️ Killing Blows</option>
+          <option value="creaturesKilled">🗡️ Creatures Killed</option>
+          <option value="crittersKilled">🐿️ Critters Killed</option>
+          <option value="questsAbandoned">📜 Quests Abandoned</option>
+          <option value="questsCompleted">✅ Quests Completed</option>
+          <option value="honorableKills">🏹 Honorable Kills</option>
+          <option value="deathsFromFalling">🪂 Deaths from Falling</option>
+          <option value="flightPaths">✈️ Flight Paths Taken</option>
+        </optgroup>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="lb-owner-filter"></div>
+    </div>
+  </div>
+  <div id="leaderboard-table"></div>
+</div>
+
+<!-- PETS VIEW -->
+<div class="main-content hidden" id="view-pets">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Character</label>
+      <select id="pets-char-select" class="sort-select" onchange="loadPets()">
+        <option value="">Select a character...</option>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Filter</label>
+      <div class="filter-bar-pills" id="pets-rarity-filter">
+        <button class="filter-pill active" onclick="setPetsRarity('',this)">All</button>
+        <button class="filter-pill" style="--pill-color:#a335ee" onclick="setPetsRarity('Epic',this)">Epic</button>
+        <button class="filter-pill" style="--pill-color:#0070dd" onclick="setPetsRarity('Rare',this)">Rare</button>
+        <button class="filter-pill" style="--pill-color:#1eff00" onclick="setPetsRarity('Uncommon',this)">Uncommon</button>
+        <button class="filter-pill" onclick="setPetsRarity('Common',this)">Common</button>
+        <button class="filter-pill" id="pets-fav-btn" onclick="togglePetsFav(this)">⭐ Faves only</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Search</label>
+      <input type="text" class="filter-search" id="pets-search" placeholder="Pet name..." oninput="renderPets()" style="width:180px">
+    </div>
+  </div>
+  <div id="pets-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="pets-grid" class="pets-grid"></div>
+</div>
+
+<!-- MOUNTS VIEW -->
+<div class="main-content hidden" id="view-mounts">
+  <div class="leaderboard-controls">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Character</label>
+      <select id="mounts-char-select" class="sort-select" onchange="loadMounts()">
+        <option value="">Select a character...</option>
+      </select>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Filter</label>
+      <div class="filter-bar-pills" id="mounts-filter-pills">
+        <button class="filter-pill active" onclick="setMountsFilter('all',this)">All</button>
+        <button class="filter-pill" onclick="setMountsFilter('fav',this)">⭐ Faves</button>
+        <button class="filter-pill" onclick="setMountsFilter('unusable',this)">🚫 Can't use</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Search</label>
+      <input type="text" class="filter-search" id="mounts-search" placeholder="Mount name..." oninput="renderMounts()" style="width:180px">
+    </div>
+  </div>
+  <div id="mounts-summary" style="padding:8px 20px;font-size:0.8rem;color:var(--text-dim)"></div>
+  <div id="mounts-grid" class="pets-grid"></div>
+</div>
+
+<!-- Raids View -->
+<div class="main-content hidden" id="view-raids">
+  <div class="leaderboard-controls" style="flex-wrap:wrap;gap:12px">
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Tier</label>
+      <div class="filter-bar-pills" id="raid-tier-pills"></div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Difficulty</label>
+      <div class="filter-bar-pills" id="raid-diff-pills">
+        <button class="filter-pill active" onclick="setRaidDiff('normal',this)">Normal</button>
+        <button class="filter-pill" onclick="setRaidDiff('heroic',this)">Heroic</button>
+        <button class="filter-pill" onclick="setRaidDiff('mythic',this)">Mythic</button>
+      </div>
+    </div>
+    <div class="lb-control-group">
+      <label class="filter-bar-label">Owner</label>
+      <div class="filter-bar-pills" id="raid-owner-pills"></div>
+    </div>
+  </div>
+  <div id="raid-loading" style="padding:60px;text-align:center;color:var(--text-dim)">⚔ Loading raid data...</div>
+  <div id="raid-content" style="padding:16px 24px"></div>
+</div>
+
+<!-- Character Detail Modal -->
+<div id="modal" class="modal hidden" onclick="closeModal(event)">
+  <div class="modal-content" id="modal-content">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- Compare Modal -->
+<div id="compare-modal" class="modal hidden" onclick="closeCompareModal(event)">
+  <div class="modal-content modal-wide">
+    <button class="modal-close" onclick="closeCompareModal()">✕</button>
+    <div id="compare-body"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

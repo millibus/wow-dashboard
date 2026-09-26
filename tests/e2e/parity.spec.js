@@ -5,7 +5,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const ALL = '/v2/?guild=deaths-edge&scope=all';
+const ALL = '/?guild=deaths-edge&scope=all';
 
 // The page's Google Fonts stylesheet is render-blocking, and Chrome holds
 // script execution on it. Tests here gate on network timing, so a slow or
@@ -227,7 +227,7 @@ test.describe('empty roster', () => {
 
   test('an empty active scope offers to show every character', async ({ page }) => {
     // The fixture's logins are all older than the archive threshold.
-    await page.goto('/v2/?guild=deaths-edge');
+    await page.goto('/?guild=deaths-edge');
     await expect(page.locator('.empty-state')).toContainText('No active characters');
     await page.getByRole('button', { name: /Show all 2 characters/ }).click();
     await expect(page.locator('.char-card')).toHaveCount(2);

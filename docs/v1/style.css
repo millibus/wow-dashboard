@@ -1634,3 +1634,14 @@ h1 {
   .raid-boss-header { min-width: 22px; font-size: 0.5rem; }
   .raid-cell { min-width: 22px; font-size: 0.6rem; height: 20px; }
 }
+
+/* Shown on every V1 page now that the new dashboard is the site root. */
+.legacy-notice {
+  padding: 8px 20px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: #b4b8cc;
+  background: rgba(200, 168, 75, 0.08);
+  border-bottom: 1px solid rgba(200, 168, 75, 0.25);
+}
+.legacy-notice a { color: var(--gold); font-weight: 600; }

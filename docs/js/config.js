@@ -2,7 +2,7 @@
 // cap, archive threshold, owners) comes from the snapshot manifest's `config`
 // projection — the UI never hardcodes those.
 
-export const DATA_BASE = '../data/v2/';
+export const DATA_BASE = 'data/v2/';
 
 // Canonical Blizzard class colors — used for NON-TEXT accents only (card
 // rails, swatches, monogram tints, meter fills), where contrast minimums do

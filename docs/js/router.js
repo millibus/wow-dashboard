@@ -1,5 +1,5 @@
 // URL <-> state sync. Only the query string is touched, so deep links work at
-// both the Pages subpath (/wow-dashboard/v2/) and a custom-domain /v2/ root.
+// both the Pages subpath (/wow-dashboard/) and a custom-domain root.
 // Navigation (guild, tab, open character) uses pushState; rapid-fire filter /
 // search / sort changes use replaceState so Back doesn't replay keystrokes.
 // popstate applies the URL without writing history again.

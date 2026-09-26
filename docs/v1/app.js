@@ -9,7 +9,7 @@ const API_BASE = '';
 // the snapshot is missing (e.g. serving via Express before any snapshot exists).
 async function fetchData(staticPath, apiPath) {
   try {
-    const res = await fetch(`data/${staticPath}`, { cache: 'no-cache' });
+    const res = await fetch(`../data/${staticPath}`, { cache: 'no-cache' });
     if (res.ok) return res.json();
     if (!API_BASE && apiPath) throw new Error(`snapshot missing: ${staticPath} (${res.status})`);
   } catch (err) {
@@ -40,7 +40,7 @@ let snapshotTs = NaN;
 let lastCheckAt = 0;
 
 function fetchSnapshotTs() {
-  return fetch('data/generated-at.json', { cache: 'no-store' })
+  return fetch('../data/generated-at.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
     .then(d => (d?.ts ? new Date(d.ts).getTime() : NaN));
 }
@@ -1403,7 +1403,7 @@ async function ensureCollections() {
   if (collectionsCache && collectionsCache.slug === currentGuildSlug) return;
   const slug = currentGuildSlug;
   try {
-    const res = await fetch(`data/collections-${slug}.json`, { cache: 'no-cache' });
+    const res = await fetch(`../data/collections-${slug}.json`, { cache: 'no-cache' });
     if (res.ok && slug === currentGuildSlug) collectionsCache = { slug, data: await res.json() };
   } catch (_) {}
 }
