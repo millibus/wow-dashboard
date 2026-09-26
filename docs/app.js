@@ -1710,9 +1710,11 @@ function renderRaids() {
     return;
   }
 
-  // Unknown is never zero: a snapshot in which not one member carries any
-  // raid record has no progress data, rather than a guild that killed nothing.
-  if (!(raidData.members || []).some(m => (m.tiers || []).length)) {
+  // Unknown is never zero — but an empty `tiers` IS a real zero: the pipeline
+  // omits a member whose raid fetch failed (with nothing to carry forward),
+  // so a member present with no tiers was fetched and has no kills. Only a
+  // file with no member records at all means the progress is unknown.
+  if (!(raidData.members || []).length) {
     el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">' +
       'Raid progress is not in this snapshot. It will appear after the next successful data refresh.</div>';
     return;
