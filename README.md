@@ -110,4 +110,8 @@ The issue closes itself on the next successful run.
 
 ## Cutover plan
 
-Done: V2 is the site root, V1 is at `/v1/`, and `/v2/` forwards to the root. Remaining: move the custom domain to Pages (repo setting + DNS verification), with the VPS kept as rollback for a 7-day soak. `api/`, `docs/v1/`, and the legacy data files are deleted after the soak.
+The custom domain moved to GitHub Pages on September 26, 2026. V2 is the site root, V1 is at `/v1/`, and `/v2/` forwards to the root while preserving query strings and hashes. Cloudflare DNS has a DNS-only CNAME from `wow.nwpremier.net` to `millibus.github.io`; `docs/CNAME` preserves the custom domain on subsequent deployments.
+
+Pages currently publishes `main:/docs`. The hourly refresh and branch deployment are working; the workflow's separate artifact deployment remains inactive until the Pages source is changed to GitHub Actions.
+
+Keep the VPS available as rollback for at least a 7-day soak. Retiring `api/`, `/v1/`, and the legacy data files is a separate follow-up after the new deployment has remained stable.
