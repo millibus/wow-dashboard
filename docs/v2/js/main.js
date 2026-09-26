@@ -381,17 +381,19 @@ function setRefreshBusy(busy) {
 
 async function applySnapshot(manifest) {
   const slug = getState().guild;
-  // Guild-independent caches go with the old snapshot. The roster is NOT
-  // cleared first: the old one stays on screen until the new one is in hand.
+  // Fetch the new roster BEFORE adopting the new manifest, then switch both
+  // in one update: the old roster stays on screen until the new one is in
+  // hand, and a failed fetch leaves the old snapshot fully in place, so the
+  // next check still sees the new snapshot id as new and retries.
+  const roster = slug ? await fetchSnapshotFile(manifest, `guilds/${slug}.json`) : null;
+  if (getState().guild !== slug) return; // switched guilds meanwhile; the next check catches up
   setState({
     manifest,
+    ...(slug ? { roster, loadError: null } : {}),
+    // Everything else cached from the old snapshot is refetched on demand.
     catalog: undefined, raids: null,
     collectionsIndex: null, collections: {},
   });
-  if (!slug) return;
-  const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
-  if (getState().guild !== slug || getState().manifest !== manifest) return;
-  setState({ roster, loadError: null });
 }
 
 function refresh({ manual = false } = {}) {

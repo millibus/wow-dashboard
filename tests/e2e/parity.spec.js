@@ -144,6 +144,26 @@ test.describe('refresh', () => {
     await expect(page).toHaveURL(/races=Undead/);
   });
 
+  test('a newer snapshot whose roster fails to load is retried, not half-applied', async ({ page }) => {
+    await page.goto(ALL);
+    await expect(page.locator('.char-card').first()).toBeVisible();
+    await routeNewerSnapshot(page, 'Decillin', 'Decillinia');
+    // The first roster fetch for the new snapshot fails.
+    let failures = 1;
+    await page.route('**/data/v2/guilds/deaths-edge.json*', async route => {
+      if (failures > 0) { failures -= 1; return route.fulfill({ status: 503, body: 'nope' }); }
+      return route.fallback();
+    });
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Could not reach');
+    await expect(page.locator('.char-card .char-name', { hasText: 'Decillin' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Updated to the latest snapshot');
+    await expect(page.locator('.char-card .char-name', { hasText: 'Decillinia' })).toBeVisible();
+  });
+
   test('checks for a newer snapshot automatically while the tab is open', async ({ page }) => {
     await page.clock.install();
     await page.goto(ALL);
