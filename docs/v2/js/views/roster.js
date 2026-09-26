@@ -15,6 +15,10 @@ import { classColor, classInk, ownerColor } from '../config.js';
 
 const DEFAULT_ARCHIVE_DAYS = 30;
 
+export function archiveDays(manifest) {
+  return archiveCutoffMs(manifest) / 86400e3;
+}
+
 function archiveCutoffMs(manifest) {
   const days = manifest?.config?.archiveThresholdDays;
   return (Number.isFinite(days) && days > 0 ? days : DEFAULT_ARCHIVE_DAYS) * 86400e3;
@@ -179,12 +183,31 @@ function componentNote(member) {
 
 // `compare` (optional): { active, selected: Set<key> } — in compare mode the
 // cards become toggles and the selected ones are marked.
-export function renderRoster(container, filtered, onOpen, compare = null) {
+// `empty` (optional): { hasFilters, onClearFilters, scopeLabel, totalOwned,
+// onShowAll } — an empty grid always offers the one action that fills it.
+export function renderRoster(container, filtered, onOpen, compare = null, empty = null) {
   clear(container);
   if (!filtered.length) {
-    container.append(el('div', { class: 'empty-state' },
-      el('p', { text: 'No characters match the current filters.' }),
-    ));
+    const box = el('div', { class: 'empty-state' });
+    if (empty?.hasFilters) {
+      box.append(
+        el('p', { class: 'empty-title', text: 'No characters match these filters.' }),
+        el('p', { class: 'empty-hint', text: 'Try removing a filter or clearing the search.' }),
+        el('button', { class: 'btn', type: 'button', text: 'Clear filters', onclick: empty.onClearFilters }),
+      );
+    } else if (empty?.scopeLabel && empty.totalOwned > 0) {
+      box.append(
+        el('p', { class: 'empty-title', text: `No ${empty.scopeLabel} characters.` }),
+        el('p', { class: 'empty-hint', text: empty.scopeHint || '' }),
+        el('button', {
+          class: 'btn', type: 'button',
+          text: `Show all ${empty.totalOwned} characters`, onclick: empty.onShowAll,
+        }),
+      );
+    } else {
+      box.append(el('p', { text: 'No characters match the current filters.' }));
+    }
+    container.append(box);
     return;
   }
   const grid = el('div', { class: 'roster-grid' });

@@ -313,7 +313,13 @@
 .detail-title { margin: 0; font-family: var(--font-display); font-size: 22px; font-weight: 700; }
 .detail-sub { margin: 2px 0 0; font-size: 13px; color: var(--class-ink, var(--ink-2)); font-weight: 600; }
 .detail-sub2 { margin: 2px 0 0; font-size: 12px; color: var(--ink-3); }
-.detail-ilvl { margin-left: auto; text-align: right; }
+.detail-link {
+  display: inline-flex; align-items: center; margin-top: 8px; padding: 3px 10px;
+  font-size: 12px; font-weight: 600; color: var(--gold-light); text-decoration: none;
+  border: 1px solid var(--border-gold); border-radius: 999px;
+}
+.detail-link:hover { background: var(--gold-dim); }
+.detail-ilvl { margin-left: auto; margin-right: 36px; text-align: right; } /* clears the absolute close button */
 .detail-ilvl b { display: block; font-size: 34px; font-weight: 700; color: var(--gold-light); line-height: 1; }
 .detail-ilvl span { font-size: 10px; letter-spacing: 1.5px; color: var(--ink-3); }
 .dialog-close {
@@ -570,7 +576,12 @@
 .portrait-frame { margin-top: 12px; text-align: center; }
 .portrait-frame img { max-height: 520px; border-radius: var(--radius); border: 1px solid var(--border); }
 
-/* ---------- Check for updates ---------- */
+/* ---------- Refresh ---------- */
+.btn-refresh .refresh-icon { flex: none; }
+.btn-refresh.is-busy .refresh-icon { animation: spin 0.9s linear infinite; }
+.btn-refresh:disabled { opacity: 0.6; cursor: default; }
+.btn-refresh.is-busy:disabled { opacity: 1; }
+@keyframes spin { to { transform: rotate(360deg); } }
 .update-notice { font-size: 12px; color: var(--ink-2); }
 .update-notice:empty { display: none; }
 
@@ -596,7 +607,15 @@
   .search-box input { width: 100%; }
   .filters { padding: 10px 16px 0; }
   .compare-bar { padding: 10px 16px 0; }
-  #check-updates { display: none; } /* header is tight on phones; the pill still reports age */
+  /* Header is tight on phones: the refresh button collapses to its icon (the
+     label stays as its accessible name) at a full touch-target size. */
+  .btn-refresh { min-width: var(--touch); min-height: var(--touch); padding: 0; }
+  .btn-refresh .btn-label {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+  .header-tools { flex-wrap: wrap; }
+  .update-notice { width: 100%; order: 10; }
   .stat-strip { gap: 8px; }
   .stat {
     background: var(--surface);
@@ -637,3 +656,8 @@
   .bottom-nav button[aria-current="true"] { color: var(--gold-light); font-weight: 600; }
   .detail-dialog { width: calc(100vw - 16px); max-height: calc(100vh - 24px); }
 }
+
+/* ---------- Empty states ---------- */
+.empty-state .empty-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+.empty-state .empty-hint { margin: 6px 0 0; font-size: 13px; color: var(--ink-3); }
+.empty-state .empty-hint:empty { display: none; }

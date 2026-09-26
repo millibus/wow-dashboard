@@ -23,7 +23,8 @@ test.describe('roster', () => {
 
   test('active scope hides characters past the archive threshold', async ({ page }) => {
     await page.goto('/v2/?guild=deaths-edge');
-    await expect(page.locator('.empty-state')).toContainText('No characters match');
+    await expect(page.locator('.empty-state')).toContainText('No active characters');
+    await expect(page.locator('.char-card')).toHaveCount(0);
   });
 
   test('search and class filters narrow the grid', async ({ page }) => {

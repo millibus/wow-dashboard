@@ -32,3 +32,13 @@ test('the page never scrolls sideways, even with a wide table', async ({ page })
     document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
   expect(overflows).toBe(false);
 });
+
+test('the refresh button stays reachable on phones, as a full-size icon target', async ({ page }) => {
+  await page.goto(BASE);
+  const button = page.getByRole('button', { name: 'Refresh' });
+  await expect(button).toBeVisible();
+  await expect(button).toBeEnabled();
+  const box = await button.boundingBox();
+  expect(box.width).toBeGreaterThanOrEqual(44);
+  expect(box.height).toBeGreaterThanOrEqual(44);
+});

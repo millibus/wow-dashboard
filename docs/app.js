@@ -30,15 +30,41 @@ const ACTIONS_URL = 'https://github.com/millibus/wow-dashboard/actions/workflows
 
 const UNREADABLE_MSG = 'The snapshot timestamp could not be read, so this data may be out of date.';
 
-function setSnapshotTimestamp() {
-  fetch('data/generated-at.json', { cache: 'no-store' })
+// Auto-refresh: an open, visible tab re-checks generated-at.json on this
+// cadence and reloads the guild quietly (filters and view kept) only when the
+// snapshot timestamp actually moved. The age label re-renders every minute so
+// "Snapshot 5m ago" never goes stale on a tab left open.
+const AUTO_REFRESH_MS = 5 * 60e3;
+const AGE_TICK_MS = 60e3;
+let snapshotTs = NaN;
+let lastCheckAt = 0;
+
+function fetchSnapshotTs() {
+  return fetch('data/generated-at.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => {
+    .then(d => (d?.ts ? new Date(d.ts).getTime() : NaN));
+}
+
+function setSnapshotTimestamp() {
+  lastCheckAt = Date.now();
+  return fetchSnapshotTs()
+    .then(ts => {
+      snapshotTs = ts;
+      renderSnapshotAge();
+      return ts;
+    })
+    .catch(() => {
+      showStaleBanner('alert', UNREADABLE_MSG);
+      return NaN;
+    });
+}
+
+function renderSnapshotAge() {
       const el = document.getElementById('last-updated');
       // A truthy but unparsable ts (NaN) must take the unreadable path, not
       // sail through every comparison as false and render "Snapshot NaNd ago"
       // with no warning at all — the exact silence this banner exists to end.
-      const ts = d?.ts ? new Date(d.ts).getTime() : NaN;
+      const ts = snapshotTs;
       if (!Number.isFinite(ts)) {
         if (el) {
           el.textContent = 'Snapshot age unknown';
@@ -70,10 +96,57 @@ function setSnapshotTimestamp() {
         // reading must come down once the data is fresh again.
         hideStaleBanner();
       }
-    })
-    .catch(() => {
-      showStaleBanner('alert', UNREADABLE_MSG);
-    });
+}
+
+// Quiet background check: reload only when a newer snapshot was published.
+async function autoRefresh() {
+  if (refreshing) return;
+  const before = snapshotTs;
+  const ts = await setSnapshotTimestamp();
+  if (Number.isFinite(ts) && ts !== before) await refreshData({ quiet: true });
+}
+
+// Everything cached per snapshot is dropped so each tab refetches on demand.
+function invalidateSnapshotCaches() {
+  raidLoaded = false;
+  raidData = null;
+  collectionsCache = null;
+}
+
+let refreshing = false;
+async function refreshData({ quiet = false } = {}) {
+  if (refreshing) return;
+  refreshing = true;
+  const btn = document.getElementById('btn-refresh');
+  if (btn && !quiet) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.classList.add('is-busy');
+  }
+  try {
+    invalidateSnapshotCaches();
+    await loadGuild(!quiet, { quiet });
+  } finally {
+    refreshing = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.classList.remove('is-busy');
+    }
+  }
+}
+
+function startAutoRefresh() {
+  setInterval(renderSnapshotAge, AGE_TICK_MS);
+  setInterval(() => {
+    if (document.visibilityState === 'visible') autoRefresh();
+  }, AUTO_REFRESH_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    renderSnapshotAge();
+    if (Date.now() - lastCheckAt >= AUTO_REFRESH_MS) autoRefresh();
+  });
+  window.addEventListener('online', () => autoRefresh());
 }
 
 // Built with createElement/textContent — no interpolation of fetched values.
@@ -113,6 +186,14 @@ function jsArg(value) {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // ============================
@@ -220,6 +301,10 @@ let currentGuildSlug = 'deaths-edge';
 // Non-owned characters are never shown — the dashboard is scoped to the OWNER_MAP crew.
 const ARCHIVE_THRESHOLD_DAYS = 30;
 let viewScope = 'active';
+// When the roster's data was current. "Active" is measured from here, not from
+// the viewer's clock: otherwise a snapshot that stops refreshing slowly moves
+// every character into the archive and the default view goes empty.
+let rosterAsOf = NaN;
 
 function isOwned(m) {
   return !!m.owner;
@@ -227,7 +312,8 @@ function isOwned(m) {
 
 function isActiveByLogin(m) {
   if (!m.lastLogin) return false;
-  return (Date.now() - m.lastLogin) < ARCHIVE_THRESHOLD_DAYS * 86400000;
+  const ref = Number.isFinite(rosterAsOf) ? rosterAsOf : Date.now();
+  return (ref - m.lastLogin) < ARCHIVE_THRESHOLD_DAYS * 86400000;
 }
 
 function inViewScope(m) {
@@ -244,6 +330,7 @@ function scopedMembers() {
 window.addEventListener('DOMContentLoaded', () => {
   loadFromURL();
   loadGuild(false);
+  startAutoRefresh();
 
   // ESC closes any open modal
   document.addEventListener('keydown', e => {
@@ -297,13 +384,17 @@ function getOwner(name) {
   return OWNER_MAP[name] || null;
 }
 
-async function loadGuild(forceRefresh) {
+// `quiet`: a background refresh keeps the current cards on screen (no
+// skeleton flash) and, if it fails, leaves them there rather than an error.
+async function loadGuild(forceRefresh, { quiet = false } = {}) {
   try {
-    document.getElementById('character-grid').innerHTML = `
-      <div class="loading-grid">
-        ${Array(8).fill('<div class="skeleton-card"></div>').join('')}
-      </div>`;
-    document.getElementById('guild-stats').innerHTML = '';
+    if (!quiet) {
+      document.getElementById('character-grid').innerHTML = `
+        <div class="loading-grid">
+          ${Array(8).fill('<div class="skeleton-card"></div>').join('')}
+        </div>`;
+      document.getElementById('guild-stats').innerHTML = '';
+    }
 
     const data = await fetchData(
       `guild-${currentGuildSlug}.json`,
@@ -314,6 +405,7 @@ async function loadGuild(forceRefresh) {
       ...m,
       owner: getOwner(m.name),
     }));
+    rosterAsOf = Date.parse(data.lastUpdated || '');
 
     setSnapshotTimestamp();
 
@@ -322,10 +414,11 @@ async function loadGuild(forceRefresh) {
     filterAndRender();
     applyURLTab();
   } catch (err) {
-    document.getElementById('character-grid').innerHTML =
-      `<div class="empty-state">⚠️ Failed to load guild data.<br><small>${err.message}</small><br><br>
-       <button class="btn-refresh" onclick="loadGuild(true)">Retry</button></div>`;
     console.error(err);
+    if (quiet) return;
+    document.getElementById('character-grid').innerHTML =
+      `<div class="empty-state">⚠️ Failed to load guild data.<br><small>${escapeHtml(err.message)}</small><br><br>
+       <button class="btn-refresh" onclick="refreshData()">Retry</button></div>`;
   }
 }
 
@@ -499,7 +592,7 @@ function renderGuildStats(data) {
   const avgIlvl = maxLevel.length
     ? Math.round(maxLevel.filter(m => m.averageIlvl > 0).reduce((a, m) => a + m.averageIlvl, 0) / maxLevel.filter(m => m.averageIlvl > 0).length)
     : 0;
-  const topIlvl = Math.max(...members.map(m => m.averageIlvl || 0));
+  const topIlvl = members.length ? Math.max(...members.map(m => m.averageIlvl || 0)) : 0;
   const classes = [...new Set(members.map(m => m.className))].length;
 
   document.getElementById('guild-stats').innerHTML = `

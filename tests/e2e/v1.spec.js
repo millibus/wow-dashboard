@@ -1,0 +1,81 @@
+'use strict';
+// The legacy V1 dashboard (docs/index.html + app.js) is still the live
+// default, so its refresh behavior and its handling of an old snapshot are
+// covered too. It reads the legacy files the pipeline writes to /data/.
+
+const { test, expect } = require('@playwright/test');
+
+// Fixture logins are 2025-08-24. Pin the roster's own timestamp a few days
+// after that, and the snapshot far in the past, to reproduce a pipeline that
+// stopped refreshing a long time ago.
+const ROSTER_AS_OF = '2025-08-28T00:00:00.000Z';
+
+async function routeStaleRoster(page, { ilvl } = {}) {
+  await page.route('**/data/guild-deaths-edge.json*', async route => {
+    const res = await route.fetch();
+    const data = JSON.parse(await res.text());
+    data.lastUpdated = ROSTER_AS_OF;
+    // Owners map by NAME in V1, so a refresh is made observable through a
+    // value on the card rather than a rename.
+    if (ilvl) for (const m of data.members) if (m.name === 'Decillin') m.averageIlvl = ilvl;
+    await route.fulfill({ response: res, body: JSON.stringify(data) });
+  });
+}
+
+async function routeSnapshotTs(page, ts) {
+  await page.route('**/data/generated-at.json*', route =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ts }) }));
+}
+
+test.beforeEach(async ({ page }) => {
+  await routeSnapshotTs(page, ROSTER_AS_OF);
+});
+
+test('an old snapshot still opens on its active characters, not an empty grid', async ({ page }) => {
+  await routeStaleRoster(page);
+  await page.goto('/');
+  await expect(page.locator('#stale-banner')).toBeVisible();
+  // "Active" is measured from the roster's timestamp, not the viewer's clock.
+  await expect(page.locator('.char-card').first()).toBeVisible();
+  await expect(page.locator('#guild-stats')).not.toContainText('Infinity');
+});
+
+test('the summary never shows -Infinity when nothing is in scope', async ({ page }) => {
+  // Unmodified fixture roster: its timestamp is fresh and every login is past
+  // the archive threshold, so the active scope is empty.
+  await page.goto('/');
+  await expect(page.locator('#guild-stats')).toContainText('Top ilvl');
+  await expect(page.locator('#guild-stats')).not.toContainText('Infinity');
+});
+
+test('Refresh reloads the snapshot in place and keeps the search', async ({ page }) => {
+  await routeStaleRoster(page);
+  await page.goto('/');
+  await expect(page.locator('.char-card').first()).toBeVisible();
+  await page.locator('#search').fill('Decil');
+  await expect(page.locator('.char-card')).toHaveCount(1);
+
+  await page.unroute('**/data/guild-deaths-edge.json*');
+  await routeStaleRoster(page, { ilvl: 777 });
+  await page.getByRole('button', { name: /Refresh/ }).click();
+  await expect(page.locator('.char-card')).toHaveCount(1);
+  await expect(page.locator('.char-card')).toContainText('777');
+  await expect(page.getByRole('button', { name: /Refresh/ })).toBeEnabled();
+});
+
+test('a newer snapshot is picked up automatically, with no reload', async ({ page }) => {
+  await page.clock.install();
+  await routeStaleRoster(page);
+  await page.goto('/');
+  await expect(page.locator('.char-card').first()).toBeVisible();
+  await page.evaluate(() => { window.__beforeRefresh = true; });
+
+  await page.unroute('**/data/generated-at.json*');
+  await routeSnapshotTs(page, '2025-08-28T01:00:00.000Z');
+  await page.unroute('**/data/guild-deaths-edge.json*');
+  await routeStaleRoster(page, { ilvl: 777 });
+
+  await page.clock.runFor(5 * 60e3 + 1000);
+  await expect(page.locator('.char-card', { hasText: '777' })).toBeVisible();
+  expect(await page.evaluate(() => window.__beforeRefresh)).toBe(true);
+});

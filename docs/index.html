@@ -7,10 +7,9 @@
   <meta name="description" content="Death's Edge guild dashboard — character roster, ilvl leaderboard, pets and mounts for Onyxia-US.">
   <meta property="og:title" content="⚔️ Death's Edge — Guild Dashboard">
   <meta property="og:description" content="Character roster, ilvl leaderboard, stats, pets and mounts for Death's Edge on Onyxia-US.">
-  <meta property="og:image" content="https://wow.nwpremier.net/og-preview.jpg">
   <meta property="og:url" content="https://wow.nwpremier.net">
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:card" content="summary">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -34,8 +33,8 @@
         <button class="guild-toggle-btn active" data-slug="deaths-edge" onclick="switchGuild('deaths-edge')">🔴 Death's Edge</button>
         <button class="guild-toggle-btn" data-slug="riot-act" onclick="switchGuild('riot-act')">🔵 Riot Act</button>
       </div>
-      <span id="last-updated" class="last-updated"></span>
-      <button class="btn-refresh" onclick="loadGuild(true)">↻ Refresh</button>
+      <span id="last-updated" class="last-updated" aria-live="polite"></span>
+      <button id="btn-refresh" class="btn-refresh" type="button" onclick="refreshData()" title="Reload the latest snapshot now (also checked automatically every 5 minutes)"><span class="refresh-glyph" aria-hidden="true">↻</span> Refresh</button>
     </div>
   </div>
   <div class="guild-stats" id="guild-stats"></div>

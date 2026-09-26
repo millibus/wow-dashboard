@@ -67,8 +67,10 @@ function renderShell(dialog, member, charFile, statusText) {
 
   const mono = el('div', { class: 'monogram', 'aria-hidden': 'true', style: { '--class-color': color } });
   const avatar = detail?.avatarUrl || member.avatarUrl;
-  if (avatar) mono.append(el('img', { src: avatar, alt: '' }));
-  else mono.textContent = member.name[0] || '?';
+  const initial = member.name[0] || '?';
+  // A render that fails to load falls back to the initial, never a broken image.
+  if (avatar) mono.append(el('img', { src: avatar, alt: '', onerror: () => { mono.textContent = initial; } }));
+  else mono.textContent = initial;
 
   const ilvl = detail?.averageIlvl ?? member.ilvl;
   body.append(el('div', { class: 'detail-head' },
@@ -77,6 +79,7 @@ function renderShell(dialog, member, charFile, statusText) {
       el('h2', { class: 'detail-title', id: 'detail-title', text: member.name }),
       el('p', { class: 'detail-sub', text: [member.spec, member.className].filter(Boolean).join(' ') || 'Unknown' }),
       el('p', { class: 'detail-sub2', text: subLine(member, detail) }),
+      armoryLink(member),
     ),
     el('div', { class: 'detail-ilvl' },
       el('b', { text: ilvl ? String(Math.round(ilvl)) : '—' }),
@@ -120,6 +123,23 @@ function appendPortrait(body, member, detail) {
     },
   });
   body.append(toggle, frame);
+}
+
+// Blizzard's public armory profile. Built only from the identity fields the
+// snapshot already keys on; a member missing any of them gets no link.
+export function armoryUrl(member) {
+  if (!member.region || !member.realmSlug || !member.name) return null;
+  const name = encodeURIComponent(member.name.toLowerCase());
+  return `https://worldofwarcraft.blizzard.com/en-us/character/${encodeURIComponent(member.region)}/${encodeURIComponent(member.realmSlug)}/${name}`;
+}
+
+function armoryLink(member) {
+  const href = armoryUrl(member);
+  if (!href) return null;
+  return el('a', {
+    class: 'detail-link', href, target: '_blank', rel: 'noopener noreferrer',
+    text: 'View on Armory ↗',
+  });
 }
 
 function subLine(member, detail) {

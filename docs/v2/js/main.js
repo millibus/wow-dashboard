@@ -3,18 +3,18 @@
 // snapshot (manifest first, everything else hash-busted through it).
 
 import { el, clear, icon } from './dom.js';
-import { fetchManifest, fetchSnapshotFile, checkForUpdates, identityKey, relAge } from './api.js';
+import { fetchManifest, fetchSnapshotFile, checkForUpdates, identityKey } from './api.js';
 import { getState, setState, subscribe } from './state.js';
 import { readUrl, syncUrl, onPopstate } from './router.js';
 import { renderFreshness, renderStaleBanner } from './views/banner.js';
-import { renderFilters, renderStats, renderRoster, filterMembers } from './views/roster.js';
+import { renderFilters, renderStats, renderRoster, filterMembers, archiveDays } from './views/roster.js';
 import { renderReadinessFilters, renderReadiness } from './views/readiness.js';
 import { renderLeaderboardFilters, renderLeaderboard } from './views/leaderboard.js';
 import { renderRaidFilters, renderRaids } from './views/raids.js';
 import { renderCollectionFilters, renderCollections, ensureCollection } from './views/collections.js';
 import { setupDialog, openDetail } from './views/detail.js';
 import { setupCompareDialog, openCompare } from './views/compare.js';
-import { TABS } from './config.js';
+import { TABS, AUTO_REFRESH } from './config.js';
 
 const $ = id => document.getElementById(id);
 const ui = {
@@ -23,7 +23,7 @@ const ui = {
   switcher: $('guild-switcher'),
   freshness: $('freshness'),
   banner: $('stale-banner'),
-  checkUpdates: $('check-updates'),
+  refresh: $('refresh'),
   updateNotice: $('update-notice'),
   tabs: $('tabs'),
   search: $('search'),
@@ -226,7 +226,15 @@ const actions = {
   setCollectionKind: collectionKind => setState({ collectionKind, rarity: null }),
   setRarity: rarity => setState({ rarity }),
   toggleFavorites: () => setState({ favoritesOnly: !getState().favoritesOnly }),
+  clearFilters: () => {
+    ui.search.value = '';
+    setState({ search: '', owners: new Set(), classes: new Set(), races: new Set(), minLevel: 0 });
+  },
 };
+
+function hasRosterFilters(state) {
+  return !!(state.search.trim() || state.owners.size || state.classes.size || state.races.size || state.minLevel);
+}
 
 function toggled(set, value) {
   const next = new Set(set);
@@ -309,6 +317,15 @@ function renderView(state) {
       ui.resultCount.textContent = `Showing ${filtered.length} of ${scoped} characters`;
       renderRoster(ui.view, filtered, openMember, {
         active: state.compareMode, selected: new Set(state.compareKeys),
+      }, {
+        hasFilters: hasRosterFilters(state),
+        onClearFilters: actions.clearFilters,
+        scopeLabel: state.scope === 'all' ? null : state.scope === 'active' ? 'active' : 'archived',
+        scopeHint: state.scope === 'active'
+          ? `Nobody has logged in within ${archiveDays(state.manifest)} days of this snapshot.`
+          : `Everyone has logged in within ${archiveDays(state.manifest)} days of this snapshot.`,
+        totalOwned: scoped,
+        onShowAll: () => actions.setScope('all'),
       });
     }
   }
@@ -339,30 +356,100 @@ function syncCompareDialog(state) {
   openCompare(ui.compareDialog, members, state);
 }
 
-// --- Check for updates ------------------------------------------------------
+// --- Refresh (manual + automatic) ------------------------------------------
 
+// One code path for both: refetch the manifest (no-store) and, only when the
+// snapshot id changed, swap the new snapshot in place — filters, tab, and
+// scroll position survive, and nothing flashes back to a loading state. This
+// can only ever discover a snapshot the pipeline already published; nothing
+// in the browser can ask Blizzard for anything.
+let refreshing = null;
+let lastCheckAt = 0;
 let noticeTimer = null;
-async function onCheckUpdates() {
-  ui.checkUpdates.disabled = true;
-  ui.updateNotice.textContent = 'Checking…';
-  try {
-    const { updated, manifest } = await checkForUpdates(getState().manifest);
-    if (updated) {
-      ui.updateNotice.textContent = 'New snapshot found — reloading…';
-      location.reload();
-      return;
-    }
-    const age = Date.parse(manifest.publishedAt || '');
-    ui.updateNotice.textContent = Number.isFinite(age)
-      ? `Up to date (published ${relAge(Math.max(0, Date.now() - age))}).`
-      : 'Up to date.';
-  } catch (_) {
-    ui.updateNotice.textContent = 'Could not reach the snapshot right now.';
-  } finally {
-    ui.checkUpdates.disabled = false;
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(() => { ui.updateNotice.textContent = ''; }, 8000);
+
+function showNotice(text) {
+  ui.updateNotice.textContent = text;
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { ui.updateNotice.textContent = ''; }, 8000);
+}
+
+function setRefreshBusy(busy) {
+  ui.refresh.disabled = busy;
+  ui.refresh.setAttribute('aria-busy', String(busy));
+  ui.refresh.classList.toggle('is-busy', busy);
+}
+
+async function applySnapshot(manifest) {
+  const slug = getState().guild;
+  // Guild-independent caches go with the old snapshot. The roster is NOT
+  // cleared first: the old one stays on screen until the new one is in hand.
+  setState({
+    manifest,
+    catalog: undefined, raids: null,
+    collectionsIndex: null, collections: {},
+  });
+  if (!slug) return;
+  const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
+  if (getState().guild !== slug || getState().manifest !== manifest) return;
+  setState({ roster, loadError: null });
+}
+
+function refresh({ manual = false } = {}) {
+  if (refreshing) return refreshing;
+  const current = getState().manifest;
+  if (!current) {
+    // Boot never got a manifest; a manual refresh is a full retry.
+    if (manual) location.reload();
+    return Promise.resolve();
   }
+  if (manual) {
+    setRefreshBusy(true);
+    ui.updateNotice.textContent = 'Checking…';
+  }
+  lastCheckAt = Date.now();
+  refreshing = (async () => {
+    try {
+      const { updated, manifest } = await checkForUpdates(current);
+      if (updated) {
+        await applySnapshot(manifest);
+        showNotice('Updated to the latest snapshot.');
+      } else {
+        // A failed roster load is retried even when the snapshot is unchanged.
+        if (getState().loadError) loadRoster(getState().guild);
+        if (manual) showNotice('Up to date.');
+      }
+    } catch (_) {
+      if (manual) showNotice('Could not reach the snapshot right now.');
+    } finally {
+      if (manual) setRefreshBusy(false);
+      // Re-render the age either way, so "Updated …" is true as of now.
+      tickFreshness();
+      refreshing = null;
+    }
+  })();
+  return refreshing;
+}
+
+function tickFreshness() {
+  const { manifest, guild } = getState();
+  if (!manifest) return;
+  renderFreshness(ui.freshness, manifest);
+  renderStaleBanner(ui.banner, manifest, guild);
+}
+
+// Poll only while the tab is visible — a background tab costs nothing — and
+// catch up immediately when it comes back or the network returns.
+function startAutoRefresh() {
+  setInterval(tickFreshness, AUTO_REFRESH.tickMs);
+  setInterval(() => {
+    if (document.visibilityState === 'visible') refresh();
+  }, AUTO_REFRESH.pollMs);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    tickFreshness();
+    if (Date.now() - lastCheckAt >= AUTO_REFRESH.pollMs) refresh();
+  });
+  window.addEventListener('online', () => refresh());
 }
 
 // --- Wiring -----------------------------------------------------------------
@@ -433,7 +520,7 @@ async function boot() {
     const on = !getState().compareMode;
     setState({ compareMode: on, compareKeys: [] });
   });
-  ui.checkUpdates.addEventListener('click', onCheckUpdates);
+  ui.refresh.addEventListener('click', () => refresh({ manual: true }));
   onPopstate(urlState => applyUrl(urlState));
 
   // The initial URL must be read and applied to state BEFORE any state
@@ -470,6 +557,9 @@ async function boot() {
     manifest = await fetchManifest();
   } catch (_) {
     renderStaleBanner(ui.banner, null, null);
+    // The header button becomes a retry; the page reloads on its own too.
+    ui.refresh.disabled = false;
+    setTimeout(() => location.reload(), AUTO_REFRESH.pollMs);
     clear(ui.view);
     ui.view.append(el('div', { class: 'empty-state' },
       el('p', { text: 'Dashboard data is unavailable right now.' }),
@@ -482,7 +572,9 @@ async function boot() {
   setState({ manifest });
   // Only meaningful once there is a manifest to compare against; the button
   // ships disabled in the markup for exactly that reason.
-  ui.checkUpdates.disabled = false;
+  ui.refresh.disabled = false;
+  lastCheckAt = Date.now();
+  startAutoRefresh();
   renderTabs(getState());
   applyUrl(initialUrl, { load: true });
   urlReady = true;
