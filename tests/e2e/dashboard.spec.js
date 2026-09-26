@@ -251,5 +251,8 @@ test.describe('degraded data', () => {
     await page.goto(ALL);
     await expect(page.locator('.empty-state')).toContainText('unavailable');
     await expect(page.locator('#stale-banner')).toBeVisible();
+    // Not a dead end: the V1 dashboard one level up still has the last data.
+    await expect(page.getByRole('link', { name: 'Open the current dashboard' })).toHaveAttribute('href', /\/$/);
+    await expect(page.getByRole('button', { name: 'Refresh' })).toBeEnabled();
   });
 });

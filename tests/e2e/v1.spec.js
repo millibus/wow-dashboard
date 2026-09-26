@@ -79,3 +79,53 @@ test('a newer snapshot is picked up automatically, with no reload', async ({ pag
   await expect(page.locator('.char-card', { hasText: '777' })).toBeVisible();
   expect(await page.evaluate(() => window.__beforeRefresh)).toBe(true);
 });
+
+test.describe('collections pickers', () => {
+  test('list only owned characters the snapshot has data for, and every entry loads', async ({ page }) => {
+    // Remove Revän's pets so the picker must leave them out.
+    await page.route('**/data/collections-deaths-edge.json*', async route => {
+      const res = await route.fetch();
+      const data = JSON.parse(await res.text());
+      delete data['Revän'].pets;
+      await route.fulfill({ response: res, body: JSON.stringify(data) });
+    });
+    await page.goto('/?tab=pets');
+    const options = page.locator('#pets-char-select option');
+    await expect(options).toHaveCount(2); // placeholder + Decillin
+    await expect(options.nth(1)).toContainText('Decillin');
+    await page.selectOption('#pets-char-select', { index: 1 });
+    await expect(page.locator('#pets-grid')).not.toContainText('Failed');
+    await expect(page.locator('#pets-summary')).not.toBeEmpty();
+  });
+
+  test('mounts lists every character with data, not only the active ones', async ({ page }) => {
+    // Fixture logins are all past the archive threshold: the active scope is
+    // empty, yet both characters have mounts.
+    await page.goto('/?tab=mounts');
+    await expect(page.locator('#mounts-char-select option')).toHaveCount(3);
+  });
+
+  test('switching guild rebuilds the picker for the new guild', async ({ page }) => {
+    await page.goto('/?tab=pets');
+    await expect(page.locator('#pets-char-select option')).toHaveCount(3);
+    await page.selectOption('#pets-char-select', { index: 1 });
+    await expect(page.locator('#pets-summary')).not.toBeEmpty();
+
+    await page.locator('.guild-toggle-btn[data-slug="riot-act"]').click();
+    const options = page.locator('#pets-char-select option');
+    await expect(options).toHaveCount(2);
+    await expect(options.nth(1)).toContainText('Grrumpy');
+    await expect(page.locator('#pets-grid')).toContainText('Select a character');
+  });
+});
+
+test('raids say so when the snapshot has no raid progress, instead of showing zeros', async ({ page }) => {
+  await page.route('**/data/raid-deaths-edge.json*', async route => {
+    const res = await route.fetch();
+    const data = JSON.parse(await res.text());
+    for (const m of data.members) m.tiers = [];
+    await route.fulfill({ response: res, body: JSON.stringify(data) });
+  });
+  await page.goto('/?tab=raids');
+  await expect(page.locator('#raid-content')).toContainText('Raid progress is not in this snapshot');
+});

@@ -562,8 +562,12 @@ async function boot() {
     setTimeout(() => location.reload(), AUTO_REFRESH.pollMs);
     clear(ui.view);
     ui.view.append(el('div', { class: 'empty-state' },
-      el('p', { text: 'Dashboard data is unavailable right now.' }),
-      el('button', { class: 'btn', type: 'button', text: 'Retry', onclick: () => location.reload() }),
+      el('p', { class: 'empty-title', text: 'Dashboard data is unavailable right now.' }),
+      el('p', { class: 'empty-hint', text: 'The current dashboard still has the last published data.' }),
+      el('div', { class: 'empty-actions' },
+        el('button', { class: 'btn', type: 'button', text: 'Retry', onclick: () => location.reload() }),
+        el('a', { class: 'btn btn-quiet', href: '../', text: 'Open the current dashboard' }),
+      ),
     ));
     return;
   }

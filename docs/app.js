@@ -111,6 +111,7 @@ function invalidateSnapshotCaches() {
   raidLoaded = false;
   raidData = null;
   collectionsCache = null;
+  snapshotGen += 1;
 }
 
 let refreshing = false;
@@ -1373,24 +1374,7 @@ let mountsData = null;
 let mountsFilter = 'all';
 
 function buildMountsCharSelect() {
-  const sel = document.getElementById('mounts-char-select');
-  const grid = document.getElementById('mounts-grid');
-  if (grid && !grid.innerHTML.trim()) {
-    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐎 Select a character above to view their mount collection</div>';
-  }
-  if (sel.options.length > 1) return;
-  const sorted = scopedMembers().slice().sort((a, b) => {
-    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
-    if (oa !== ob) return oa.localeCompare(ob);
-    return (b.averageIlvl||0) - (a.averageIlvl||0);
-  });
-  for (const m of sorted) {
-    const opt = document.createElement('option');
-    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
-    const owner = m.owner ? `[${m.owner}] ` : '';
-    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
-    sel.appendChild(opt);
-  }
+  return buildCollectionCharSelect('mounts', '🐎 Select a character above to view their mount collection');
 }
 
 async function loadMounts() {
@@ -1411,15 +1395,59 @@ async function loadMounts() {
 }
 
 let collectionsCache = null;
-async function loadCollection(kind, name, realm) {
-  if (!collectionsCache || collectionsCache.slug !== currentGuildSlug) {
-    try {
-      const data = await fetch(`data/collections-${currentGuildSlug}.json`, { cache: 'no-cache' });
-      if (data.ok) {
-        collectionsCache = { slug: currentGuildSlug, data: await data.json() };
-      }
-    } catch (_) {}
+// Bumped whenever cached snapshot data is dropped, so dropdowns built from
+// the old snapshot know to rebuild.
+let snapshotGen = 0;
+
+async function ensureCollections() {
+  if (collectionsCache && collectionsCache.slug === currentGuildSlug) return;
+  const slug = currentGuildSlug;
+  try {
+    const res = await fetch(`data/collections-${slug}.json`, { cache: 'no-cache' });
+    if (res.ok && slug === currentGuildSlug) collectionsCache = { slug, data: await res.json() };
+  } catch (_) {}
+}
+
+// The character pickers list only owned characters the snapshot actually has
+// this collection for — a name in the list always loads — and are rebuilt
+// for each guild and each new snapshot, never left holding the last guild's.
+async function buildCollectionCharSelect(kind, placeholder) {
+  const sel = document.getElementById(`${kind}-char-select`);
+  const grid = document.getElementById(`${kind}-grid`);
+  const summary = document.getElementById(`${kind}-summary`);
+  await ensureCollections();
+  const builtFor = `${currentGuildSlug}:${snapshotGen}`;
+  if (sel.dataset.builtFor === builtFor) {
+    if (grid && !grid.innerHTML.trim()) grid.innerHTML = collectionPlaceholder(placeholder);
+    return;
   }
+  const previous = sel.value;
+  const data = collectionsCache?.slug === currentGuildSlug ? collectionsCache.data : {};
+  const members = allMembers
+    .filter(m => m.owner && data?.[m.name]?.[kind])
+    .sort((a, b) => a.owner.localeCompare(b.owner) || (b.averageIlvl || 0) - (a.averageIlvl || 0));
+  sel.replaceChildren(new Option(members.length ? 'Select a character...' : 'No collection data in this snapshot', ''));
+  for (const m of members) {
+    const text = `[${m.owner}] ${m.name} — L${m.level} ${m.spec || ''} ${m.className}`;
+    sel.appendChild(new Option(text, `${m.realm || 'onyxia'}|${m.name}`));
+  }
+  sel.dataset.builtFor = builtFor;
+  if (previous && [...sel.options].some(o => o.value === previous)) {
+    sel.value = previous;
+  } else {
+    // The previously shown character is not in this guild/snapshot.
+    if (kind === 'pets') petsData = null; else mountsData = null;
+    if (summary) summary.textContent = '';
+    if (grid) grid.innerHTML = collectionPlaceholder(placeholder);
+  }
+}
+
+function collectionPlaceholder(text) {
+  return `<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">${text}</div>`;
+}
+
+async function loadCollection(kind, name, realm) {
+  await ensureCollections();
   const fromSnapshot = collectionsCache?.data?.[name]?.[kind];
   if (fromSnapshot) return fromSnapshot;
   if (!API_BASE) throw new Error(`${kind} missing from snapshot`);
@@ -1477,25 +1505,7 @@ const QUALITY_COLORS = {
 };
 
 function buildPetsCharSelect() {
-  const sel = document.getElementById('pets-char-select');
-  // Show guidance when no character selected
-  const grid = document.getElementById('pets-grid');
-  if (grid && !grid.innerHTML.trim()) {
-    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐾 Select a character above to view their pet collection</div>';
-  }
-  if (sel.options.length > 1) return; // already built
-  const sorted = [...allMembers].sort((a, b) => {
-    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
-    if (oa !== ob) return oa.localeCompare(ob);
-    return (b.averageIlvl||0) - (a.averageIlvl||0);
-  });
-  for (const m of sorted) {
-    const opt = document.createElement('option');
-    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
-    const owner = m.owner ? `[${m.owner}] ` : '';
-    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
-    sel.appendChild(opt);
-  }
+  return buildCollectionCharSelect('pets', '🐾 Select a character above to view their pet collection');
 }
 
 async function loadPets() {
@@ -1693,6 +1703,14 @@ function renderRaids() {
   const tierDef = raidData.tiers?.[raidTierIdx];
   if (!tierDef) {
     el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center">No raid tiers available</div>';
+    return;
+  }
+
+  // Unknown is never zero: a snapshot in which not one member carries any
+  // raid record has no progress data, rather than a guild that killed nothing.
+  if (!(raidData.members || []).some(m => (m.tiers || []).length)) {
+    el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">' +
+      'Raid progress is not in this snapshot. It will appear after the next successful data refresh.</div>';
     return;
   }
 

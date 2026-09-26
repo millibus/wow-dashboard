@@ -661,3 +661,5 @@
 .empty-state .empty-title { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
 .empty-state .empty-hint { margin: 6px 0 0; font-size: 13px; color: var(--ink-3); }
 .empty-state .empty-hint:empty { display: none; }
+.empty-state .empty-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 12px; }
+.empty-state .empty-actions .btn { margin-top: 0; text-decoration: none; }
