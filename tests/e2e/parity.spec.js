@@ -164,6 +164,31 @@ test.describe('refresh', () => {
     await expect(page.locator('.char-card .char-name', { hasText: 'Decillinia' })).toBeVisible();
   });
 
+  test('a raids request from the previous snapshot never answers for the new one', async ({ page }) => {
+    // Hold the first (old-snapshot) raids request and make its answer empty.
+    let release;
+    const gate = new Promise(r => { release = r; });
+    let first = true;
+    await page.route('**/data/v2/raids/deaths-edge.json*', async route => {
+      if (!first) return route.fallback();
+      first = false;
+      const res = await route.fetch();
+      const data = JSON.parse(await res.text());
+      data.members = [];
+      await gate;
+      await route.fulfill({ response: res, body: JSON.stringify(data) });
+    });
+    await page.goto(`${ALL}&tab=raids`);
+    await routeNewerSnapshot(page, 'Decillin', 'Decillin');
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Updated to the latest snapshot');
+    release();
+    await expect(page.locator('.matrix-name', { hasText: 'Decillin' })).toBeVisible();
+    await page.waitForTimeout(300); // let the held old-snapshot answer land
+    await expect(page.locator('.matrix-name', { hasText: 'Decillin' })).toBeVisible();
+  });
+
   test('checks for a newer snapshot automatically while the tab is open', async ({ page }) => {
     await page.clock.install();
     await page.goto(ALL);

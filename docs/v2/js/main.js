@@ -60,8 +60,9 @@ function titleFromSlug(slug) {
 
 // --- Data loading -----------------------------------------------------------
 
-// In-flight fetches keyed by "kind:slug" so a state change during a load
-// cannot start the same request twice.
+// In-flight fetches keyed by "kind:slug:snapshot" so a state change during a
+// load cannot start the same request twice — and a request begun under an
+// older snapshot is never joined by (or allowed to answer for) a newer one.
 const inflight = new Map();
 function once(key, fn) {
   if (inflight.has(key)) return inflight.get(key);
@@ -93,14 +94,15 @@ function loadRoster(slug) {
 function loadRaids(slug) {
   const state = getState();
   if (state.raids && state.raids.slug === slug) return Promise.resolve();
-  return once(`raids:${slug}`, async () => {
+  const { manifest } = state;
+  return once(`raids:${slug}:${manifest.snapshotId}`, async () => {
     const [raids, catalog] = await Promise.all([
-      fetchSnapshotFile(state.manifest, `raids/${slug}.json`).catch(() => null),
+      fetchSnapshotFile(manifest, `raids/${slug}.json`).catch(() => null),
       state.catalog !== undefined
         ? Promise.resolve(state.catalog)
-        : fetchSnapshotFile(state.manifest, 'raid-catalog.json').catch(() => null),
+        : fetchSnapshotFile(manifest, 'raid-catalog.json').catch(() => null),
     ]);
-    if (getState().guild !== slug) return;
+    if (getState().guild !== slug || getState().manifest !== manifest) return;
     const tiers = catalog?.tiers || [];
     const tierId = tiers.some(t => t.id === getState().tierId) ? getState().tierId : (tiers[0]?.id ?? null);
     setState({ raids: raids ? { ...raids, slug } : null, catalog: catalog ?? null, tierId });
@@ -110,10 +112,11 @@ function loadRaids(slug) {
 function loadCollectionsIndex(slug) {
   const state = getState();
   if (state.collectionsIndex && state.collectionsIndex.slug === slug) return Promise.resolve();
-  return once(`collections:${slug}`, async () => {
-    const index = await fetchSnapshotFile(state.manifest, `collections/${slug}/index.json`)
+  const { manifest } = state;
+  return once(`collections:${slug}:${manifest.snapshotId}`, async () => {
+    const index = await fetchSnapshotFile(manifest, `collections/${slug}/index.json`)
       .catch(() => ({ characters: {} }));
-    if (getState().guild !== slug) return;
+    if (getState().guild !== slug || getState().manifest !== manifest) return;
     const keys = Object.keys(index.characters || {});
     const collectionKey = keys.includes(getState().collectionKey) ? getState().collectionKey : (keys[0] || null);
     setState({ collectionsIndex: { ...index, slug }, collectionKey });

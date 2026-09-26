@@ -1415,8 +1415,12 @@ async function buildCollectionCharSelect(kind, placeholder) {
   const sel = document.getElementById(`${kind}-char-select`);
   const grid = document.getElementById(`${kind}-grid`);
   const summary = document.getElementById(`${kind}-summary`);
-  await ensureCollections();
+  // Capture what this build is for BEFORE awaiting: a guild switch or new
+  // snapshot during the fetch must abandon this build, not stamp an empty
+  // picker as built for the new guild.
   const builtFor = `${currentGuildSlug}:${snapshotGen}`;
+  await ensureCollections();
+  if (builtFor !== `${currentGuildSlug}:${snapshotGen}`) return;
   if (sel.dataset.builtFor === builtFor) {
     if (grid && !grid.innerHTML.trim()) grid.innerHTML = collectionPlaceholder(placeholder);
     return;

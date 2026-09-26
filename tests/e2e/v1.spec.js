@@ -129,3 +129,23 @@ test('raids say so when the snapshot has no raid progress, instead of showing ze
   await page.goto('/?tab=raids');
   await expect(page.locator('#raid-content')).toContainText('Raid progress is not in this snapshot');
 });
+
+test('a guild switch during a slow collections load still builds the new guild\'s picker', async ({ page }) => {
+  let release;
+  const gate = new Promise(r => { release = r; });
+  await page.route('**/data/collections-deaths-edge.json*', async route => {
+    await gate;
+    await route.continue();
+  });
+  // Hold riot-act's collections briefly too, so it lands after the switch.
+  await page.route('**/data/collections-riot-act.json*', async route => {
+    await new Promise(r => setTimeout(r, 300));
+    await route.continue();
+  });
+  await page.goto('/?tab=pets');
+  await page.locator('.guild-toggle-btn[data-slug="riot-act"]').click();
+  release(); // deaths-edge's request resumes while riot-act is current
+  const options = page.locator('#pets-char-select option');
+  await expect(options.nth(1)).toContainText('Grrumpy');
+  await expect(options).toHaveCount(2);
+});
