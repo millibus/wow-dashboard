@@ -36,7 +36,7 @@ jobs:
           node scripts/validate-snapshot.js docs/data
           node scripts/validate-snapshot-v2.js docs/data/v2 --allow-missing
 
-  # Browser coverage for the V2 dashboard: real docs/v2 sources against a
+  # Browser coverage for the dashboard: real docs/ sources against a
   # snapshot the real pipeline builds from fixtures, plus axe accessibility
   # scans of every view. No credentials and no Blizzard traffic.
   e2e:

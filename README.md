@@ -3,7 +3,7 @@
 Dashboard for the Deaths Edge (Horde) and Riot Act (Alliance) guilds on Onyxia-US.
 
 - **Live site:** <https://wow.nwpremier.net/> (GitHub Pages; also at <https://millibus.github.io/wow-dashboard/>)
-- **New dashboard (V2):** <https://wow.nwpremier.net/v2/> — becomes the default in the cutover PR
+- **Previous dashboard (V1):** `/v1/` — kept as a fallback; old `/v2/` links forward to the root
 
 ## How it works
 
@@ -18,7 +18,7 @@ GitHub Actions, hourly (.github/workflows/refresh-data.yml)
   deploy  ─ pages:write   ──► deploys the exact artifact (once Pages source = GitHub Actions)
   alert   ─ issues:write  ──► one deduplicated incident issue on failure, auto-closed on recovery
 
-Browser: docs/v2/ (ES modules) reads docs/data/v2/ — no API calls at runtime.
+Browser: docs/ (ES modules) reads docs/data/v2/ — no API calls at runtime.
 ```
 
 **Design rules the whole pipeline follows:**
@@ -40,8 +40,9 @@ Browser: docs/v2/ (ES modules) reads docs/data/v2/ — no API calls at runtime.
 | `scripts/validate-snapshot*.js` | Schema and sanity gates; a failed validation commits nothing |
 | `scripts/test/` | `node:test` suite, runs the real pipeline against `scripts/fixtures/` |
 | `tests/e2e/` | Playwright + axe browser tests for the V2 dashboard |
-| `docs/v2/` | The V2 dashboard (no framework, no `innerHTML`) |
-| `docs/index.html`, `docs/app.js` | Legacy V1 dashboard, still the default until the cutover |
+| `docs/index.html`, `docs/js/`, `docs/css/` | The dashboard (V2; no framework, no `innerHTML`) |
+| `docs/v1/` | Previous V1 dashboard, kept at `/v1/` as a fallback; reads the legacy files in `docs/data/` |
+| `docs/v2/index.html` | Redirect: the old `/v2/` address forwards to the root, keeping the query string |
 | `api/` | Legacy VPS Express proxy, retired after the cutover soak |
 
 ## Configuration
@@ -49,7 +50,7 @@ Browser: docs/v2/ (ES modules) reads docs/data/v2/ — no API calls at runtime.
 **`config/dashboard-config.json`** — region, guilds, `activeExpansionId`, `levelCap`, `minMemberLevel`, `raidMinLevel`, `archiveThresholdDays`, `readiness` thresholds, sanity `limits`, per-component fetch `cadencesHours`, raid `tierOverrides`, and `lifeStatDefs`.
 
 - **New expansion:** update `activeExpansionId` and `levelCap`. The `LEVEL_CAP_DRIFT` warning fires if the roster outgrows the cap. Raid tiers are discovered from the journal API; nothing else to edit.
-- **Adding a guild:** add it to `guilds`. (The legacy `docs/app.js` and `api/server.js` still carry their own lists until retired.)
+- **Adding a guild:** add it to `guilds`. (The legacy `docs/v1/app.js` and `api/server.js` still carry their own lists until retired.)
 - **Life stats:** matched by statistic `id` when set, by display name otherwise. Every run logs `LIFE_STAT_ID_SUGGESTIONS` with the ids it observed — paste them into `lifeStatDefs` to make matching rename-proof. `LIFE_STAT_UNMATCHED` means a display name no longer exists on Blizzard's side; the stat publishes as unknown until the config is fixed.
 
 **`config/tracked-characters.json`** — which characters belong to which owner. Expensive fetches (raids, collections) run only for tracked characters. Entries match by `id` when set, by name otherwise; the V2 roster records resolved ids so this file can be backfilled.
@@ -80,7 +81,7 @@ npm run validate         # schema-check docs/data
 BLIZZARD_CLIENT_ID=… BLIZZARD_CLIENT_SECRET=… npm run snapshot
 
 # Serve the site locally
-cd docs && python3 -m http.server 8000     # http://localhost:8000 and /v2/
+cd docs && python3 -m http.server 8000     # http://localhost:8000 (and /v1/)
 
 # Browser tests (installs Playwright + Chromium)
 npm ci && npx playwright install chromium && npm run test:e2e
@@ -109,4 +110,4 @@ The issue closes itself on the next successful run.
 
 ## Cutover plan
 
-V1 remains the default until V2 is verified on a real snapshot. The cutover PR makes `/v2/` the root, then the custom domain moves to Pages (repo setting + DNS verification), with the VPS kept as rollback for a 7-day soak. `api/`, `docs/app.js`, and the legacy data files are deleted after the soak.
+Done: V2 is the site root, V1 is at `/v1/`, and `/v2/` forwards to the root. Remaining: move the custom domain to Pages (repo setting + DNS verification), with the VPS kept as rollback for a 7-day soak. `api/`, `docs/v1/`, and the legacy data files are deleted after the soak.

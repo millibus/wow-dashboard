@@ -9,7 +9,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const ALL = '/v2/?guild=deaths-edge&scope=all';
+const ALL = '/?guild=deaths-edge&scope=all';
 
 test.describe('roster', () => {
   test('shows owned characters only, sorted by item level', async ({ page }) => {
@@ -22,7 +22,7 @@ test.describe('roster', () => {
   });
 
   test('active scope hides characters past the archive threshold', async ({ page }) => {
-    await page.goto('/v2/?guild=deaths-edge');
+    await page.goto('/?guild=deaths-edge');
     await expect(page.locator('.empty-state')).toContainText('No active characters');
     await expect(page.locator('.char-card')).toHaveCount(0);
   });
@@ -95,7 +95,7 @@ test.describe('readiness', () => {
   test('unavailable components are never scored as zeros', async ({ page }) => {
     await page.goto(`${ALL}&tab=readiness`);
     const results = await page.evaluate(async () => {
-      const { readinessOf } = await import('/v2/js/views/readiness.js');
+      const { readinessOf } = await import('/js/views/readiness.js');
       const manifest = { config: { readiness: {
         minLevel: 80, ilvlFloor: 520, ilvlTarget: 610,
         belowLevelPenalty: 25, readyScore: 80, watchScore: 60,
@@ -251,8 +251,8 @@ test.describe('degraded data', () => {
     await page.goto(ALL);
     await expect(page.locator('.empty-state')).toContainText('unavailable');
     await expect(page.locator('#stale-banner')).toBeVisible();
-    // Not a dead end: the V1 dashboard one level up still has the last data.
-    await expect(page.getByRole('link', { name: 'Open the current dashboard' })).toHaveAttribute('href', /\/$/);
+    // Not a dead end: the previous (V1) dashboard may still load.
+    await expect(page.getByRole('link', { name: 'Open the previous dashboard' })).toHaveAttribute('href', /\/v1\/$/);
     await expect(page.getByRole('button', { name: 'Refresh' })).toBeEnabled();
   });
 });

@@ -3,7 +3,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE = '/v2/?guild=deaths-edge&scope=all';
+const BASE = '/?guild=deaths-edge&scope=all';
 
 test('the bottom nav replaces the tab strip and switches views', async ({ page }) => {
   await page.goto(BASE);

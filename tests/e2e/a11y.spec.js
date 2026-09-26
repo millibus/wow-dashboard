@@ -7,7 +7,7 @@ const { test, expect } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
-const BASE = '/v2/?guild=deaths-edge&scope=all';
+const BASE = '/?guild=deaths-edge&scope=all';
 
 async function scan(page) {
   return new AxeBuilder({ page }).withTags(TAGS).analyze();
