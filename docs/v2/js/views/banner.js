@@ -10,6 +10,10 @@ export function renderFreshness(container, manifest) {
   if (!manifest) return;
   const f = freshness(manifest);
   container.className = `freshness is-${f.state}`;
+  const published = Date.parse(manifest.publishedAt || '');
+  container.title = Number.isFinite(published)
+    ? `Snapshot published ${new Date(published).toLocaleString()}. This page checks for new data automatically.`
+    : 'This page checks for new data automatically.';
   container.append(
     el('span', { class: 'dot' }),
     el('span', { text: `Updated ${f.label}` }),

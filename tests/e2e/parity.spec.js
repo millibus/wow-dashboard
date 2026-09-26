@@ -1,6 +1,6 @@
 'use strict';
 // V1 → V2 feature parity: race and level filters, compare mode, full
-// portrait, "Check for updates", and the header reading realm/region from
+// portrait, refresh (manual and automatic), and the header reading realm/region from
 // the data rather than constants.
 
 const { test, expect } = require('@playwright/test');
@@ -106,7 +106,7 @@ test.describe('character detail', () => {
   });
 });
 
-test.describe('check for updates', () => {
+test.describe('refresh', () => {
   test('is disabled until the initial manifest has loaded', async ({ page }) => {
     // Hold the first manifest response so the pre-load window is observable.
     let release;
@@ -117,7 +117,7 @@ test.describe('check for updates', () => {
       await route.continue();
     });
     await page.goto(ALL, { waitUntil: 'commit' });
-    const button = page.getByRole('button', { name: 'Check for updates' });
+    const button = page.getByRole('button', { name: 'Refresh' });
     await expect(button).toBeDisabled();
     release();
     await expect(button).toBeEnabled();
@@ -126,31 +126,121 @@ test.describe('check for updates', () => {
 
   test('reports up to date when the snapshot id is unchanged', async ({ page }) => {
     await page.goto(ALL);
-    await page.getByRole('button', { name: 'Check for updates' }).click();
+    await page.getByRole('button', { name: 'Refresh' }).click();
     await expect(page.locator('#update-notice')).toContainText('Up to date');
   });
 
-  test('reloads when a newer snapshot has been published', async ({ page }) => {
-    await page.goto(ALL);
-    await page.evaluate(() => { window.__beforeReload = true; });
-    let calls = 0;
-    await page.route('**/data/v2/manifest.json*', async route => {
-      calls += 1;
-      const res = await route.fetch();
-      const manifest = JSON.parse(await res.text());
-      manifest.snapshotId = `${manifest.snapshotId}-newer`;
-      await route.fulfill({ response: res, body: JSON.stringify(manifest) });
-    });
-    // Arm the listener BEFORE clicking: waitForLoadState resolves at once on
-    // an already-loaded page, so it cannot observe the reload.
-    const reloaded = page.waitForEvent('load');
-    await page.getByRole('button', { name: 'Check for updates' }).click();
-    await reloaded;
-    await expect(page.locator('.roster-grid')).toBeVisible();
-    // A real navigation happened: the in-memory marker is gone.
-    expect(await page.evaluate(() => window.__beforeReload)).toBeUndefined();
-    expect(calls).toBeGreaterThanOrEqual(2);
+  test('applies a newer snapshot in place, keeping filters and without a page reload', async ({ page }) => {
+    await page.goto(`${ALL}&races=Undead`);
+    await expect(page.locator('.char-card')).toHaveCount(1);
+    await page.evaluate(() => { window.__beforeRefresh = true; });
+    await routeNewerSnapshot(page, 'Decillin', 'Decillinia');
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Updated to the latest snapshot');
+    await expect(page.locator('.char-card .char-name')).toHaveText(['Decillinia']);
+    // Same document (no navigation), and the race filter survived.
+    expect(await page.evaluate(() => window.__beforeRefresh)).toBe(true);
+    await expect(page).toHaveURL(/races=Undead/);
   });
+
+  test('a newer snapshot whose roster fails to load is retried, not half-applied', async ({ page }) => {
+    await page.goto(ALL);
+    await expect(page.locator('.char-card').first()).toBeVisible();
+    await routeNewerSnapshot(page, 'Decillin', 'Decillinia');
+    // The first roster fetch for the new snapshot fails.
+    let failures = 1;
+    await page.route('**/data/v2/guilds/deaths-edge.json*', async route => {
+      if (failures > 0) { failures -= 1; return route.fulfill({ status: 503, body: 'nope' }); }
+      return route.fallback();
+    });
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Could not reach');
+    await expect(page.locator('.char-card .char-name', { hasText: 'Decillin' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Updated to the latest snapshot');
+    await expect(page.locator('.char-card .char-name', { hasText: 'Decillinia' })).toBeVisible();
+  });
+
+  test('a raids request from the previous snapshot never answers for the new one', async ({ page }) => {
+    // Hold the first (old-snapshot) raids request and make its answer empty.
+    let release;
+    const gate = new Promise(r => { release = r; });
+    let first = true;
+    await page.route('**/data/v2/raids/deaths-edge.json*', async route => {
+      if (!first) return route.fallback();
+      first = false;
+      const res = await route.fetch();
+      const data = JSON.parse(await res.text());
+      data.members = [];
+      await gate;
+      await route.fulfill({ response: res, body: JSON.stringify(data) });
+    });
+    await page.goto(`${ALL}&tab=raids`);
+    await routeNewerSnapshot(page, 'Decillin', 'Decillin');
+
+    await page.getByRole('button', { name: 'Refresh' }).click();
+    await expect(page.locator('#update-notice')).toContainText('Updated to the latest snapshot');
+    release();
+    await expect(page.locator('.matrix-name', { hasText: 'Decillin' })).toBeVisible();
+    await page.waitForTimeout(300); // let the held old-snapshot answer land
+    await expect(page.locator('.matrix-name', { hasText: 'Decillin' })).toBeVisible();
+  });
+
+  test('checks for a newer snapshot automatically while the tab is open', async ({ page }) => {
+    await page.clock.install();
+    await page.goto(ALL);
+    await expect(page.locator('.char-card').first()).toBeVisible();
+    await routeNewerSnapshot(page, 'Decillin', 'Decillinia');
+
+    await page.clock.runFor(5 * 60e3 + 1000);
+    await expect(page.locator('.char-card .char-name', { hasText: 'Decillinia' })).toBeVisible();
+  });
+});
+
+// Serve a manifest with a new snapshot id, and a roster with one renamed
+// member, so an applied refresh is observable on screen.
+async function routeNewerSnapshot(page, from, to) {
+  await page.route('**/data/v2/manifest.json*', async route => {
+    const res = await route.fetch();
+    const manifest = JSON.parse(await res.text());
+    manifest.snapshotId = `${manifest.snapshotId}-newer`;
+    await route.fulfill({ response: res, body: JSON.stringify(manifest) });
+  });
+  await page.route('**/data/v2/guilds/deaths-edge.json*', async route => {
+    const res = await route.fetch();
+    await route.fulfill({ response: res, body: (await res.text()).replaceAll(`"${from}"`, `"${to}"`) });
+  });
+}
+
+test.describe('empty roster', () => {
+  test('filters that match nothing offer a Clear filters action', async ({ page }) => {
+    await page.goto(`${ALL}&q=zzzz`);
+    await expect(page.locator('.empty-state')).toContainText('No characters match these filters');
+    await page.getByRole('button', { name: 'Clear filters' }).click();
+    await expect(page.locator('.char-card')).toHaveCount(2);
+    await expect(page.locator('#search')).toHaveValue('');
+    await expect(page).not.toHaveURL(/q=/);
+  });
+
+  test('an empty active scope offers to show every character', async ({ page }) => {
+    // The fixture's logins are all older than the archive threshold.
+    await page.goto('/v2/?guild=deaths-edge');
+    await expect(page.locator('.empty-state')).toContainText('No active characters');
+    await page.getByRole('button', { name: /Show all 2 characters/ }).click();
+    await expect(page.locator('.char-card')).toHaveCount(2);
+  });
+});
+
+test('the character dialog links to the Blizzard armory', async ({ page }) => {
+  await page.goto(ALL);
+  await page.locator('.char-card', { hasText: 'Decillin' }).click();
+  const link = page.getByRole('link', { name: /View on Armory/ });
+  await expect(link).toHaveAttribute('href', 'https://worldofwarcraft.blizzard.com/en-us/character/us/onyxia/decillin');
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', /noopener/);
 });
 
 test('switching back to a guild whose first load is still in flight never shows the other guild', async ({ page }) => {

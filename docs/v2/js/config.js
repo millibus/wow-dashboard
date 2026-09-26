@@ -69,6 +69,15 @@ export const FRESHNESS = {
   alertMaxMs: 7 * 86400e3,  // > 7d: stale banner (alert)
 };
 
+// Auto-refresh: how often an open, visible tab re-checks the manifest, and how
+// often relative ages ("Updated 5 min ago") are re-rendered. The manifest is a
+// small no-store fetch, so polling it is cheap; data files are only refetched
+// when the snapshot id actually changed.
+export const AUTO_REFRESH = {
+  pollMs: 5 * 60e3,
+  tickMs: 60e3,
+};
+
 export function classColor(className) {
   return CLASS_COLORS[className] || '#c8a84b';
 }

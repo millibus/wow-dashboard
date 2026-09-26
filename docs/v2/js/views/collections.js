@@ -64,10 +64,14 @@ export async function ensureCollection(state, setState) {
   const key = state.collectionKey;
   if (!key || state.collections?.[key] !== undefined) return;
   setState({ collections: { ...(state.collections || {}), [key]: null } }); // loading
+  // `state` is the live store object: capture what this request is for, and
+  // drop the answer if the guild or snapshot moved on while it was in flight.
+  const { manifest, guild } = state;
   let file = 'error';
   try {
-    file = await fetchSnapshotFile(state.manifest, `collections/${state.guild}/${key}.json`);
+    file = await fetchSnapshotFile(manifest, `collections/${guild}/${key}.json`);
   } catch (_) { /* keep the sentinel */ }
+  if (state.manifest !== manifest || state.guild !== guild) return;
   const current = state.collections || {};
   setState({ collections: { ...current, [key]: file } });
 }

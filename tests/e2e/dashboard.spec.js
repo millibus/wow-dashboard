@@ -23,7 +23,8 @@ test.describe('roster', () => {
 
   test('active scope hides characters past the archive threshold', async ({ page }) => {
     await page.goto('/v2/?guild=deaths-edge');
-    await expect(page.locator('.empty-state')).toContainText('No characters match');
+    await expect(page.locator('.empty-state')).toContainText('No active characters');
+    await expect(page.locator('.char-card')).toHaveCount(0);
   });
 
   test('search and class filters narrow the grid', async ({ page }) => {
@@ -250,5 +251,8 @@ test.describe('degraded data', () => {
     await page.goto(ALL);
     await expect(page.locator('.empty-state')).toContainText('unavailable');
     await expect(page.locator('#stale-banner')).toBeVisible();
+    // Not a dead end: the V1 dashboard one level up still has the last data.
+    await expect(page.getByRole('link', { name: 'Open the current dashboard' })).toHaveAttribute('href', /\/$/);
+    await expect(page.getByRole('button', { name: 'Refresh' })).toBeEnabled();
   });
 });

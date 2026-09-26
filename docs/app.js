@@ -30,15 +30,41 @@ const ACTIONS_URL = 'https://github.com/millibus/wow-dashboard/actions/workflows
 
 const UNREADABLE_MSG = 'The snapshot timestamp could not be read, so this data may be out of date.';
 
-function setSnapshotTimestamp() {
-  fetch('data/generated-at.json', { cache: 'no-store' })
+// Auto-refresh: an open, visible tab re-checks generated-at.json on this
+// cadence and reloads the guild quietly (filters and view kept) only when the
+// snapshot timestamp actually moved. The age label re-renders every minute so
+// "Snapshot 5m ago" never goes stale on a tab left open.
+const AUTO_REFRESH_MS = 5 * 60e3;
+const AGE_TICK_MS = 60e3;
+let snapshotTs = NaN;
+let lastCheckAt = 0;
+
+function fetchSnapshotTs() {
+  return fetch('data/generated-at.json', { cache: 'no-store' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => {
+    .then(d => (d?.ts ? new Date(d.ts).getTime() : NaN));
+}
+
+function setSnapshotTimestamp() {
+  lastCheckAt = Date.now();
+  return fetchSnapshotTs()
+    .then(ts => {
+      snapshotTs = ts;
+      renderSnapshotAge();
+      return ts;
+    })
+    .catch(() => {
+      showStaleBanner('alert', UNREADABLE_MSG);
+      return NaN;
+    });
+}
+
+function renderSnapshotAge() {
       const el = document.getElementById('last-updated');
       // A truthy but unparsable ts (NaN) must take the unreadable path, not
       // sail through every comparison as false and render "Snapshot NaNd ago"
       // with no warning at all — the exact silence this banner exists to end.
-      const ts = d?.ts ? new Date(d.ts).getTime() : NaN;
+      const ts = snapshotTs;
       if (!Number.isFinite(ts)) {
         if (el) {
           el.textContent = 'Snapshot age unknown';
@@ -70,10 +96,58 @@ function setSnapshotTimestamp() {
         // reading must come down once the data is fresh again.
         hideStaleBanner();
       }
-    })
-    .catch(() => {
-      showStaleBanner('alert', UNREADABLE_MSG);
-    });
+}
+
+// Quiet background check: reload only when a newer snapshot was published.
+async function autoRefresh() {
+  if (refreshing) return;
+  const before = snapshotTs;
+  const ts = await setSnapshotTimestamp();
+  if (Number.isFinite(ts) && ts !== before) await refreshData({ quiet: true });
+}
+
+// Everything cached per snapshot is dropped so each tab refetches on demand.
+function invalidateSnapshotCaches() {
+  raidLoaded = false;
+  raidData = null;
+  collectionsCache = null;
+  snapshotGen += 1;
+}
+
+let refreshing = false;
+async function refreshData({ quiet = false } = {}) {
+  if (refreshing) return;
+  refreshing = true;
+  const btn = document.getElementById('btn-refresh');
+  if (btn && !quiet) {
+    btn.disabled = true;
+    btn.setAttribute('aria-busy', 'true');
+    btn.classList.add('is-busy');
+  }
+  try {
+    invalidateSnapshotCaches();
+    await loadGuild(!quiet, { quiet });
+  } finally {
+    refreshing = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.classList.remove('is-busy');
+    }
+  }
+}
+
+function startAutoRefresh() {
+  setInterval(renderSnapshotAge, AGE_TICK_MS);
+  setInterval(() => {
+    if (document.visibilityState === 'visible') autoRefresh();
+  }, AUTO_REFRESH_MS);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    renderSnapshotAge();
+    if (Date.now() - lastCheckAt >= AUTO_REFRESH_MS) autoRefresh();
+  });
+  window.addEventListener('online', () => autoRefresh());
 }
 
 // Built with createElement/textContent — no interpolation of fetched values.
@@ -113,6 +187,14 @@ function jsArg(value) {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 // ============================
@@ -220,6 +302,10 @@ let currentGuildSlug = 'deaths-edge';
 // Non-owned characters are never shown — the dashboard is scoped to the OWNER_MAP crew.
 const ARCHIVE_THRESHOLD_DAYS = 30;
 let viewScope = 'active';
+// When the roster's data was current. "Active" is measured from here, not from
+// the viewer's clock: otherwise a snapshot that stops refreshing slowly moves
+// every character into the archive and the default view goes empty.
+let rosterAsOf = NaN;
 
 function isOwned(m) {
   return !!m.owner;
@@ -227,7 +313,8 @@ function isOwned(m) {
 
 function isActiveByLogin(m) {
   if (!m.lastLogin) return false;
-  return (Date.now() - m.lastLogin) < ARCHIVE_THRESHOLD_DAYS * 86400000;
+  const ref = Number.isFinite(rosterAsOf) ? rosterAsOf : Date.now();
+  return (ref - m.lastLogin) < ARCHIVE_THRESHOLD_DAYS * 86400000;
 }
 
 function inViewScope(m) {
@@ -244,6 +331,7 @@ function scopedMembers() {
 window.addEventListener('DOMContentLoaded', () => {
   loadFromURL();
   loadGuild(false);
+  startAutoRefresh();
 
   // ESC closes any open modal
   document.addEventListener('keydown', e => {
@@ -297,13 +385,17 @@ function getOwner(name) {
   return OWNER_MAP[name] || null;
 }
 
-async function loadGuild(forceRefresh) {
+// `quiet`: a background refresh keeps the current cards on screen (no
+// skeleton flash) and, if it fails, leaves them there rather than an error.
+async function loadGuild(forceRefresh, { quiet = false } = {}) {
   try {
-    document.getElementById('character-grid').innerHTML = `
-      <div class="loading-grid">
-        ${Array(8).fill('<div class="skeleton-card"></div>').join('')}
-      </div>`;
-    document.getElementById('guild-stats').innerHTML = '';
+    if (!quiet) {
+      document.getElementById('character-grid').innerHTML = `
+        <div class="loading-grid">
+          ${Array(8).fill('<div class="skeleton-card"></div>').join('')}
+        </div>`;
+      document.getElementById('guild-stats').innerHTML = '';
+    }
 
     const data = await fetchData(
       `guild-${currentGuildSlug}.json`,
@@ -314,6 +406,7 @@ async function loadGuild(forceRefresh) {
       ...m,
       owner: getOwner(m.name),
     }));
+    rosterAsOf = Date.parse(data.lastUpdated || '');
 
     setSnapshotTimestamp();
 
@@ -322,10 +415,11 @@ async function loadGuild(forceRefresh) {
     filterAndRender();
     applyURLTab();
   } catch (err) {
-    document.getElementById('character-grid').innerHTML =
-      `<div class="empty-state">⚠️ Failed to load guild data.<br><small>${err.message}</small><br><br>
-       <button class="btn-refresh" onclick="loadGuild(true)">Retry</button></div>`;
     console.error(err);
+    if (quiet) return;
+    document.getElementById('character-grid').innerHTML =
+      `<div class="empty-state">⚠️ Failed to load guild data.<br><small>${escapeHtml(err.message)}</small><br><br>
+       <button class="btn-refresh" onclick="refreshData()">Retry</button></div>`;
   }
 }
 
@@ -499,7 +593,7 @@ function renderGuildStats(data) {
   const avgIlvl = maxLevel.length
     ? Math.round(maxLevel.filter(m => m.averageIlvl > 0).reduce((a, m) => a + m.averageIlvl, 0) / maxLevel.filter(m => m.averageIlvl > 0).length)
     : 0;
-  const topIlvl = Math.max(...members.map(m => m.averageIlvl || 0));
+  const topIlvl = members.length ? Math.max(...members.map(m => m.averageIlvl || 0)) : 0;
   const classes = [...new Set(members.map(m => m.className))].length;
 
   document.getElementById('guild-stats').innerHTML = `
@@ -1280,24 +1374,7 @@ let mountsData = null;
 let mountsFilter = 'all';
 
 function buildMountsCharSelect() {
-  const sel = document.getElementById('mounts-char-select');
-  const grid = document.getElementById('mounts-grid');
-  if (grid && !grid.innerHTML.trim()) {
-    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐎 Select a character above to view their mount collection</div>';
-  }
-  if (sel.options.length > 1) return;
-  const sorted = scopedMembers().slice().sort((a, b) => {
-    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
-    if (oa !== ob) return oa.localeCompare(ob);
-    return (b.averageIlvl||0) - (a.averageIlvl||0);
-  });
-  for (const m of sorted) {
-    const opt = document.createElement('option');
-    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
-    const owner = m.owner ? `[${m.owner}] ` : '';
-    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
-    sel.appendChild(opt);
-  }
+  return buildCollectionCharSelect('mounts', '🐎 Select a character above to view their mount collection');
 }
 
 async function loadMounts() {
@@ -1318,15 +1395,63 @@ async function loadMounts() {
 }
 
 let collectionsCache = null;
-async function loadCollection(kind, name, realm) {
-  if (!collectionsCache || collectionsCache.slug !== currentGuildSlug) {
-    try {
-      const data = await fetch(`data/collections-${currentGuildSlug}.json`, { cache: 'no-cache' });
-      if (data.ok) {
-        collectionsCache = { slug: currentGuildSlug, data: await data.json() };
-      }
-    } catch (_) {}
+// Bumped whenever cached snapshot data is dropped, so dropdowns built from
+// the old snapshot know to rebuild.
+let snapshotGen = 0;
+
+async function ensureCollections() {
+  if (collectionsCache && collectionsCache.slug === currentGuildSlug) return;
+  const slug = currentGuildSlug;
+  try {
+    const res = await fetch(`data/collections-${slug}.json`, { cache: 'no-cache' });
+    if (res.ok && slug === currentGuildSlug) collectionsCache = { slug, data: await res.json() };
+  } catch (_) {}
+}
+
+// The character pickers list only owned characters the snapshot actually has
+// this collection for — a name in the list always loads — and are rebuilt
+// for each guild and each new snapshot, never left holding the last guild's.
+async function buildCollectionCharSelect(kind, placeholder) {
+  const sel = document.getElementById(`${kind}-char-select`);
+  const grid = document.getElementById(`${kind}-grid`);
+  const summary = document.getElementById(`${kind}-summary`);
+  // Capture what this build is for BEFORE awaiting: a guild switch or new
+  // snapshot during the fetch must abandon this build, not stamp an empty
+  // picker as built for the new guild.
+  const builtFor = `${currentGuildSlug}:${snapshotGen}`;
+  await ensureCollections();
+  if (builtFor !== `${currentGuildSlug}:${snapshotGen}`) return;
+  if (sel.dataset.builtFor === builtFor) {
+    if (grid && !grid.innerHTML.trim()) grid.innerHTML = collectionPlaceholder(placeholder);
+    return;
   }
+  const previous = sel.value;
+  const data = collectionsCache?.slug === currentGuildSlug ? collectionsCache.data : {};
+  const members = allMembers
+    .filter(m => m.owner && data?.[m.name]?.[kind])
+    .sort((a, b) => a.owner.localeCompare(b.owner) || (b.averageIlvl || 0) - (a.averageIlvl || 0));
+  sel.replaceChildren(new Option(members.length ? 'Select a character...' : 'No collection data in this snapshot', ''));
+  for (const m of members) {
+    const text = `[${m.owner}] ${m.name} — L${m.level} ${m.spec || ''} ${m.className}`;
+    sel.appendChild(new Option(text, `${m.realm || 'onyxia'}|${m.name}`));
+  }
+  sel.dataset.builtFor = builtFor;
+  if (previous && [...sel.options].some(o => o.value === previous)) {
+    sel.value = previous;
+  } else {
+    // The previously shown character is not in this guild/snapshot.
+    if (kind === 'pets') petsData = null; else mountsData = null;
+    if (summary) summary.textContent = '';
+    if (grid) grid.innerHTML = collectionPlaceholder(placeholder);
+  }
+}
+
+function collectionPlaceholder(text) {
+  return `<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">${text}</div>`;
+}
+
+async function loadCollection(kind, name, realm) {
+  await ensureCollections();
   const fromSnapshot = collectionsCache?.data?.[name]?.[kind];
   if (fromSnapshot) return fromSnapshot;
   if (!API_BASE) throw new Error(`${kind} missing from snapshot`);
@@ -1384,25 +1509,7 @@ const QUALITY_COLORS = {
 };
 
 function buildPetsCharSelect() {
-  const sel = document.getElementById('pets-char-select');
-  // Show guidance when no character selected
-  const grid = document.getElementById('pets-grid');
-  if (grid && !grid.innerHTML.trim()) {
-    grid.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">🐾 Select a character above to view their pet collection</div>';
-  }
-  if (sel.options.length > 1) return; // already built
-  const sorted = [...allMembers].sort((a, b) => {
-    const oa = a.owner || 'zzz', ob = b.owner || 'zzz';
-    if (oa !== ob) return oa.localeCompare(ob);
-    return (b.averageIlvl||0) - (a.averageIlvl||0);
-  });
-  for (const m of sorted) {
-    const opt = document.createElement('option');
-    opt.value = `${m.realm || 'onyxia'}|${m.name}`;
-    const owner = m.owner ? `[${m.owner}] ` : '';
-    opt.textContent = `${owner}${m.name} — L${m.level} ${m.spec||''} ${m.className}`;
-    sel.appendChild(opt);
-  }
+  return buildCollectionCharSelect('pets', '🐾 Select a character above to view their pet collection');
 }
 
 async function loadPets() {
@@ -1600,6 +1707,14 @@ function renderRaids() {
   const tierDef = raidData.tiers?.[raidTierIdx];
   if (!tierDef) {
     el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center">No raid tiers available</div>';
+    return;
+  }
+
+  // Unknown is never zero: a snapshot in which not one member carries any
+  // raid record has no progress data, rather than a guild that killed nothing.
+  if (!(raidData.members || []).some(m => (m.tiers || []).length)) {
+    el.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:var(--text-dim)">' +
+      'Raid progress is not in this snapshot. It will appear after the next successful data refresh.</div>';
     return;
   }
 

@@ -289,6 +289,13 @@ h1 {
   letter-spacing: 0.5px;
 }
 .btn-refresh:hover { background: var(--gold); color: #000; }
+.btn-refresh:disabled { cursor: default; opacity: 0.75; }
+.btn-refresh .refresh-glyph { display: inline-block; }
+.btn-refresh.is-busy .refresh-glyph { animation: refresh-spin 0.9s linear infinite; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn-refresh.is-busy .refresh-glyph { animation: none; }
+}
 
 .guild-toggle {
   display: flex;
