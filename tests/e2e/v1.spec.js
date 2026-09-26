@@ -119,7 +119,19 @@ test.describe('collections pickers', () => {
   });
 });
 
-test('raids say so when the snapshot has no raid progress, instead of showing zeros', async ({ page }) => {
+test('raids say so when the snapshot has no raid records, instead of showing zeros', async ({ page }) => {
+  // The pipeline omits members whose raid fetch failed; none at all = unknown.
+  await page.route('**/data/raid-deaths-edge.json*', async route => {
+    const res = await route.fetch();
+    const data = JSON.parse(await res.text());
+    data.members = [];
+    await route.fulfill({ response: res, body: JSON.stringify(data) });
+  });
+  await page.goto('/?tab=raids');
+  await expect(page.locator('#raid-content')).toContainText('Raid progress is not in this snapshot');
+});
+
+test('members fetched with no kills show as a real zero, not as unknown', async ({ page }) => {
   await page.route('**/data/raid-deaths-edge.json*', async route => {
     const res = await route.fetch();
     const data = JSON.parse(await res.text());
@@ -127,7 +139,8 @@ test('raids say so when the snapshot has no raid progress, instead of showing ze
     await route.fulfill({ response: res, body: JSON.stringify(data) });
   });
   await page.goto('/?tab=raids');
-  await expect(page.locator('#raid-content')).toContainText('Raid progress is not in this snapshot');
+  await expect(page.locator('#raid-content')).not.toContainText('not in this snapshot');
+  await expect(page.locator('#raid-content')).toContainText('0 of 2');
 });
 
 test('a guild switch during a slow collections load still builds the new guild\'s picker', async ({ page }) => {

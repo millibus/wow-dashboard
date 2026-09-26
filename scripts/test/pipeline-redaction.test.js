@@ -8,6 +8,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { execFile } = require('node:child_process');
 
@@ -29,7 +31,14 @@ function startServer(handler) {
   });
 }
 
+// Every run writes into a fresh, empty temp dir — never the repo's docs/data.
+// Without this the test (a) overwrote the committed snapshot with whatever
+// the fake endpoints produced, and (b) depended on it: once a real V2
+// snapshot existed, a total API outage correctly carried it forward and
+// exited 0, so the failure-path assertions broke. The refresh workflow runs
+// these tests in the same checkout it then builds from, so both mattered.
 function runSnapshot(env) {
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'wow-redaction-'));
   return new Promise((resolve) => {
     execFile(
       process.execPath,
@@ -41,11 +50,15 @@ function runSnapshot(env) {
           BLIZZARD_CLIENT_SECRET: SENTINEL_SECRET,
           BLIZZARD_RETRY_BASE_MS: '20',
           GITHUB_OUTPUT: '',
+          SNAPSHOT_OUT_DIR: outDir,
           ...env,
         },
         timeout: 30000,
       },
-      (error, stdout, stderr) => resolve({ code: error ? error.code : 0, stdout, stderr }),
+      (error, stdout, stderr) => {
+        fs.rmSync(outDir, { recursive: true, force: true });
+        resolve({ code: error ? error.code : 0, stdout, stderr });
+      },
     );
   });
 }
