@@ -55,7 +55,7 @@ jobs:
         with:
           name: snapshot-data
           path: docs/data
-          retention-days: 3
+          retention-days: 1
           if-no-files-found: error
 
   commit:
