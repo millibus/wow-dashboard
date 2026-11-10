@@ -1,0 +1,28 @@
+---
+description: wow-dashboard - WoW guild dashboard (static docs/ site + hourly Blizzard API snapshot pipeline on GitHub Actions)
+alwaysApply: true
+---
+# wow-dashboard
+
+Guild dashboard: a static frontend in `docs/` (ES modules, no framework, no `innerHTML`) that reads committed JSON snapshots; `scripts/build-snapshot.js` fetches the Blizzard API hourly in GitHub Actions. Read `README.md` (design rules, layout, config) first.
+
+## Stack and local commands (Node, no runtime deps)
+- `npm test` - `node:test` pipeline and unit tests against `scripts/fixtures/` (no credentials, no install).
+- `npm run validate` - schema-check `docs/data`.
+- `npm ci && npx playwright install chromium && npm run test:e2e` - Playwright + axe browser tests.
+- Serve locally: `cd docs && python3 -m http.server 8000`.
+- Do not run `npm run snapshot` or `capture-fixtures` with real credentials; use fixtures.
+
+## Deploys: never
+- Target: GitHub Pages, deployed by `.github/workflows/refresh-data.yml` from `main`. Agents must never deploy, trigger workflows, change repo settings or secrets, or touch DNS. Deploys, merges and DNS changes need potac's explicit OK.
+- `docs/data/` is written by the hourly pipeline: don't hand-edit it.
+
+## Branches and PRs
+- Default branch `main`. Never push to it. Small, focused draft PRs; never merge or close PRs (including Dependabot's). Keep CI (`ci.yml`) green.
+
+## How to work
+- Reproduce a bug before fixing it (a failing test against fixtures first). Reuse and delete before adding.
+- Pipeline rules: unknown is never zero (carry forward or `null`, rendered as `-`); key characters by id, not name; guild/expansion values belong in `config/`, not constants.
+- Never commit secrets or print them. Errors go through `scripts/lib/safe-error.js`; credentials must never reach logs, issues or data files.
+- No personal names in code, docs or commits beyond the public guild/character data the dashboard already shows.
+- `api/` is the retired legacy proxy: don't extend it.
