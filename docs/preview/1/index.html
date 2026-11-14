@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en" data-game="retail" data-faction="horde" data-view="roster">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="Option 1: The Muster (preview)">
+<meta property="og:description" content="Preview of a new look for the guild site. Your characters lined up as a group shot.">
+<meta property="og:image" content="https://wow.nwpremier.net/preview/img/1-retail.jpg">
+<title>Muster: guild dashboard mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Sofia+Sans:wght@400;500;700&family=Sofia+Sans+Condensed:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;800&display=swap" rel="stylesheet">
+<style>
+/* ------------------------------------------------------------------ tokens */
+:root{
+  --ui:"Sofia Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Sofia Sans",system-ui,sans-serif;
+  --display:"Sofia Sans Extra Condensed","Arial Narrow",sans-serif;
+  --q-poor:#b0b0b0; --q-common:#ffffff; --q-uncommon:#1eff00; --q-rare:#62a8ff; --q-epic:#cf8dff; --q-legendary:#ff8000;
+  --good:#5fe07a; --warn:#ffd24a; --bad:#ff7a6b;
+  --bar-h:60px; --wrap:1240px;
+}
+html[data-game="retail"][data-faction="horde"]{
+  --page:#150809; --panel:#1f0e10; --panel2:#2a1416; --rowhover:#331a1b; --line:rgba(255,214,190,.13); --line2:rgba(255,214,190,.24);
+  --text:#f7ebde; --muted:#cdb3a5; --faint:#a88c7e; --accent:#ff7a45; --accent-ink:#1c0906; --faction:#b3121e;
+  --on-page:var(--text); --on-page-muted:var(--muted); --fog:21,8,9; --barbg:rgba(21,8,9,.86);
+}
+html[data-game="retail"][data-faction="alliance"]{
+  --page:#080e1e; --panel:#0e1832; --panel2:#142142; --rowhover:#1a2b55; --line:rgba(196,216,255,.14); --line2:rgba(196,216,255,.26);
+  --text:#eef3fc; --muted:#b1bdd8; --faint:#8a99bd; --accent:#f5c451; --accent-ink:#1b1403; --faction:#1c4fb8;
+  --on-page:var(--text); --on-page-muted:var(--muted); --fog:8,14,30; --barbg:rgba(8,14,30,.86);
+}
+html[data-game="forever"]{
+  --page:#c9ac7d; --panel:#0a2c2f; --panel2:#0d3336; --rowhover:#113b3f; --line:rgba(240,206,150,.2); --line2:rgba(240,206,150,.38);
+  --text:#f8efda; --muted:#bfd4cb; --faint:#9dbdb4; --accent:#f3c47c; --accent-ink:#2a1a06; --faction:#1f6f6b;
+  --on-page:#2a1c0e; --on-page-muted:#3a2912; --fog:9,32,40; --barbg:rgba(9,40,43,.94);
+  --display:"Marcellus","Iowan Old Style",Georgia,serif;
+  --bronze:#c8975a; --bronze-dark:#5c3c17; --bronze-light:#f0cf95;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--text);font:400 16px/1.45 var(--body);font-variant-numeric:lining-nums tabular-nums;min-height:100vh;padding-bottom:0}
+html[data-game="forever"] body{
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='900' height='900'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006 .011' numOctaves='3' seed='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .25  0 0 0 0 .15  0 0 0 0 .04  0 0 0 -.6 .4'/%3E%3C/filter%3E%3Crect width='900' height='900' filter='url(%23n)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='9' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2  0 0 0 0 .12  0 0 0 0 .03  0 0 0 -.55 .42'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg,#d0b385,#c1a271);
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;text-align:inherit}
+img{display:block}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 28px}
+
+/* ------------------------------------------------------------------ top bar */
+.bar{position:sticky;top:0;z-index:50;height:var(--bar-h);background:var(--barbg);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+html[data-game="forever"] .bar{border-bottom:2px solid var(--bronze);box-shadow:0 1px 0 var(--bronze-dark),0 6px 18px rgba(40,22,0,.35)}
+.bar-in{max-width:1440px;margin:0 auto;height:100%;display:flex;align-items:center;gap:22px;padding:0 20px}
+.games{display:flex;height:40px;border-radius:5px;padding:3px;gap:3px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px var(--line)}
+.game{display:flex;align-items:center;gap:8px;padding:0 14px 0 9px;border-radius:3px;color:var(--muted);opacity:.72;white-space:nowrap}
+.game svg{width:24px;height:24px;flex:none}
+.game:hover{opacity:1}
+.game .g-name{line-height:1}
+.g-retail .g-name{font:800 22px/1 "Sofia Sans Extra Condensed","Arial Narrow",sans-serif;text-transform:uppercase;letter-spacing:.05em;padding-top:2px}
+.g-forever .g-name{font:400 18px/1 "Marcellus",Georgia,serif;letter-spacing:.01em}
+.game[aria-pressed="true"]{opacity:1;color:#fff}
+.g-retail[aria-pressed="true"]{background:linear-gradient(180deg,color-mix(in srgb,var(--faction) 82%,#fff 0%),color-mix(in srgb,var(--faction) 70%,#000));box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
+.g-forever[aria-pressed="true"]{background:linear-gradient(180deg,#2c8a84,#1b625f);color:#fbf3df;box-shadow:inset 0 0 0 1px #f0cf95,inset 0 0 0 2px #5c3c17}
+.guilds{display:flex;gap:4px}
+.guild{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px 0 6px;border-radius:4px;font:600 17px/1 var(--ui);color:var(--muted);white-space:nowrap}
+.guild img{width:24px;height:24px;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.guild:hover{color:var(--text)}
+.guild[aria-pressed="true"]{color:var(--text);background:var(--panel2);box-shadow:inset 0 0 0 1px var(--line2)}
+.guild-swap{display:none}
+.tabs{margin-left:auto;display:flex;gap:2px;height:100%}
+.tab{position:relative;display:flex;align-items:center;gap:7px;padding:0 13px;font:600 17px/1 var(--ui);color:var(--muted)}
+.tab svg{display:none}
+.tab:hover{color:var(--text)}
+.tab[aria-current="page"]{color:var(--text)}
+.tab[aria-current="page"]::after{content:"";position:absolute;left:10px;right:10px;bottom:-1px;height:3px;background:var(--accent);border-radius:2px 2px 0 0}
+.fresh{font:500 14px/1.15 var(--ui);color:var(--faint);text-align:right;white-space:nowrap}
+.fresh b{display:block;font-weight:600;color:var(--muted)}
+.fresh.stale b{color:var(--warn)}
+
+/* ------------------------------------------------------------------ stage */
+.stage{position:relative;height:640px;overflow:hidden;isolation:isolate;background:#000}
+html[data-game="forever"] .stage{margin:22px auto 0;max-width:1396px;width:calc(100% - 44px);border-radius:6px;border:1px solid var(--bronze-dark);box-shadow:0 0 0 3px var(--bronze),0 0 0 4px var(--bronze-dark),0 0 0 5px #e9c88d,0 0 0 6px var(--bronze-dark),0 18px 40px rgba(40,22,0,.45)}
+.stage.slim{height:176px}
+.scene{position:absolute;inset:0;width:100%;height:100%}
+.fogl{position:absolute;left:0;right:0;pointer-events:none}
+.lineup{position:absolute;inset:0}
+.fig{position:absolute;display:block;transition:transform .18s ease,filter .18s ease}
+.fig img{position:absolute;max-width:none;pointer-events:none;user-select:none}
+.fig .shadow{position:absolute;left:50%;bottom:-6%;width:120%;height:13%;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(0,0,0,.6),rgba(0,0,0,0));z-index:-1;pointer-events:none}
+.fig.r0{z-index:50}.fig.r1{z-index:30}.fig.r2{z-index:10}
+.fig.r1 img{filter:brightness(.7) saturate(.85)}
+.fig.r2 img{filter:brightness(.46) saturate(.6)}
+.fig:hover,.fig:focus-visible{transform:translateY(-5px);z-index:60}
+.fig:hover img,.fig:focus-visible img{filter:brightness(1.12) saturate(1.05)}
+.plate{position:absolute;bottom:calc(100% + 5px);transform:translateX(-50%);text-align:center;white-space:nowrap;pointer-events:none;line-height:1.05;
+  text-shadow:0 0 2px #000,0 0 3px #000,0 1px 3px #000,0 0 10px rgba(0,0,0,.9),0 0 18px rgba(0,0,0,.7)}
+.plate b{display:block;font:700 19px/1.05 var(--ui);color:var(--cls);letter-spacing:.01em}
+.plate i{display:block;font:600 13px/1.2 var(--ui);font-style:normal;color:#f1e7da;opacity:.92}
+.plate .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:5px;box-shadow:0 0 0 1px #000,0 0 6px var(--good);vertical-align:1px}
+.plate.top{z-index:85;bottom:auto}
+.fig .plate{opacity:0;transition:opacity .15s}
+.fig .plate b{font-size:16px}
+.fig:hover .plate,.fig:focus-visible .plate{opacity:1}
+.fig:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:8px}
+.fire{position:absolute;left:50%;transform:translateX(-50%);z-index:45;pointer-events:none}
+.fireglow{position:absolute;left:50%;bottom:-140px;width:1100px;height:620px;transform:translateX(-50%);z-index:70;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(closest-side,rgba(255,150,54,.5),rgba(255,120,40,.2) 45%,rgba(255,110,30,0) 100%);animation:flick 3.2s ease-in-out infinite}
+@keyframes flick{0%,100%{opacity:.9}22%{opacity:.72}41%{opacity:1}63%{opacity:.8}80%{opacity:.95}}
+.flame{transform-origin:50% 100%;animation:flame 1.7s ease-in-out infinite}
+.flame.f2{animation-duration:1.25s;animation-delay:-.4s}
+@keyframes flame{0%,100%{transform:scale(1,1) skewX(0)}30%{transform:scale(.94,1.08) skewX(-3deg)}65%{transform:scale(1.05,.93) skewX(3deg)}}
+@media (prefers-reduced-motion:reduce){.fireglow,.flame{animation:none}.fig{transition:none}}
+.gname{position:absolute;z-index:5;left:0;right:0;top:92px;margin:0;text-align:center;white-space:nowrap;font:800 100px/.8 var(--display);text-transform:uppercase;letter-spacing:.005em;
+  color:transparent;background:linear-gradient(180deg,#fff6e6 0%,#fff6e6 48%,rgba(255,246,230,.2) 90%);-webkit-background-clip:text;background-clip:text;pointer-events:none}
+.gname span{display:inline-block}
+.gname.stack span{display:block}
+.gname.stack{line-height:.82}
+html[data-game="forever"] .gname{font:400 100px/1 var(--display);text-transform:none;letter-spacing:-.01em;top:76px;background:linear-gradient(180deg,#fbf1d8 0%,#fbf1d8 52%,rgba(251,241,216,.22) 92%);-webkit-background-clip:text;background-clip:text}
+html[data-game="forever"] .gname.stack{line-height:.95}
+.stage.slim .gname{top:58px}
+html[data-game="forever"] .stage.slim .gname{top:48px}
+.gsub{position:absolute;z-index:80;left:max(22px,calc((100% - var(--wrap))/2 + 28px));right:22px;top:22px;margin:0;font:600 17px/1.2 var(--ui);color:#f6eadb;display:flex;flex-wrap:wrap;align-items:center;gap:6px 0;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.gsub img{width:22px;height:22px;border-radius:50%;margin-right:7px}
+.gsub span{display:inline-flex;align-items:center}
+.gsub span+span{margin-left:13px;padding-left:13px;border-left:1px solid rgba(255,255,255,.32)}
+.gsub .upd{margin-left:auto;border:0;color:#eadccb;opacity:.9;font-weight:500}
+.gsub .upd.stale{color:var(--warn);opacity:1}
+@media (min-width:1181px){.gsub .upd{display:none}}
+.sample{display:inline-flex;align-items:center;font:700 13.5px/1 var(--ui);color:#2a1a06;background:#f3c47c;border-radius:3px;padding:5px 8px 4px;letter-spacing:.02em;text-shadow:none}
+.caption{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 30px;padding-top:22px}
+html[data-game="forever"] .caption{padding-top:28px}
+.caption p{margin:0}
+.gline{font:400 20px/1.4 var(--body);color:var(--on-page);max-width:46em}
+.gline strong{font-weight:700}
+.glegend{font:500 15px/1.35 var(--ui);color:var(--on-page-muted)}
+.glegend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#2fbf55;margin:0 6px 0 12px;vertical-align:1px}
+
+/* ------------------------------------------------------------------ layout below the stage */
+.below{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:36px;align-items:start;padding-top:26px;padding-bottom:80px}
+.below.single{grid-template-columns:minmax(0,1fr)}
+.sheet{min-width:0}
+html[data-game="forever"] .sheet,html[data-game="forever"] .card{background:var(--panel);border-radius:6px;border:1px solid var(--bronze-dark);box-shadow:0 0 0 2px var(--bronze),0 0 0 3px var(--bronze-dark),0 12px 28px rgba(40,22,0,.32)}
+html[data-game="forever"] .sheet{padding:20px 22px 10px}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;margin-bottom:8px}
+.search{flex:1 1 220px;min-width:0;height:42px;border-radius:4px;border:1px solid var(--line2);background:rgba(0,0,0,.28);padding:0 12px 0 38px;font:500 17px/1 var(--ui);color:var(--text);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23bbb' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-size:18px;background-position:11px 50%}
+.search::placeholder{color:var(--faint);opacity:1}
+.sortwrap{display:flex;align-items:center;gap:8px;font:500 15px/1 var(--ui);color:var(--faint)}
+.sort{height:42px;border-radius:4px;border:1px solid var(--line2);background:rgba(0,0,0,.28);padding:0 30px 0 12px;font:600 16px/1 var(--ui);color:var(--text);appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23ccc' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-size:11px;background-position:right 11px center}
+.sort option{background:#1a1a1a;color:#fff}
+.classes{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.cls{position:relative;display:flex;align-items:center;gap:6px;height:36px;padding:0 10px 0 3px;border-radius:18px;background:rgba(0,0,0,.26);box-shadow:inset 0 0 0 1px var(--line);font:700 15px/1 var(--ui);color:var(--muted)}
+.cls img{width:30px;height:30px;border-radius:50%;box-shadow:0 0 0 2px var(--c)}
+.cls:hover{color:var(--text);box-shadow:inset 0 0 0 1px var(--line2)}
+.cls[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 26%,transparent);color:#fff;box-shadow:inset 0 0 0 1.5px var(--c)}
+.clear{height:36px;padding:0 12px;border-radius:18px;font:600 15px/1 var(--ui);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.sec{display:flex;align-items:baseline;gap:12px;margin:30px 0 6px;padding-bottom:9px;border-bottom:1px solid var(--line2)}
+.sec h2{margin:0;font:800 30px/1 var(--display);letter-spacing:.01em;text-transform:uppercase;color:var(--text)}
+html[data-game="forever"] .sec h2{font:400 25px/1.05 var(--display);text-transform:none}
+.sec .n{font:700 17px/1 var(--ui);color:var(--accent)}
+.sec p{margin:0 0 0 auto;font:500 14px/1.2 var(--ui);color:var(--faint);text-align:right}
+.rows{list-style:none;margin:0;padding:0}
+.row{position:relative;display:grid;grid-template-columns:132px minmax(0,1fr) 150px 150px 128px;align-items:center;gap:0 16px;width:100%;height:76px;border-bottom:1px solid var(--line);overflow:hidden;isolation:isolate}
+.row:hover{background:var(--rowhover)}
+.row:focus-visible{outline-offset:-2px}
+.art{position:relative;align-self:stretch;overflow:hidden}
+.art img{position:absolute;left:-8px;top:50%;width:156px;height:auto;transform:translateY(-46%);mix-blend-mode:lighten;-webkit-mask-image:radial-gradient(64% 86% at 46% 52%,#000 46%,transparent 100%);mask-image:radial-gradient(64% 86% at 46% 52%,#000 46%,transparent 100%)}
+.art .ghost{position:absolute;left:34px;top:14px;width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px var(--line2);display:grid;place-items:center;font:700 22px/1 var(--display);color:var(--faint)}
+.who{min-width:0}
+.name{display:block;font:700 21px/1.1 var(--ui);color:var(--clst);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.005em}
+.sub .seenin,.sub .d-short{display:none}
+.sub{display:block;margin-top:3px;font:500 15px/1.2 var(--ui);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seen,.gear{font:500 15px/1.25 var(--ui);color:var(--muted);min-width:0}
+.seen small,.gear small{display:block;font-size:13.5px;color:var(--faint)}
+.seen .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px;box-shadow:0 0 6px rgba(95,224,122,.7)}
+.gear .flag{color:var(--warn)}
+.prog{display:grid;grid-template-columns:auto 1fr;gap:0 9px;align-items:end;padding-right:14px}
+.prog .num{font:800 40px/.82 var(--display);color:var(--text);letter-spacing:.01em;text-align:right;min-width:52px}
+html[data-game="forever"] .prog .num{font:400 32px/.9 var(--display)}
+.prog .lab{font:600 13.5px/1.12 var(--ui);color:var(--faint)}
+.prog .lab b{display:block;font-weight:700;color:var(--muted)}
+.prog .lab b.ok{color:var(--good)}
+.prog .gauge{grid-column:1/-1;height:4px;margin-top:7px;background:rgba(255,255,255,.12);border-radius:2px;position:relative}
+.prog .gauge span{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--cls)}
+.prog .gauge::after{content:"";position:absolute;right:0;top:-3px;bottom:-3px;width:2px;background:var(--text);opacity:.75}
+.row.dash .num{color:var(--faint)}
+.empty{padding:30px 0 34px;font:400 17px/1.5 var(--body);color:var(--muted)}
+
+/* rail cards */
+.rail{display:grid;gap:18px;position:sticky;top:calc(var(--bar-h) + 18px)}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:18px 18px 16px}
+.card h3{margin:0 0 8px;font:700 18px/1.1 var(--ui);color:var(--text)}
+.card p{margin:0 0 8px;font:400 15px/1.45 var(--body);color:var(--muted)}
+.card p:last-child{margin-bottom:0}
+.card .big{font:800 54px/.9 var(--display);color:var(--text);margin:2px 0 6px}
+html[data-game="forever"] .card .big{font:400 44px/1 var(--display)}
+.card .big small{font:600 16px/1 var(--ui);color:var(--muted);margin-left:6px}
+.linkish{font:700 15px/1 var(--ui);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.owners{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.owners button{display:flex;justify-content:space-between;width:100%;padding:7px 8px;border-radius:3px;font:600 16px/1 var(--ui);color:var(--muted)}
+.owners button:hover{background:rgba(255,255,255,.06);color:var(--text)}
+.owners button[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent)}
+.raidneed{display:grid;gap:9px;margin-top:10px}
+.raidneed div{font:600 15px/1.2 var(--ui);color:var(--muted);display:flex;justify-content:space-between;gap:8px}
+.raidneed div b{color:var(--text);font-weight:700}
+
+/* ------------------------------------------------------------------ character sheet */
+.chero{position:relative;overflow:hidden;isolation:isolate;border-bottom:1px solid var(--line)}
+html[data-game="forever"] .chero{margin:22px auto 0;max-width:1396px;width:calc(100% - 44px);border-radius:6px;border:1px solid var(--bronze-dark);box-shadow:0 0 0 3px var(--bronze),0 0 0 4px var(--bronze-dark),0 18px 40px rgba(40,22,0,.45)}
+.chero .scene{opacity:.55}
+.chero::before{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(60% 70% at 64% 58%,color-mix(in srgb,var(--cls) 30%,transparent),transparent 70%),linear-gradient(180deg,rgba(var(--fog),.2),rgba(var(--fog),.92) 92%)}
+.cgrid{position:relative;z-index:2;display:grid;grid-template-columns:320px minmax(0,1fr);gap:44px;padding-top:22px;padding-bottom:34px}
+.back{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 8px;border-radius:4px;font:700 16px/1 var(--ui);color:var(--text);background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px var(--line2)}
+.back svg{width:16px;height:16px}
+.back:hover{background:rgba(0,0,0,.55)}
+.cname{margin:22px 0 0;font:800 96px/.84 var(--display);text-transform:uppercase;color:var(--clst);letter-spacing:.005em;overflow-wrap:anywhere;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+html[data-game="forever"] .cname{font:400 58px/1 var(--display);text-transform:none}
+.cdesc{margin:10px 0 0;font:600 20px/1.25 var(--ui);color:var(--text)}
+.cmeta{margin:10px 0 0;padding:0;list-style:none;font:500 16px/1.5 var(--ui);color:var(--muted)}
+.cmeta .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--good);margin-right:6px}
+.checks{list-style:none;margin:22px 0 0;padding:0;border-top:1px solid var(--line2)}
+.checks li{display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);font:600 17px/1.2 var(--ui)}
+.checks li span{color:var(--muted);font-weight:500}
+.checks .ic{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:800 13px/1 var(--ui)}
+.checks .y .ic{background:var(--good);color:#06240e}.checks .n .ic{background:transparent;box-shadow:inset 0 0 0 2px var(--warn);color:var(--warn)}
+.checks .u .ic{box-shadow:inset 0 0 0 2px var(--faint);color:var(--faint)}
+.checks b{font-weight:700;color:var(--text)}
+.verdict{margin:18px 0 0;font:700 21px/1.25 var(--ui);color:var(--text)}
+.checks{margin-top:14px}
+.doll{display:grid;grid-template-columns:minmax(0,1fr) 300px minmax(0,1fr);gap:0 6px;align-items:start}
+.slots{display:grid;gap:5px;position:relative;z-index:3}
+.slot{display:grid;grid-template-columns:46px minmax(0,1fr);gap:11px;align-items:center;min-height:58px;padding:5px 10px 5px 5px;border-radius:5px;background:color-mix(in srgb,var(--panel) 86%,transparent);box-shadow:inset 0 0 0 1px var(--line)}
+.slots.right .slot{grid-template-columns:minmax(0,1fr) 46px;text-align:right;padding:5px 5px 5px 10px}
+.slots.right .imeta{justify-content:flex-end}
+.slots.right .slot .ico{order:2}
+.ico{width:46px;height:46px;border-radius:5px;position:relative;background:#0a0a0a;box-shadow:0 0 0 2px var(--q),0 0 0 3px rgba(0,0,0,.8)}
+.ico img{width:100%;height:100%;border-radius:4px}
+.ico.none{box-shadow:inset 0 0 0 1px var(--line2);background:rgba(0,0,0,.4)}
+.iname{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font:700 16.5px/1.12 var(--ui);color:var(--q);overflow:hidden}
+.imeta{display:flex;flex-wrap:wrap;gap:1px 10px;margin-top:3px;font:500 14px/1.2 var(--ui);color:var(--muted)}
+.imeta b{color:var(--text);font-weight:700}
+.imeta .miss{color:var(--warn)}.imeta .has{color:var(--good)}
+.slot.vacant .iname{color:var(--faint);font-weight:500}
+.model{position:relative;height:520px;align-self:stretch;z-index:1}
+.model .fig2{position:absolute;left:50%;bottom:26px}
+.model .fig2 img{position:absolute;max-width:none}
+.model .ped{position:absolute;left:50%;bottom:6px;width:280px;height:54px;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(0,0,0,.75),rgba(0,0,0,0))}
+.weapons{grid-column:1/-1;display:flex;justify-content:center;gap:6px;margin-top:10px;position:relative;z-index:3}
+.weapons .slot{flex:0 1 290px}
+.cbelow{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:36px;padding-top:30px;padding-bottom:80px}
+.cbelow.one{grid-template-columns:minmax(0,1fr)}
+html[data-game="forever"] .cbelow .sheet{padding-bottom:20px}
+.life{margin:0;font:400 23px/1.5 var(--body);color:var(--muted);max-width:30em}
+.life b{color:var(--text);font-weight:700}
+.h3{margin:0 0 12px;font:800 30px/1 var(--display);text-transform:uppercase;color:var(--text)}
+html[data-game="forever"] .h3{font:400 25px/1.05 var(--display);text-transform:none}
+.stats{margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 26px}
+.stats div{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font:500 17px/1.2 var(--ui);color:var(--muted)}
+.stats dt{margin:0}.stats dd{margin:0;font-weight:700;color:var(--text)}
+.note{margin:14px 0 0;font:400 14.5px/1.45 var(--body);color:var(--faint)}
+
+/* ------------------------------------------------------------------ readiness */
+.lead{margin:0;font:800 60px/.94 var(--display);text-transform:uppercase;color:var(--text);max-width:16em;letter-spacing:.005em}
+html[data-game="forever"] .lead{font:400 40px/1.12 var(--display);text-transform:none}
+.leadsub{margin:14px 0 0;font:400 18px/1.5 var(--body);color:var(--muted);max-width:38em}
+.track{position:relative;margin:58px 0 0;height:176px}
+.track .axis{position:absolute;left:0;right:0;bottom:30px;height:8px;border-radius:4px;background:rgba(255,255,255,.12)}
+.track .axis i{position:absolute;top:14px;transform:translateX(-50%);font:600 14px/1 var(--ui);font-style:normal;color:var(--faint)}
+.track .axis i::before{content:"";position:absolute;left:50%;top:-12px;width:1px;height:6px;background:var(--faint)}
+.track .goal{position:absolute;bottom:22px;top:-34px;width:2px;background:var(--accent)}
+.track .goal b{position:absolute;top:0;right:8px;white-space:nowrap;font:700 15px/1 var(--ui);color:var(--accent)}
+.tok{position:absolute;display:block;border-radius:50%;box-shadow:0 0 0 2.5px var(--cls),0 0 0 4px rgba(0,0,0,.7);background:#111;overflow:visible}
+.tok img{width:100%;height:100%;border-radius:50%}
+.tok .ini{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;font:700 13px/1 var(--ui);color:var(--faint);background:rgba(255,255,255,.06)}
+.tok.unk{box-shadow:0 0 0 1.5px var(--faint),0 0 0 3px rgba(0,0,0,.6)}
+.tok:hover,.tok:focus-visible{z-index:5;transform:scale(1.25)}
+.tok .tl{position:absolute;left:50%;bottom:calc(100% + 9px);transform:translateX(-50%);white-space:nowrap;text-align:center;font:700 15px/1.1 var(--ui);color:var(--clst)}
+.tok .tl small{display:block;font:600 13.5px/1.2 var(--ui);color:var(--muted)}
+.pile{position:relative;margin-top:26px}
+.pile .axis{position:absolute;left:0;right:0;bottom:26px;height:2px;background:var(--line2)}
+.pile .axis i{position:absolute;top:8px;transform:translateX(-50%);font:600 14px/1 var(--ui);font-style:normal;color:var(--faint)}
+.pile .axis i.cap{color:var(--accent);font-weight:700}
+.pile .tip{position:absolute;z-index:9;pointer-events:none;transform:translate(-50%,-100%);background:#000;border:1px solid var(--line2);border-radius:3px;padding:5px 8px;font:600 14px/1.15 var(--ui);white-space:nowrap;display:none}
+.chk{list-style:none;margin:8px 0 0;padding:0}
+.chk li{border-bottom:1px solid var(--line)}
+.chk button{display:grid;grid-template-columns:56px minmax(0,1.2fr) repeat(4,minmax(0,1fr));gap:12px;align-items:center;width:100%;padding:11px 0}
+.chk button:hover{background:var(--rowhover)}
+.chk .av{width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 2px var(--cls)}
+.chk .nm{font:700 20px/1.1 var(--ui);color:var(--clst)}
+.chk .ck{font:500 15px/1.2 var(--ui);color:var(--muted)}
+.chk .ck b{display:block;font:700 17px/1.2 var(--ui);color:var(--text)}
+.chk .ck.y b{color:var(--good)}.chk .ck.n b{color:var(--warn)}
+.needs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:34px}
+.need{background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:16px 16px 14px}
+.need h4{margin:0;font:700 20px/1.1 var(--ui)}
+.need p{margin:4px 0 12px;font:500 15px/1.3 var(--ui);color:var(--muted)}
+.pips{display:grid;grid-template-columns:repeat(10,13px);gap:5px}
+.pips i{width:13px;height:13px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--faint)}
+.pips i.on{background:var(--accent);box-shadow:none}
+
+/* ------------------------------------------------------------------ raids */
+.doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px;margin-top:34px}
+.door{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:18px 18px 14px;overflow:hidden}
+.door h3{margin:0;font:800 34px/.95 var(--display);text-transform:uppercase;letter-spacing:.01em}
+html[data-game="forever"] .door h3{font:400 27px/1.05 var(--display);text-transform:none}
+.door .dm{margin:6px 0 12px;font:500 15px/1.3 var(--ui);color:var(--muted)}
+.door ol{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.door li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font:500 16px/1.2 var(--ui);color:var(--muted)}
+.diff{display:flex;gap:5px;flex:none}
+.diff i{width:20px;height:20px;border-radius:3px;display:grid;place-items:center;font:700 11.5px/1 var(--ui);font-style:normal;color:var(--faint);box-shadow:inset 0 0 0 1px var(--line2)}
+.door .lock{display:flex;align-items:center;gap:12px;margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
+.door .lock img{width:44px;height:44px;border-radius:5px;box-shadow:0 0 0 2px var(--bronze,#888);filter:saturate(.75)}
+.door .lock b{display:block;font:700 18px/1.15 var(--ui);color:var(--text)}
+.door .lock span{font:500 15px/1.2 var(--ui);color:var(--muted)}
+.count{font:800 120px/.8 var(--display);color:var(--accent);letter-spacing:.01em}
+html[data-game="forever"] .count{font:400 96px/.9 var(--display)}
+.counthead{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
+.stub{max-width:36em;padding:20px 0 60px}
+
+/* phone tab bar (hidden on desktop) */
+.dock{display:none}
+footer.foot{padding:0 0 110px;font:400 14px/1.5 var(--body);color:var(--on-page-muted)}
+footer.foot .wrap{border-top:1px solid color-mix(in srgb,var(--on-page-muted) 40%,transparent);padding-top:16px}
+
+/* ------------------------------------------------------------------ medium */
+@media (max-width:1180px){
+  .below{grid-template-columns:minmax(0,1fr)}
+  .rail{position:static;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .cgrid{grid-template-columns:minmax(0,1fr)}
+  .fresh{display:none}
+}
+/* ------------------------------------------------------------------ phone */
+@media (max-width:760px){
+  :root{--bar-h:54px}
+  .wrap{padding:0 14px}
+  .bar-in{padding:0 10px;gap:8px;justify-content:space-between}
+  .games{height:38px}
+  .game{padding:0 10px 0 6px;gap:6px}
+  .g-retail .g-name{font-size:20px}.g-forever .g-name{font-size:16.5px}
+  .guilds .guild{display:none}
+  .guild-swap{display:flex;align-items:center;gap:7px;height:38px;padding:0 9px 0 5px;border-radius:5px;background:rgba(0,0,0,.35);box-shadow:inset 0 0 0 1px var(--line2);font:700 16px/1 var(--ui);color:var(--text);white-space:nowrap}
+  .guild-swap img{width:26px;height:26px;border-radius:50%}
+  .guild-swap svg{width:15px;height:15px;opacity:.8}
+  .tabs{display:none}
+  .dock{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;z-index:60;left:0;right:0;bottom:0;height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--barbg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line2)}
+  html[data-game="forever"] .dock{border-top:2px solid var(--bronze)}
+  .dock .tab{flex-direction:column;justify-content:center;gap:4px;padding:0;font-size:13.5px}
+  .dock .tab svg{display:block;width:24px;height:24px}
+  .dock .tab[aria-current="page"]{color:var(--accent)}
+  .dock .tab[aria-current="page"]::after{left:26%;right:26%;bottom:auto;top:-1px;border-radius:0 0 2px 2px}
+  html[data-game="forever"] .stage,html[data-game="forever"] .chero{margin-top:12px;width:calc(100% - 20px)}
+  .stage.slim{height:124px}
+  .stage{height:470px}
+  .gname{top:60px}
+  html[data-game="forever"] .gname{top:56px}
+  .stage.slim .gname,html[data-game="forever"] .stage.slim .gname{top:46px}
+  .gsub{left:14px;right:14px;top:14px;font-size:15px}
+  .gsub img{width:20px;height:20px;margin-right:6px}
+  .gsub span+span{margin-left:9px;padding-left:9px}
+  .gsub .upd{flex-basis:100%;margin:0;padding:0;font-size:13.5px}
+  .stage.slim .gsub .upd{display:none}
+  .caption{padding-top:14px}
+  .gline{font-size:17px}
+  .glegend{font-size:14px}.glegend .dot{margin-left:8px}
+  html[data-game="forever"] .caption{padding-top:22px}
+  .plate b{font-size:17px}.plate i{font-size:12.5px}
+  .fireglow{width:560px;height:420px;bottom:-110px}
+  .below{padding-top:18px;padding-bottom:40px;gap:22px}
+  html[data-game="forever"] .sheet{padding:14px 12px 4px}
+  html[data-game="forever"] .wrap{padding-left:10px;padding-right:10px}
+  .toolbar{gap:8px}
+  .search{flex-basis:100%;order:0}
+  .sortwrap{flex:1}.sort{flex:1}
+  .classes{flex-wrap:nowrap;overflow-x:auto;margin:10px -14px 0;padding:2px 14px 6px;scrollbar-width:none}
+  .classes::-webkit-scrollbar{display:none}
+  .cls{flex:none}
+  .sec{margin-top:24px;flex-wrap:wrap}
+  .sec h2{font-size:27px}html[data-game="forever"] .sec h2{font-size:22px}
+  .sec p{flex-basis:100%;text-align:left;margin:2px 0 0}
+  .row{grid-template-columns:74px minmax(0,1fr) auto;gap:0 10px;height:74px}
+  .art img{left:-27px;width:136px}
+  .art .ghost{left:12px;top:14px;width:46px;height:46px}
+  .row .gear{display:none}
+  .row .seen{grid-column:2;grid-row:1;align-self:end;display:none}
+  .name{font-size:19px}.sub{font-size:14px}
+  .sub .d-full{display:none}.sub .d-short{display:inline}
+  .sub .seenin{display:block;color:var(--faint);font-size:13.5px;margin-top:1px;overflow:hidden;text-overflow:ellipsis}
+  .prog{padding-right:4px;min-width:98px}
+  .prog .num{font-size:34px;min-width:44px}
+  html[data-game="forever"] .prog .num{font-size:27px}
+  .prog .lab{font-size:12.5px}
+  footer.foot{padding-bottom:96px}
+  /* sheet */
+  .cgrid{padding-top:12px;padding-bottom:18px}
+  .cname{font-size:64px;margin-top:14px}
+  html[data-game="forever"] .cname{font-size:40px}
+  .cdesc{font-size:17px}
+  .cgrid{gap:5px}
+  .cleft,.cright,.doll{display:contents}
+  .cid{order:0}.model{order:1;height:316px}.cready{order:2;margin-bottom:14px}.slots.left{order:3}.slots.right{order:4}.weapons{order:5;flex-direction:column}
+  .weapons .slot{flex:none}
+  .slots.right .imeta{justify-content:flex-start}
+  .slots.right .slot{grid-template-columns:46px minmax(0,1fr);text-align:left;padding:4px 8px 4px 4px}
+  .slots.right .slot .ico{order:0}
+  .weapons{margin-top:0}
+  .cbelow{grid-template-columns:minmax(0,1fr);gap:26px;padding-top:22px;padding-bottom:40px}
+  .life{font-size:19px}
+  .h3{font-size:27px}html[data-game="forever"] .h3{font-size:22px}
+  .lead{font-size:42px}html[data-game="forever"] .lead{font-size:29px}
+  .leadsub{font-size:16.5px}
+  .chk button{grid-template-columns:50px minmax(0,1fr) minmax(0,1fr);gap:6px 10px}
+  .chk .av{grid-row:span 3}
+  .chk .nm{grid-column:2/-1}
+  .needs{grid-template-columns:minmax(0,1fr);gap:12px}
+  .doors{grid-template-columns:minmax(0,1fr);gap:12px;margin-top:22px}
+  .count{font-size:96px}html[data-game="forever"] .count{font-size:72px}
+  .track .tok .tl{font-size:13.5px}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <div class="games" role="group" aria-label="Game">
+      <button class="game g-retail" data-game="retail" aria-pressed="true">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="#f6b25a"/><circle cx="12" cy="12" r="9.5" fill="none" stroke="#ffe2ae" stroke-width="1"/><circle cx="10.2" cy="10.6" r="8.2" fill="#12060a"/></svg>
+        <span class="g-name">Retail</span>
+      </button>
+      <button class="game g-forever" data-game="forever" aria-pressed="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#5c3c17"/><circle cx="12" cy="12" r="10" fill="#c8975a"/><circle cx="12" cy="12" r="7.6" fill="#1b6a67" stroke="#f0cf95" stroke-width=".9"/><path d="M6.7 12c0-1.5 1.1-2.4 2.3-2.4 2.4 0 3.6 4.8 6 4.8 1.200 0 2.300-.9 2.300-2.400s-1.100-2.400-2.300-2.400c-2.400 0-3.600 4.800-6 4.800-1.200 0-2.300-.9-2.300-2.400z" fill="none" stroke="#fbf1d8" stroke-width="1.5"/></svg>
+        <span class="g-name">Forever</span>
+      </button>
+    </div>
+    <div class="guilds" role="group" aria-label="Guild">
+      <button class="guild" data-guild="deaths-edge" aria-pressed="true"><img src="https://render.worldofwarcraft.com/us/icons/56/ui_hordeicon.jpg" alt="Horde">Deaths Edge</button>
+      <button class="guild" data-guild="riot-act" aria-pressed="false"><img src="https://render.worldofwarcraft.com/us/icons/56/ui_allianceicon.jpg" alt="Alliance">Riot Act</button>
+      <button class="guild-swap" id="swap"></button>
+    </div>
+    <nav class="tabs" aria-label="Views" id="tabs"></nav>
+    <div class="fresh" id="fresh"></div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<footer class="foot"><div class="wrap" id="foot"></div></footer>
+<nav class="dock" aria-label="Views" id="dock"></nav>
+
+<script>
+const DATA = {"retail":{"deaths-edge":{"name":"Deaths Edge","faction":"horde","realm":"Onyxia","updatedAt":"2026-11-13T09:20:35.174Z","members":[{"id":207404033,"n":"Versev","l":32,"k":5},{"id":207507996,"n":"Viral","l":80,"k":1,"c":"Rogue","s":"Assassination","r":"Blood Elf","i":78,"t":1769035519000,"b":28,"ap":8890,"eq":[["Head","Treasure-Seeker's Helm","Uncommon",79,0,0],["Neck","Swarm-Maven's Amulet","Uncommon",78,0,0],["Shoulders","Whispering Umbral Mantle","Rare",79,0,0],["Shirt","Orange Martial Shirt","Uncommon",1,0,0],["Chest","General's Pungent Armor","Uncommon",78,0,0],["Waist","Smuggled Nerubian Belt","Uncommon",78,0,0],["Legs","Breeches of the Reckoning's Vengeance","Uncommon",78,0,0],["Feet","Lockstitch Waders of the Harmonious","Uncommon",79,0,0],["Wrist","Olbarig's Old Bracers","Uncommon",79,0,0],["Hands","Treasure-Seeker's Grips","Uncommon",78,0,0],["Ring 1","Gem-Studded Band of the Peerless","Uncommon",79,0,0],["Ring 2","Gem-Studded Ring of the Peerless","Uncommon",79,0,0],["Trinket 1","Nizrek's Holographic Manipulator","Uncommon",78,0,0],["Trinket 2","Arathi Demolition Charge","Uncommon",77,0,0],["Back","Anvilhide Cape","Rare",79,0,0],["Main Hand","Earthen Traveler's Dagger","Uncommon",76,0,0],["Off Hand","Kaheti Confiscated Dirk","Uncommon",78,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":51680,"strength":129,"agility":356,"intellect":110,"stamina":2584,"armor":158,"crit":21.5,"haste":11.7,"mastery":38.3,"vers":3.6},"ls":{"questsCompleted":2811,"totalDeaths":884,"deathsFromFalling":13,"killingBlows":19272,"dungeonsEntered":130,"timesHearthed":223,"flightPaths":1000,"crittersKilled":1624,"creaturesKilled":43817,"raidsEntered":28,"bossesDefeated":234},"bb":[586,374,904,982,783,807]},{"id":207510073,"n":"Oathos","l":80,"k":0,"o":"user2","c":"Paladin","s":"Protection","r":"Blood Elf","i":94,"t":1772401496000,"b":57,"ap":8890,"eq":[["Head","Earthen Landlubber's Helm","Epic",83,0,0],["Neck","Sunwell Defender's Brooch","Uncommon",120,0,1],["Shoulders","Sedimentary Mantle of the Aurora","Rare",80,0,0],["Shirt","Red Martial Shirt","Uncommon",1,0,0],["Chest","Earthen Landlubber's Breastplate","Epic",83,0,0],["Waist","Earthen Landlubber's Girdle","Epic",83,0,0],["Legs","Earthen Landlubber's Legguards","Epic",83,0,0],["Feet","Earthen Landlubber's Sabatons","Epic",83,0,0],["Wrist","Reluctant Diplomat's Bracers","Uncommon",120,0,0],["Hands","Earthen Landlubber's Gauntlets","Epic",83,0,0],["Ring 1","Entropic Void Crystal","Uncommon",120,0,1],["Ring 2","Cyrce's Circlet","Epic",98,0,1],["Trinket 1","Darkmoon Deck: Vivacity","Epic",80,0,0],["Trinket 2","Spelunker's Waning Candle","Rare",80,0,0],["Back","Sin'dorei Citizen's Cloak","Uncommon",120,0,0],["Main Hand","Golden City Blade","Uncommon",120,0,0],["Off Hand","Earthen Deckhand's Bulwark","Epic",83,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":90780,"strength":362,"agility":57,"intellect":167,"stamina":4539,"armor":943,"crit":22.4,"haste":25.4,"mastery":22.9,"vers":6.7},"ls":{"questsCompleted":3127,"totalDeaths":183,"deathsFromFalling":16,"killingBlows":28326,"dungeonsEntered":112,"timesHearthed":145,"flightPaths":601,"crittersKilled":853,"creaturesKilled":39930,"raidsEntered":18,"bossesDefeated":91},"mo":156,"pe":94,"bb":[496,374,1028,982,762,807]},{"id":207595200,"n":"Darthfurball","l":81,"k":1,"o":"user3","c":"Druid","s":"Guardian","r":"Tauren","i":98,"t":1775165205000,"b":192,"ap":13440,"eq":[["Head","Sporefused Cowl","Uncommon",79,0,0],["Neck","Clasp of the Voidslayer","Uncommon",120,0,1],["Shoulders","Flamewalker Scale Spaulders","Epic",83,0,0],["Shirt","Green Linen Shirt","Uncommon",1,0,0],["Chest","Insolent Dark Iron's Vest","Epic",86,0,0],["Waist","Lockstitch Sash of the Fireflash","Rare",80,0,1],["Legs","Lockstitch Breeches of the Feverflare","Epic",83,0,0],["Feet","Lockstitch Waders of the Fireflash","Rare",103,0,0],["Wrist","Reluctant Diplomat's Wraps","Uncommon",120,0,0],["Hands","Eviscerators of the Greatlynx","Epic",86,0,0],["Ring 1","Seal of Ghoulish Glee","Epic",83,0,0],["Ring 2","Voidbound Lieutenant's Band","Uncommon",120,0,1],["Trinket 1","Molten Furnace","Epic",86,0,0],["Trinket 2","Scroll of Momentum","Epic",83,0,0],["Back","Sin'dorei Citizen's Shawl","Uncommon",120,0,0],["Main Hand","Recovered Sanctum Pole","Uncommon",120,0,0],["Tabard","Dream Wardens Tabard","Epic",1,0,0]],"st":{"health":89948,"strength":84,"agility":373,"intellect":190,"stamina":3963,"armor":180,"crit":25.1,"haste":7.6,"mastery":13.5,"vers":9},"ls":{"questsCompleted":3427,"totalDeaths":433,"deathsFromFalling":21,"killingBlows":30117,"dungeonsEntered":394,"timesHearthed":133,"flightPaths":362,"crittersKilled":1580,"creaturesKilled":71564,"raidsEntered":39,"bossesDefeated":173},"ti":"Blood Champion Darthfurball","mo":162,"pe":427,"bb":[454,282,1110,1004,785,823]},{"id":207595681,"n":"Revän","l":80,"k":1,"o":"user3","c":"Warlock","s":"Demonology","r":"Blood Elf","i":95,"t":1773711943000,"b":161,"ap":13440,"eq":[["Head","Earthen Scallywag's Cowl","Epic",83,0,0],["Neck","Sunwell Defender's Brooch","Uncommon",120,0,1],["Shoulders","Rescued Aeroknight's Mantle","Uncommon",79,0,0],["Shirt","Scarlet Filigreed Doublet","Uncommon",1,0,0],["Chest","Vestment of the Reckoning's Vengeance","Uncommon",79,0,0],["Waist","Flying Kobold's Seatbelt","Rare",78,0,0],["Legs","Smuggled Nerubian Trousers","Uncommon",79,0,0],["Feet","Tarnished Dawnlit Spellbinder's Slippers","Uncommon",133,0,0],["Wrist","General's Pungent Wraps","Uncommon",79,0,0],["Hands","Gloves of Irradiating Imprisonment","Rare",78,0,0],["Ring 1","Gem-Studded Signet of the Aurora","Epic",83,0,0],["Ring 2","Entropic Void Crystal","Uncommon",120,0,1],["Trinket 1","Esteemed Earthen Emblem","Rare",78,0,0],["Trinket 2","Candle Confidant","Uncommon",79,0,0],["Back","Sin'dorei Citizen's Shawl","Rare",126,0,0],["Main Hand","Recovered Sanctum Stave","Uncommon",120,0,0],["Tabard","Tabard of the Achiever","Epic",1,0,0]],"st":{"health":72597,"strength":57,"agility":124,"intellect":495,"stamina":3457,"armor":200,"crit":18,"haste":20.7,"mastery":25.9,"vers":7.9},"ls":{"questsCompleted":3282,"totalDeaths":828,"deathsFromFalling":44,"killingBlows":34321,"dungeonsEntered":235,"timesHearthed":190,"flightPaths":715,"crittersKilled":1082,"creaturesKilled":47279,"raidsEntered":7,"bossesDefeated":218},"ti":"Revän the Kingslayer","mo":162,"pe":427,"bb":[542,298,948,976,795,817]},{"id":207690253,"n":"Incantation","l":80,"k":1,"o":"user2","c":"Mage","s":"Arcane","r":"Blood Elf","i":79,"t":1793727733000,"b":13,"ap":8920,"eq":[["Head","Cowl of Sina's Stalwarts","Rare",78,0,0],["Neck","Gem-Studded Pendant of the Feverflare","Uncommon",79,0,0],["Shoulders","Alighted Shoulderpads of the Feverflare","Uncommon",79,0,0],["Shirt","Dark Silk Shirt","Uncommon",1,0,0],["Chest","Vestment of the Reckoning's Vengeance","Uncommon",79,0,0],["Waist","The Cleansing Flame's Cord of the Aurora","Rare",80,0,0],["Legs","Smuggled Nerubian Trousers","Rare",79,0,0],["Feet","Tower-Keeper's Shoes","Uncommon",78,0,0],["Wrist","General's Pungent Wraps","Epic",79,0,0],["Hands","Punctured Apiary Gloves","Rare",78,0,0],["Ring 1","Flameguard's Band","Uncommon",79,0,0],["Ring 2","Hissing Blackblood Ring","Rare",79,0,0],["Trinket 1","Nizrek's Holographic Manipulator","Rare",79,0,0],["Trinket 2","Quickwick Candlestick","Epic",83,0,0],["Back","Drape of the Heritage Lord","Uncommon",79,0,0],["Main Hand","Deep-Dweller's Staff of the Fireflash","Uncommon",79,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":51760,"strength":67,"agility":109,"intellect":417,"stamina":2588,"armor":99,"crit":14.4,"haste":13.8,"mastery":28.1,"vers":6.4},"ls":{"questsCompleted":1604,"totalDeaths":72,"deathsFromFalling":1,"killingBlows":6645,"dungeonsEntered":50,"timesHearthed":20,"flightPaths":219,"crittersKilled":493,"creaturesKilled":15873,"raidsEntered":null,"bossesDefeated":null},"ti":"Incantation the Patient","mo":165,"pe":94,"bb":[510,314,940,982,767,817]},{"id":207704066,"n":"Religious","l":73,"k":1,"o":"user2","c":"Warlock","s":"Demonology","r":"Undead","i":67,"t":1769281761000,"b":2,"ap":8890,"eq":[["Head","Ohn'ir Initiate Hood","Uncommon",69,0,0],["Neck","Remembrance of the Fallen City","Uncommon",74,0,0],["Shoulders","Expedition Researcher's Mantle","Rare",66,0,0],["Shirt","Dark Silk Shirt","Uncommon",1,0,0],["Chest","Charred Nerubian Robes","Rare",74,0,0],["Waist","Ohn'ir Initiate Sash","Epic",67,0,0],["Legs","Ohn'ir Initiate Leggings","Uncommon",69,0,0],["Feet","Ohn'ir Initiate Slippers","Uncommon",68,0,0],["Wrist","Expedition Researcher's Wraps","Rare",66,0,0],["Hands","Congealed Cinderbrew Gloves","Uncommon",75,0,0],["Ring 1","Carved Basalt Ring","Uncommon",62,0,0],["Ring 2","Felsoul Ring of Destruction","Uncommon",58,0,0],["Trinket 1","Lifegift Ruby","Rare",66,0,0],["Trinket 2","Felsoul Stone of Destruction","Uncommon",58,0,0],["Back","Drape of the Djaradin Slayer","Uncommon",64,0,0],["Main Hand","Arachnophobic Spelunker's Spellsword","Uncommon",75,0,0],["Off Hand","Brilliant Beacon","Uncommon",76,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":47195,"strength":59,"agility":114,"intellect":359,"stamina":2644,"armor":158,"crit":15.5,"haste":9,"mastery":18.5,"vers":10.2},"ls":{"questsCompleted":739,"totalDeaths":17,"deathsFromFalling":3,"killingBlows":2908,"dungeonsEntered":14,"timesHearthed":16,"flightPaths":94,"crittersKilled":145,"creaturesKilled":4564,"raidsEntered":null,"bossesDefeated":null},"ti":"Religious the Explorer","bb":[460,426,942,984,757,827]},{"id":207712999,"n":"Caedus","l":80,"k":1,"o":"user3","c":"Death Knight","s":"Frost","r":"Blood Elf","i":81,"t":1773704627000,"b":231,"ap":13440,"eq":[["Head","Earthen Traveler's Helm","Uncommon",79,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Earthen Landlubber's Mantle","Epic",86,0,0],["Shirt","Red Workman's Shirt","Uncommon",1,0,0],["Chest","Sedimentary Breastplate of the Quickblade","Uncommon",78,0,0],["Waist","Stalwart Girdle of the Quickblade","Rare",80,0,0],["Legs","Earthforged Faulds of the Peerless","Uncommon",80,0,0],["Feet","Congealed Cinderbrew Battleboots","Uncommon",77,0,0],["Wrist","Olbarig's Old Vambraces","Uncommon",78,0,0],["Hands","Earthen Traveler's Gauntlets","Rare",79,0,0],["Ring 1","Luminescent Pearl Band","Uncommon",77,0,0],["Ring 2","Cyrce's Circlet","Epic",101,0,0],["Trinket 1","Esteemed Earthen Emblem","Rare",79,0,0],["Trinket 2","Darkmoon Deck: Vivacity","Epic",80,0,0],["Back","Earthen Scallywag's Cloak","Epic",83,0,0],["Main Hand","Ordained Forge Maul","Epic",83,1,0]],"st":{"health":55240,"strength":368,"agility":139,"intellect":92,"stamina":2762,"armor":356,"crit":21.5,"haste":6.8,"mastery":39.9,"vers":7.9},"ls":{"questsCompleted":1682,"totalDeaths":78,"deathsFromFalling":4,"killingBlows":9419,"dungeonsEntered":18,"timesHearthed":33,"flightPaths":88,"crittersKilled":344,"creaturesKilled":10084,"raidsEntered":null,"bossesDefeated":null},"ti":"Caedus the Kingslayer","mo":162,"pe":427,"bb":[556,338,962,982,773,807]},{"id":207741418,"n":"Holyrevan","l":50,"k":1,"o":"user3","c":"Paladin","s":"Protection","r":"Blood Elf","i":50,"t":1773706701000,"b":234,"ap":13440,"eq":[["Head","Sunsoul Faceguard","Uncommon",50,0,0],["Neck","Sunsoul Amulet","Uncommon",50,0,0],["Shoulders","Sunsoul Shoulderguards","Uncommon",50,0,0],["Shirt","Initiate's Shirt","Uncommon",1,0,0],["Chest","Sunsoul Chestguard","Uncommon",50,0,0],["Waist","Sunsoul Waistband","Uncommon",50,0,0],["Legs","Sunsoul Legguards","Uncommon",50,0,0],["Feet","Sunsoul Greaves","Uncommon",50,0,0],["Wrist","Sunsoul Armguards","Uncommon",50,0,0],["Hands","Sunsoul Handguards","Uncommon",50,0,0],["Ring 1","Sunsoul Ring of Stoicism","Uncommon",50,0,0],["Ring 2","Sunsoul Band of Stoicism","Uncommon",50,0,0],["Trinket 1","Sunsoul Defender Idol","Uncommon",50,0,0],["Trinket 2","Sunsoul Defender Stone","Uncommon",50,0,0],["Back","Sunsoul Cloak of Stoicism","Uncommon",50,0,0],["Main Hand","Sunsoul Sword","Uncommon",50,0,0],["Off Hand","Sunsoul Bulwark","Uncommon",50,0,0],["Tabard","Illustrious Guild Tabard","Rare",1,0,0]],"st":{"health":18189,"strength":192,"agility":33,"intellect":93,"stamina":2021,"armor":457,"crit":22.1,"haste":6.7,"mastery":20.2,"vers":8.6},"ls":{"questsCompleted":2081,"totalDeaths":229,"deathsFromFalling":13,"killingBlows":25724,"dungeonsEntered":253,"timesHearthed":160,"flightPaths":301,"crittersKilled":1305,"creaturesKilled":44379,"raidsEntered":3,"bossesDefeated":203},"ti":"Holyrevan the Kingslayer","bb":[548,356,956,990,770,811]},{"id":207918227,"n":"Apocalypsic","l":82,"k":1,"o":"user2","c":"Death Knight","s":"Blood","r":"Blood Elf","i":138,"t":1793414289000,"b":147,"ap":8920,"eq":[["Head","Greathelm of Scorched Fronds","Uncommon",139,0,0],["Neck","Tranquillien Choker","Uncommon",133,0,1],["Shoulders","Rampant Thornmantles","Rare",139,0,0],["Shirt","Undercity Doublet","Uncommon",1,0,0],["Chest","Burnt Watha'nan Breastplate","Epic",146,0,0],["Waist","Worn Harandar Greatbelt","Uncommon",139,0,0],["Legs","Humble Servant's Pants","Uncommon",139,0,0],["Feet","Lightstalker's Greaves","Uncommon",120,0,0],["Wrist","Rampant Briarcuffs","Epic",139,0,0],["Hands","Touch of Renewal","Uncommon",139,0,0],["Ring 1","Voidtainted Ritual Band","Rare",139,0,1],["Ring 2","Vibrant Wilderloop","Rare",145,0,1],["Trinket 1","Puzzling Crypt Relic","Uncommon",133,0,0],["Trinket 2","Umbric's Channeling Focus","Rare",139,0,0],["Back","Reshii Wraps","Artifact",141,0,0],["Main Hand","Spore-Touched Falchion","Rare",145,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":198220,"strength":522,"agility":182,"intellect":120,"stamina":9911,"armor":727,"crit":15,"haste":14,"mastery":55.8,"vers":13.1},"ls":{"questsCompleted":2968,"totalDeaths":399,"deathsFromFalling":24,"killingBlows":40460,"dungeonsEntered":179,"timesHearthed":185,"flightPaths":700,"crittersKilled":1402,"creaturesKilled":48160,"raidsEntered":28,"bossesDefeated":254},"mo":164,"pe":94,"bb":[452,362,932,982,776,761]},{"id":208172225,"n":"Necronomican","l":70,"k":1,"o":"user3","c":"Warrior","s":"Protection","r":"Blood Elf","i":68,"t":1773706150000,"b":193,"ap":13440,"eq":[["Head","Sleet Shined Skullguard","Rare",71,0,0],["Neck","Lucky Hunting Charm","Rare",71,0,0],["Shoulders","Mantle of Raging Tempests","Epic",72,0,0],["Chest","Breastplate of Raging Tempests","Epic",72,0,0],["Waist","Spearbreaker Belt","Uncommon",65,0,0],["Legs","Sleet Shined Legplates","Uncommon",68,0,0],["Feet","Sleet Shined Stompers","Rare",68,0,0],["Wrist","Armplates of Raging Tempests","Epic",72,0,0],["Hands","Gauntlets of Raging Tempests","Epic",72,0,0],["Ring 1","Roscha's Band of Remembrance","Uncommon",65,0,0],["Ring 2","Salt Crystal Ring","Rare",71,0,0],["Trinket 1","Empowered Shark's Tooth","Rare",63,0,0],["Trinket 2","Bag of Biscuits","Uncommon",65,0,0],["Back","Tuskarr Spirit Shawl","Uncommon",68,0,0],["Main Hand","Gleaming Bronze Blade","Rare",71,0,0],["Off Hand","Drakefire Shield","Uncommon",65,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":44863,"strength":294,"agility":101,"intellect":101,"stamina":3451,"armor":651,"crit":11.8,"haste":12.3,"mastery":20.3,"vers":9.8},"ls":{"questsCompleted":1488,"totalDeaths":45,"deathsFromFalling":7,"killingBlows":8128,"dungeonsEntered":29,"timesHearthed":32,"flightPaths":95,"crittersKilled":391,"creaturesKilled":8486,"raidsEntered":3,"bossesDefeated":null},"ti":"Necronomican the Astral Walker","bb":[534,316,968,982,786,806]},{"id":208628021,"n":"Sanicon","l":90,"k":3,"o":"user1","c":"Paladin","s":"Protection","r":"Blood Elf","i":190,"t":1775880479000,"b":53,"ap":3480,"eq":[["Head","Helmet of the Colossal Behemoths","Uncommon",174,0,0],["Neck","Loa-Blessed Beads","Rare",198,0,1],["Shoulders","Pauldrons of the Colossal Behemoths","Uncommon",174,0,0],["Chest","Breastplate of the Colossal Behemoths","Uncommon",174,0,0],["Waist","Steelbark Girdle","Rare",198,0,0],["Legs","Rampant Bramblegreaves","Uncommon",183,0,0],["Feet","Steelbark Sabatons","Rare",198,0,0],["Wrist","Steelbark Vambraces","Rare",198,0,0],["Hands","Grips of the Colossal Behemoths","Uncommon",165,0,0],["Ring 1","Omission of Light","Rare",180,0,0],["Ring 2","Sin'dorei Magister's Keepsake","Rare",198,0,0],["Trinket 1","Ultradon Cuirass","Rare",198,0,0],["Trinket 2","Withered Saptor's Paw","Rare",198,0,0],["Back","Deepvine Shroud","Rare",198,0,0],["Main Hand","Thornwood Slasher","Epic",237,0,0],["Off Hand","Shield of Desolation","Uncommon",174,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":310500,"strength":1047,"agility":218,"intellect":646,"stamina":15525,"armor":2183,"crit":17.5,"haste":18.5,"mastery":15.1,"vers":4.1},"ls":{"questsCompleted":1480,"totalDeaths":85,"deathsFromFalling":8,"killingBlows":7485,"dungeonsEntered":38,"timesHearthed":31,"flightPaths":123,"crittersKilled":586,"creaturesKilled":11737,"raidsEntered":6,"bossesDefeated":34},"ti":"Twilight Vanquisher Sanicon","mo":76,"pe":47,"bb":[504,278,1018,982,769,806]},{"id":208628203,"n":"Decillin","l":90,"k":2,"o":"user1","c":"Death Knight","s":"Blood","r":"Undead","i":209,"t":1777725305000,"b":235,"ap":3570,"eq":[["Head","Voidbreaker's Greathelm","Uncommon",214,0,0],["Neck","Loa-Blessed Beads","Epic",233,0,1],["Shoulders","Voidbreaker's Shoulderplates","Uncommon",214,0,0],["Shirt","White Linen Shirt","Uncommon",1,0,0],["Chest","Steelbark Chestguard","Epic",233,0,0],["Waist","Voidbreaker's Waistguard","Uncommon",214,0,0],["Legs","Voidbreaker's Faulds","Uncommon",214,0,0],["Feet","Voidbreaker's Sabatons","Uncommon",214,0,0],["Wrist","Voidbreaker's Armguards","Uncommon",214,0,0],["Hands","Voidbreaker's Handguards","Uncommon",214,0,0],["Ring 1","Circlet of Encroaching Shadow","Rare",198,0,1],["Ring 2","Unmoved Elder's Hoop","Uncommon",183,0,0],["Trinket 1","Lucky Lynx Locket","Rare",198,0,0],["Trinket 2","Ultradon Cuirass","Rare",198,0,0],["Back","Rootspeaker's Mantle","Rare",220,0,0],["Main Hand","Vine-Rending Claymore","Rare",198,1,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":397760,"strength":1129,"agility":514,"intellect":333,"stamina":19888,"armor":1871,"crit":12.5,"haste":11.6,"mastery":29.2,"vers":8},"ls":{"questsCompleted":1214,"totalDeaths":50,"deathsFromFalling":4,"killingBlows":6671,"dungeonsEntered":22,"timesHearthed":21,"flightPaths":109,"crittersKilled":396,"creaturesKilled":8104,"raidsEntered":2,"bossesDefeated":1},"mo":76,"pe":47,"bb":[432,418,932,976,778,821]},{"id":208631216,"n":"Makorucar","l":38,"k":1},{"id":208631526,"n":"Borderlands","l":27,"k":1},{"id":208786463,"n":"Myssarie","l":24,"k":2},{"id":208788198,"n":"Rravveenn","l":11,"k":5},{"id":208788496,"n":"Krang","l":50,"k":2,"o":"user3","c":"Rogue","s":"Assassination","r":"Goblin","i":50,"t":1773706518000,"b":16,"ap":13440,"eq":[["Head","Lightdrinker Hood","Uncommon",50,0,0],["Neck","Lightdrinker Choker","Uncommon",50,0,0],["Shoulders","Lightdrinker Shoulders","Uncommon",50,0,0],["Chest","Lightdrinker Jerkin","Uncommon",50,0,0],["Waist","Lightdrinker Waistband","Uncommon",50,0,0],["Legs","Lightdrinker Britches","Uncommon",50,0,0],["Feet","Lightdrinker Boots","Uncommon",50,0,0],["Wrist","Lightdrinker Bindings","Uncommon",50,0,0],["Hands","Lightdrinker Gloves","Uncommon",50,0,0],["Ring 1","Lightdrinker Band of Onslaught","Uncommon",50,0,0],["Ring 2","Lightdrinker Ring of Onslaught","Uncommon",50,0,0],["Trinket 1","Lightdrinker Idol of Rage","Uncommon",50,0,0],["Trinket 2","Lightdrinker Stone of Rage","Uncommon",50,0,0],["Back","Lightdrinker Cloak of Rage","Uncommon",50,0,0],["Main Hand","Lightdrinker Dagger","Uncommon",50,0,0],["Off Hand","Lightdrinker Shiv","Uncommon",50,0,0]],"st":{"health":13320,"strength":73,"agility":211,"intellect":65,"stamina":1480,"armor":93,"crit":22.4,"haste":19.1,"mastery":31.4,"vers":0},"ls":{"questsCompleted":791,"totalDeaths":34,"deathsFromFalling":null,"killingBlows":2637,"dungeonsEntered":1,"timesHearthed":12,"flightPaths":43,"crittersKilled":12,"creaturesKilled":2716,"raidsEntered":null,"bossesDefeated":null},"ti":"Krang the Fearless","bb":[552,498,956,990,799,836]},{"id":208792211,"n":"Harclive","l":41,"k":3,"o":"user1"},{"id":208796600,"n":"Mizarie","l":14,"k":2},{"id":208797224,"n":"Missarie","l":40,"k":2},{"id":208800366,"n":"Pizo","l":62,"k":1,"o":"user3","c":"Shaman","s":"Elemental","r":"Orc","i":59,"t":1773705242000,"b":110,"ap":13440,"eq":[["Head","Streamtalker Coif","Uncommon",59,0,0],["Neck","Streamtalker Medallion","Uncommon",59,0,0],["Shoulders","Streamtalker Pauldrons","Uncommon",59,0,0],["Shirt","Red Linen Shirt","Uncommon",1,0,0],["Chest","Streamtalker Tunic","Uncommon",59,0,0],["Waist","Streamtalker Belt","Uncommon",59,0,0],["Legs","Streamtalker Legwraps","Uncommon",59,0,0],["Feet","Streamtalker Boots","Uncommon",59,0,0],["Wrist","Streamtalker Armbands","Uncommon",59,0,0],["Hands","Streamtalker Gloves","Uncommon",59,0,0],["Ring 1","Streamtalker Ring of Destruction","Uncommon",59,0,0],["Ring 2","Streamtalker Band of Destruction","Uncommon",59,0,0],["Trinket 1","Streamtalker Idol of Destruction","Uncommon",59,0,0],["Trinket 2","Streamtalker Stone of Destruction","Uncommon",59,0,0],["Back","Streamtalker Cloak of Destruction","Uncommon",59,0,0],["Main Hand","Streamtalker Claws","Uncommon",59,0,0],["Off Hand","Streamtalker Aegis","Uncommon",59,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":22693,"strength":54,"agility":116,"intellect":297,"stamina":2063,"armor":281,"crit":19.4,"haste":15,"mastery":32.2,"vers":0},"ls":{"questsCompleted":551,"totalDeaths":12,"deathsFromFalling":2,"killingBlows":1113,"dungeonsEntered":2,"timesHearthed":3,"flightPaths":19,"crittersKilled":8,"creaturesKilled":1204,"raidsEntered":null,"bossesDefeated":null},"ti":"Pizo, Liberator of Orgrimmar","bb":[516,394,1082,982,794,777]},{"id":208813540,"n":"Buttermilk","l":70,"k":1,"c":"Shaman","s":"Elemental","r":"Highmountain Tauren","i":65,"t":1769281252000,"b":228,"ap":8890,"eq":[["Head","Expedition Mercenary's Helm","Rare",71,0,0],["Neck","Primalist Pendant","Uncommon",62,0,0],["Shoulders","Expedition Mercenary's Monnion","Epic",68,0,0],["Shirt","Orange Mageweave Shirt","Uncommon",1,0,0],["Chest","Expedition Mercenary's Hauberk","Uncommon",61,0,0],["Waist","Shikaar Scout Buckle","Uncommon",69,0,0],["Legs","Expedition Mercenary's Legguards","Uncommon",67,0,0],["Feet","Shikaar Scout Sabatons","Uncommon",69,0,0],["Wrist","Expedition Mercenary's Bracers","Uncommon",67,0,0],["Hands","Expedition Mercenary's Grips","Uncommon",63,0,0],["Ring 1","Streamtalker Ring of Destruction","Uncommon",60,0,0],["Ring 2","Streamtalker Band of Destruction","Uncommon",60,0,0],["Trinket 1","Lifegift Ruby","Uncommon",68,0,0],["Trinket 2","Streamtalker Stone of Destruction","Uncommon",60,0,0],["Back","Drape of the Djaradin Slayer","Rare",66,0,0],["Main Hand","Ohn'ir Ritual Scepter","Uncommon",68,0,0],["Off Hand","Drakefire Shield","Uncommon",69,0,0],["Tabard","Illustrious Guild Tabard","Rare",1,0,0]],"st":{"health":31824,"strength":63,"agility":143,"intellect":346,"stamina":2448,"armor":347,"crit":13.5,"haste":11.4,"mastery":31.1,"vers":5.8},"ls":{"questsCompleted":638,"totalDeaths":3,"deathsFromFalling":null,"killingBlows":1857,"dungeonsEntered":5,"timesHearthed":7,"flightPaths":35,"crittersKilled":14,"creaturesKilled":2631,"raidsEntered":2,"bossesDefeated":null},"ti":"Buttermilk the Explorer","bb":[480,204,1208,1004,751,817]},{"id":208832211,"n":"Nurda","l":10,"k":2},{"id":208889058,"n":"Verimor","l":80,"k":1,"c":"Hunter","s":"Beast Mastery","r":"Blood Elf","i":83,"t":1769041488000,"b":226,"ap":8890,"eq":[["Head","Earthen Islander's Coif","Epic",83,0,0],["Neck","Embershard Pendant","Epic",83,0,0],["Shoulders","Earthen Islander's Shoulderguards","Epic",83,0,0],["Shirt","Wound Dressing","Uncommon",1,0,0],["Chest","Earthen Islander's Chainmail","Epic",83,0,0],["Waist","Earthen Islander's Cinch","Epic",83,0,0],["Legs","Earthen Islander's Greaves","Epic",83,0,0],["Feet","Earthen Islander's Striders","Epic",83,0,0],["Wrist","Earthen Islander's Bracers","Epic",83,0,0],["Hands","Earthen Islander's Grips","Epic",83,0,0],["Ring 1","Seafarer's Wandering Signet","Epic",83,0,0],["Ring 2","Timely Tourist's Ring","Epic",83,0,1],["Trinket 1","Runecaster's Stormbound Rune","Epic",83,0,0],["Trinket 2","Cursed Pirate Skull","Epic",83,0,0],["Back","Earthen Islander's Shawl","Epic",83,0,0],["Main Hand","Magma-Shot Boomstick","Epic",86,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":52600,"strength":94,"agility":360,"intellect":132,"stamina":2630,"armor":235,"crit":19.2,"haste":10,"mastery":29.7,"vers":10.4},"ls":{"questsCompleted":1151,"totalDeaths":27,"deathsFromFalling":null,"killingBlows":10230,"dungeonsEntered":48,"timesHearthed":26,"flightPaths":152,"crittersKilled":175,"creaturesKilled":12017,"raidsEntered":10,"bossesDefeated":34},"bb":[678,364,946,982,775,811]},{"id":208900506,"n":"Jeetkundo","l":70,"k":2,"o":"user3","c":"Monk","s":"Brewmaster","r":"Undead","i":62,"t":1773705850000,"b":154,"ap":13440,"eq":[["Head","Frostwolf Scout's Cap","Rare",69,0,0],["Neck","Chain of Biting Winds","Uncommon",64,0,0],["Shoulders","Coldsnout Shoulders of the Feverflare","Uncommon",59,0,0],["Chest","Moultingskin Tunic","Rare",50,0,0],["Waist","Skysinger Belt","Rare",44,0,0],["Legs","Frostwolf Scout's Leggings","Uncommon",69,0,0],["Feet","Grom'gar Wolfpelt Boots","Uncommon",64,0,0],["Wrist","Agurak Leather Bracers","Rare",70,0,0],["Hands","Overgrowth Cutter Gauntlets","Rare",69,0,0],["Ring 1","Talon Guard Bloodsworn Signet","Rare",62,0,0],["Ring 2","Bloodbone Ring","Rare",69,0,0],["Trinket 1","Swift Hand of Justice","Heirloom",49,0,0],["Trinket 2","Asha's Fang","Uncommon",63,0,0],["Back","Darktalon's Drape","Rare",59,0,0],["Main Hand","Thunderlord Hunting Spear","Rare",69,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":45890,"strength":64,"agility":290,"intellect":143,"stamina":3530,"armor":186,"crit":19.2,"haste":6.8,"mastery":13.1,"vers":2.6},"ls":{"questsCompleted":648,"totalDeaths":11,"deathsFromFalling":1,"killingBlows":2019,"dungeonsEntered":1,"timesHearthed":2,"flightPaths":4,"crittersKilled":63,"creaturesKilled":2520,"raidsEntered":1,"bossesDefeated":null},"ti":"Detective Jeetkundo","bb":[458,416,918,972,759,813]},{"id":208911527,"n":"Jacobyy","l":80,"k":1,"o":"user3","c":"Hunter","s":"Beast Mastery","r":"Orc","i":84,"t":1773705007000,"b":167,"ap":13440,"eq":[["Head","Chitinoid Coif of the Aurora","Epic",83,0,1],["Neck","Long-Lost Choker","Epic",86,0,0],["Shoulders","Spaulders of the Stygian Sea","Epic",86,0,0],["Shirt","Antiseptic-Soaked Dressing","Uncommon",1,0,0],["Chest","Hauberk of the Stygian Sea","Epic",83,0,0],["Waist","Sash of the Stygian Sea","Rare",80,0,0],["Legs","Flamestonge's Greaves of the Feverflare","Rare",80,0,0],["Feet","Saboteur's Striders","Uncommon",79,0,0],["Wrist","Expeditionary Bracers of the Quickblade","Uncommon",80,0,0],["Hands","Chitinoid Grips of the Feverflare","Epic",83,0,0],["Ring 1","Cyrce's Circlet","Epic",98,0,1],["Ring 2","Ceremonial Song Ring","Epic",86,0,0],["Trinket 1","Scroll of Momentum","Rare",80,0,0],["Trinket 2","Imperfect Ascendancy Serum","Epic",86,0,0],["Back","Cave Topographer's Drape","Epic",83,0,0],["Main Hand","Trailblazer's Hookshoot","Epic",89,0,0]],"st":{"health":53360,"strength":100,"agility":345,"intellect":129,"stamina":2668,"armor":234,"crit":20.4,"haste":7.5,"mastery":28.2,"vers":10.7},"ls":{"questsCompleted":2640,"totalDeaths":141,"deathsFromFalling":12,"killingBlows":15384,"dungeonsEntered":75,"timesHearthed":17,"flightPaths":161,"crittersKilled":671,"creaturesKilled":16763,"raidsEntered":7,"bossesDefeated":null},"ti":"Jacobyy, Liberator of Orgrimmar","mo":162,"pe":427,"bb":[326,288,1052,990,780,773]},{"id":208924807,"n":"Zeison","l":72,"k":1,"o":"user2","c":"Monk","s":"Brewmaster","r":"Blood Elf","i":70,"t":1769280586000,"b":135,"ap":8890,"eq":[["Head","Field Scout's Helmet","Rare",71,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Congealed Cinderbrew Pauldrons","Uncommon",74,0,0],["Shirt","Blue Linen Shirt","Uncommon",1,0,0],["Chest","Mead-Speckled Vest","Uncommon",75,0,0],["Waist","Teerai Watcher Belt","Uncommon",69,0,0],["Legs","Charred Nerubian Leggings","Uncommon",73,0,0],["Feet","Teerai Watcher Moccasins","Uncommon",70,0,0],["Wrist","Field Scout's Bindings","Uncommon",68,0,0],["Hands","Rubble-Salvaged Grips","Uncommon",75,0,0],["Ring 1","Carved Basalt Ring","Uncommon",64,0,0],["Ring 2","Hoop of the Blighted","Rare",74,0,0],["Trinket 1","Lifegift Ruby","Uncommon",68,0,0],["Trinket 2","Mistdancer Defender Stone","Uncommon",60,0,0],["Back","Drape of the Djaradin Slayer","Rare",66,0,0],["Main Hand","Cured Terracotta Axe","Rare",74,0,0],["Off Hand","Arachnophobic Spelunker's Striker","Uncommon",73,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":58336,"strength":61,"agility":293,"intellect":150,"stamina":3646,"armor":226,"crit":23.5,"haste":11.7,"mastery":14.9,"vers":10},"ls":{"questsCompleted":581,"totalDeaths":25,"deathsFromFalling":1,"killingBlows":2865,"dungeonsEntered":4,"timesHearthed":16,"flightPaths":94,"crittersKilled":60,"creaturesKilled":3463,"raidsEntered":1,"bossesDefeated":null},"ti":"Assistant Professor Zeison","bb":[646,374,924,982,780,807]},{"id":209069587,"n":"Potac","l":22,"k":2,"o":"user1"},{"id":209070059,"n":"Korvanis","l":80,"k":2,"c":"Demon Hunter","s":"Vengeance","r":"Blood Elf","i":81,"t":1769042688000,"b":235,"ap":8890,"eq":[["Head","Earthen Deckhand's Cap","Epic",83,0,0],["Neck","Flickering Glowtorc","Rare",79,0,0],["Shoulders","Earthen Deckhand's Shoulderpads","Epic",83,0,0],["Chest","Earthen Deckhand's Vest","Epic",83,0,0],["Waist","Earthen Deckhand's Sash","Epic",83,0,0],["Legs","Earthen Deckhand's Breeches","Epic",83,0,0],["Feet","Earthen Deckhand's Waders","Epic",83,0,0],["Wrist","Earthen Deckhand's Bindings","Epic",83,0,0],["Hands","Earthen Deckhand's Grips","Epic",83,0,0],["Ring 1","Corrosive Blackblood Ring","Uncommon",78,0,0],["Ring 2","Flameguard's Band","Rare",78,0,0],["Trinket 1","Nizrek's Holographic Manipulator","Uncommon",79,0,0],["Trinket 2","Refracting Aggression Module","Rare",79,0,0],["Back","Earthen Islander's Shawl","Epic",83,0,0],["Main Hand","Earthen Deckhand's Warglaive","Epic",83,0,0],["Off Hand","Earthen Deckhand's Warglaive","Epic",83,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":87880,"strength":129,"agility":342,"intellect":161,"stamina":4394,"armor":498,"crit":26.1,"haste":6.1,"mastery":27.3,"vers":7.5},"ls":{"questsCompleted":855,"totalDeaths":10,"deathsFromFalling":1,"killingBlows":2805,"dungeonsEntered":11,"timesHearthed":7,"flightPaths":18,"crittersKilled":163,"creaturesKilled":3768,"raidsEntered":null,"bossesDefeated":null},"bb":[666,374,912,982,778,808]},{"id":209072227,"n":"Zion","l":80,"k":2,"c":"Priest","s":"Shadow","r":"Dracthyr","i":78,"t":1769041978000,"b":99,"ap":8890,"eq":[["Head","Cowl of Sina's Stalwarts","Uncommon",78,0,0],["Neck","Queensfang Choker","Uncommon",79,0,0],["Shoulders","Alighted Shoulderpads of the Quickblade","Uncommon",79,0,0],["Shirt","Common Gray Shirt","Uncommon",1,0,0],["Chest","Vestment of the Reckoning's Vengeance","Uncommon",78,0,0],["Waist","Cave Topographer's Cord","Uncommon",79,0,0],["Legs","Alighted Leggings of the Fireflash","Uncommon",79,0,0],["Feet","Tower-Keeper's Shoes","Uncommon",78,0,0],["Wrist","Alighted Cuffs of the Fireflash","Uncommon",79,0,0],["Hands","Lamplighter's Handwraps","Uncommon",78,0,0],["Ring 1","Flameguard's Band","Uncommon",78,0,0],["Ring 2","Corrosive Blackblood Ring","Uncommon",78,0,0],["Trinket 1","Arathi Demolition Charge","Epic",78,0,0],["Trinket 2","Nizrek's Holographic Manipulator","Uncommon",79,0,0],["Back","Drape of the Heritage Lord","Uncommon",78,0,0],["Main Hand","Algari Heavy Staff","Uncommon",79,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":53740,"strength":92,"agility":132,"intellect":427,"stamina":2687,"armor":99,"crit":21.4,"haste":7.7,"mastery":7.9,"vers":4.1},"ls":{"questsCompleted":849,"totalDeaths":10,"deathsFromFalling":1,"killingBlows":2480,"dungeonsEntered":12,"timesHearthed":2,"flightPaths":32,"crittersKilled":79,"creaturesKilled":3117,"raidsEntered":null,"bossesDefeated":null},"ti":"Zion the Explorer","bb":[572,246,1044,982,808,787]},{"id":209075203,"n":"Colonic","l":86,"k":3,"o":"user1","c":"Demon Hunter","s":"Vengeance","r":"Blood Elf","i":163,"t":1778450904000,"b":3,"ap":3615,"eq":[["Head","Eversong Defender's Hood","Rare",165,0,0],["Neck","Yoke of the Charging Bear","Rare",171,0,1],["Shoulders","Osseoclad Razorspaulders","Rare",158,0,0],["Chest","Smuggler's Leather Tunic","Rare",165,0,0],["Waist","Spiritwarden's Sash","Rare",171,0,0],["Legs","Twilight Spy's Tights","Uncommon",152,1,0],["Feet","Smuggler's Leather Footpads","Rare",168,0,0],["Wrist","Smuggler's Leather Wristbands","Rare",168,0,0],["Hands","Verdant Tracker's Claws","Rare",171,0,0],["Ring 1","Depleted Voidshard Ring","Uncommon",152,0,1],["Ring 2","Ring of Doubt","Uncommon",165,0,1],["Trinket 1","Permafrost Essence","Rare",171,0,0],["Trinket 2","Tangle of Vibrant Vines","Epic",152,0,0],["Back","Verdant Tracker's Cover","Rare",165,0,0],["Main Hand","Stonebough Hatchet","Rare",165,0,0],["Off Hand","Enchanted Crypt Sword","Uncommon",152,0,0]],"st":{"health":276766,"strength":302,"agility":707,"intellect":370,"stamina":13055,"armor":1156,"crit":20.2,"haste":20.6,"mastery":34.1,"vers":5.1},"ls":{"questsCompleted":911,"totalDeaths":22,"deathsFromFalling":2,"killingBlows":3253,"dungeonsEntered":6,"timesHearthed":4,"flightPaths":18,"crittersKilled":227,"creaturesKilled":3993,"raidsEntered":null,"bossesDefeated":null},"mo":78,"pe":47,"bb":[616,314,950,992,770,803]},{"id":209075247,"n":"Phenis","l":28,"k":2,"o":"user1","c":"Warrior","s":"Protection","r":"Blood Elf","i":79,"t":1736102311000,"b":47,"ap":2520,"eq":[["Head","Polished Helm of Valor","Heirloom",112,0,0],["Neck","Silver Rope Chain of the Aurora","Uncommon",29,0,0],["Shoulders","Polished Spaulders of Valor","Heirloom",112,0,0],["Chest","Polished Breastplate of Valor","Heirloom",112,0,0],["Waist","Gold-Plated Coldsteel Girdle","Uncommon",56,0,0],["Legs","Burnished Legplates of Might","Heirloom",112,0,0],["Feet","Master Artilleryman Boots","Uncommon",56,0,0],["Wrist","Shaleground Bracers","Uncommon",53,0,0],["Hands","Onyx Grips","Uncommon",53,0,0],["Ring 1","Zin-Malor Ring","Uncommon",42,0,0],["Ring 2","Milan's Mastercraft Band","Rare",32,0,0],["Trinket 1","Omarion's Gift","Rare",47,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",112,0,0],["Back","Ripped Sandstorm Cloak","Heirloom",112,0,0],["Main Hand","Bloodsoaked Skullforge Reaver","Heirloom",112,0,0],["Off Hand","Weathered Observer's Shield","Heirloom",112,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":4392,"strength":158,"agility":60,"intellect":60,"stamina":549,"armor":363,"crit":22.4,"haste":9.9,"mastery":12,"vers":0.8},"ls":{"questsCompleted":566,"totalDeaths":26,"deathsFromFalling":3,"killingBlows":2813,"dungeonsEntered":1,"timesHearthed":6,"flightPaths":47,"crittersKilled":68,"creaturesKilled":3672,"raidsEntered":null,"bossesDefeated":null},"bb":[482,300,1022,982,773,806]},{"id":209095206,"n":"Lothbrok","l":73,"k":2,"c":"Warrior","s":"Protection","r":"Orc","i":71,"t":1769282204000,"b":38,"ap":8890,"eq":[["Head","Mead-Speckled Full Helm","Uncommon",75,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Sleet Shined Shoulderguards","Uncommon",66,0,0],["Shirt","Stylish Red Shirt","Uncommon",1,0,0],["Chest","Charred Nerubian Warplate","Rare",73,0,0],["Waist","Spearbreaker Belt","Uncommon",69,0,0],["Legs","Junior Timewarder Greaves","Rare",67,0,0],["Feet","Hops-Laden Greatboots","Rare",76,0,0],["Wrist","Secret-Dredger's Armplates","Uncommon",74,0,0],["Hands","Sleet Shined Crushers","Rare",69,0,0],["Ring 1","Sparkling Pearl Ring","Uncommon",73,0,0],["Ring 2","Life-Binder's Band","Rare",71,0,0],["Trinket 1","Uncanny Pocketwatch","Rare",71,0,0],["Trinket 2","Lifegift Ruby","Uncommon",62,0,0],["Back","Chef Chewie's Towel","Rare",76,0,0],["Main Hand","Arachnophobic Spelunker's Saber","Uncommon",74,0,0],["Off Hand","Cured Terracotta Shield","Rare",74,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":60367,"strength":298,"agility":100,"intellect":100,"stamina":3551,"armor":684,"crit":18.2,"haste":8.7,"mastery":24.6,"vers":5.8},"ls":{"questsCompleted":1263,"totalDeaths":18,"deathsFromFalling":5,"killingBlows":5386,"dungeonsEntered":3,"timesHearthed":10,"flightPaths":92,"crittersKilled":177,"creaturesKilled":6359,"raidsEntered":null,"bossesDefeated":null},"ti":"Lothbrok the Explorer","bb":[508,268,1100,988,693,770]},{"id":234878643,"n":"Demonik","l":34,"k":2,"o":"user3","c":"Demon Hunter","s":"Havoc","r":"Blood Elf","i":31,"t":1773706610000,"b":179,"ap":13440,"eq":[["Head","Illidari Blindfold","Uncommon",34,0,0],["Neck","Illidari Chain","Uncommon",34,0,0],["Shoulders","Illidari Shoulders","Uncommon",34,0,0],["Chest","Illidari Robe","Uncommon",34,0,0],["Waist","Illidari Belt","Uncommon",34,0,0],["Legs","Illidari Leggings","Uncommon",34,0,0],["Feet","Illidari Boots","Uncommon",34,0,0],["Wrist","Illidari Bracers","Uncommon",34,0,0],["Hands","Illidari Gloves","Uncommon",34,0,0],["Ring 1","Illidari Band","Uncommon",34,0,0],["Ring 2","Illidari Ring","Uncommon",34,0,0],["Trinket 1","Demon Trophy","Uncommon",34,0,0],["Trinket 2","Charm of Demonic Fire","Uncommon",34,0,0],["Back","Illidari Drape","Uncommon",34,0,0],["Main Hand","Illidari Warglaive","Uncommon",34,0,0]],"st":{"health":8928,"strength":54,"agility":151,"intellect":71,"stamina":1116,"armor":71,"crit":28.8,"haste":14.9,"mastery":33.4,"vers":0},"ls":{"questsCompleted":512,"totalDeaths":4,"deathsFromFalling":1,"killingBlows":714,"dungeonsEntered":3,"timesHearthed":3,"flightPaths":6,"crittersKilled":41,"creaturesKilled":879,"raidsEntered":null,"bossesDefeated":null},"ti":"Demonik the Astral Walker","bb":[552,336,922,982,769,817]},{"id":234878790,"n":"Alduen","l":70,"k":1,"o":"user3","c":"Evoker","s":"Devastation","r":"Dracthyr","i":65,"t":1773706086000,"b":70,"ap":13440,"eq":[["Head","Expedition Mercenary's Helm","Rare",72,0,0],["Neck","Primalist Pendant","Uncommon",63,0,0],["Shoulders","Expedition Mercenary's Monnion","Rare",69,0,0],["Chest","Crimson Dracthyr Battlegear Hauberk","Rare",61,0,0],["Waist","Expedition Mercenary's Belt","Rare",68,0,0],["Legs","Crimson Dracthyr Battlegear Leggings","Rare",63,0,0],["Feet","Expedition Mercenary's Boots","Uncommon",64,0,0],["Wrist","Expedition Mercenary's Bracers","Uncommon",69,0,0],["Hands","Crimson Dracthyr Battlegear Grips","Rare",62,0,0],["Ring 1","Band of the Unscalable","Rare",71,0,0],["Ring 2","Carved Basalt Ring","Uncommon",65,0,0],["Trinket 1","Ekrazathal's Colored Fang","Rare",62,0,0],["Trinket 2","Lifegift Ruby","Uncommon",69,0,0],["Back","Crimson Dracthyr's Drape","Rare",61,0,0],["Main Hand","Emblazoned Ruby Staff","Rare",61,0,0]],"st":{"health":30238,"strength":64,"agility":99,"intellect":332,"stamina":2326,"armor":326,"crit":13.4,"haste":10.7,"mastery":22.7,"vers":7.7},"ls":{"questsCompleted":462,"totalDeaths":3,"deathsFromFalling":2,"killingBlows":429,"dungeonsEntered":null,"timesHearthed":6,"flightPaths":5,"crittersKilled":28,"creaturesKilled":606,"raidsEntered":null,"bossesDefeated":null},"ti":"Alduen of the Nightfall","bb":[572,246,1050,982,808,785]},{"id":234897449,"n":"Stray","l":80,"k":2,"o":"user2","c":"Druid","s":"Guardian","r":"Zandalari Troll","i":79,"t":1769280206000,"b":41,"ap":8890,"eq":[["Head","Lockstitch Headgear of the Feverflare","Uncommon",79,0,0],["Neck","Strapped Rescue-Keg","Rare",78,0,0],["Shoulders","Earthen Deckhand's Shoulderpads","Epic",83,0,0],["Chest","Earthen Deckhand's Vest","Epic",83,0,0],["Waist","Smuggled Nerubian Belt","Uncommon",78,0,0],["Legs","Earthen Deckhand's Breeches","Epic",83,0,0],["Feet","Webweave Stompers","Uncommon",78,0,0],["Wrist","Rescued Aeroknight's Vambraces","Uncommon",78,0,0],["Hands","Treasure-Seeker's Grips","Uncommon",78,0,0],["Ring 1","Band of the Relic Bearer","Rare",79,0,0],["Ring 2","85-Year Tenure Ring","Rare",78,0,0],["Trinket 1","Nizrek's Holographic Manipulator","Uncommon",78,0,0],["Trinket 2","Arathi Demolition Charge","Uncommon",78,0,0],["Back","Stew-Stained Cape","Uncommon",79,0,0],["Main Hand","Earthen Landlubber's Polearm","Epic",83,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":64023,"strength":69,"agility":322,"intellect":156,"stamina":2838,"armor":170,"crit":19.7,"haste":12.3,"mastery":12.8,"vers":3.4},"ls":{"questsCompleted":880,"totalDeaths":5,"deathsFromFalling":null,"killingBlows":2767,"dungeonsEntered":8,"timesHearthed":4,"flightPaths":30,"crittersKilled":197,"creaturesKilled":3503,"raidsEntered":null,"bossesDefeated":null},"mo":153,"pe":94,"bb":[502,294,978,990,788,794]},{"id":235157781,"n":"Dracarus","l":70,"k":2,"c":"Evoker","s":"Devastation","r":"Dracthyr","i":354,"t":1762230806000,"b":21,"ap":8645,"eq":[["Head","Shikaar Scout Helm","Uncommon",363,0,0],["Neck","Teerai Locket","Uncommon",360,0,0],["Shoulders","Expedition Mercenary's Monnion","Rare",348,0,0],["Chest","Shikaar Scout Hauberk","Uncommon",360,0,0],["Waist","Shikaar Scout Buckle","Uncommon",357,0,0],["Legs","Shikaar Scout Breeches","Uncommon",363,0,0],["Feet","Shikaar Scout Sabatons","Rare",365,0,0],["Wrist","Expedition Mercenary's Bracers","Uncommon",354,0,0],["Hands","Shikaar Scout Grips","Uncommon",363,0,0],["Ring 1","Carved Basalt Ring","Uncommon",339,0,0],["Ring 2","Dragonkin Signet Ring","Rare",332,0,0],["Trinket 1","Lifegift Ruby","Uncommon",354,0,0],["Trinket 2","Inherited Insignia of the Horde","Heirloom",337,0,0],["Back","Drape of the Djaradin Slayer","Rare",352,0,0],["Main Hand","Ohn'ir Ritual Scepter","Uncommon",357,0,0],["Off Hand","Code of the Maruuk","Epic",367,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":251200,"strength":919,"agility":1421,"intellect":5609,"stamina":12560,"armor":6053,"crit":15.5,"haste":7.2,"mastery":30.1,"vers":6.5},"ls":{"questsCompleted":265,"totalDeaths":null,"deathsFromFalling":null,"killingBlows":351,"dungeonsEntered":null,"timesHearthed":1,"flightPaths":2,"crittersKilled":18,"creaturesKilled":413,"raidsEntered":null,"bossesDefeated":null},"bb":[624,246,1044,982,806,787]},{"id":235720205,"n":"Babbang","l":60,"k":3,"o":"user1","c":"Warrior","s":"Protection","r":"Pandaren","i":257,"t":1760296303000,"b":13,"ap":3115,"eq":[["Head","Polished Helm of Valor","Heirloom",287,0,0],["Neck","Eternal Talisman of Evasion","Heirloom",287,0,0],["Shoulders","Polished Spaulders of Valor","Heirloom",287,0,0],["Chest","Polished Breastplate of Valor","Heirloom",287,0,0],["Waist","Exiled Veteran's Greatbelt","Uncommon",166,0,0],["Legs","Burnished Legplates of Might","Heirloom",287,0,0],["Feet","Stormforger Sabatons of the Peerless","Uncommon",320,0,0],["Wrist","Exiled Veteran's Armbands","Rare",325,0,0],["Hands","Nazmani Warplate Battlegloves","Uncommon",209,0,0],["Ring 1","Jin'Tiki's Signet","Uncommon",186,0,0],["Ring 2","Zul Adherent's Band","Uncommon",42,0,0],["Trinket 1","Swift Hand of Justice","Heirloom",287,0,0],["Trinket 2","Inherited Mark of Tyranny","Heirloom",287,0,0],["Back","Ripped Sandstorm Cloak","Heirloom",287,0,0],["Main Hand","Bloodsoaked Skullforge Reaver","Heirloom",287,0,0],["Off Hand","Weathered Observer's Shield","Heirloom",287,0,0]],"st":{"health":129030,"strength":2250,"agility":846,"intellect":836,"stamina":8602,"armor":5717,"crit":17.4,"haste":7.3,"mastery":17.8,"vers":4.2},"ls":{"questsCompleted":536,"totalDeaths":9,"deathsFromFalling":1,"killingBlows":1896,"dungeonsEntered":2,"timesHearthed":11,"flightPaths":23,"crittersKilled":99,"creaturesKilled":2031,"raidsEntered":null,"bossesDefeated":null},"bb":[568,320,1120,966,791,790]},{"id":235901083,"n":"Gorgis","l":70,"k":3,"o":"user1","c":"Hunter","s":"Beast Mastery","r":"Orc","i":322,"t":1757136752000,"b":155,"ap":3035,"eq":[["Head","Eavesdropper's Coif","Rare",348,0,0],["Neck","Reclaimed Maldraxxi Choker","Uncommon",320,0,0],["Shoulders","Champion Herod's Shoulder","Heirloom",282,0,0],["Shirt","Sleeveless T-Shirt","Uncommon",1,0,0],["Chest","Expedition Mercenary's Hauberk","Uncommon",339,0,0],["Waist","Cinch of Uncertain Devotion","Uncommon",279,0,0],["Legs","Junior Timewarder Scales","Uncommon",354,0,0],["Feet","Time Walkers","Rare",362,0,0],["Wrist","Magmatalon Wrist Scales","Uncommon",350,0,0],["Hands","Humble Aspirant's Gauntlets","Uncommon",296,0,0],["Ring 1","Causality Band","Uncommon",354,0,0],["Ring 2","Reverberating Silver Band","Uncommon",289,0,0],["Trinket 1","Misfiring Centurion Controller","Rare",276,0,0],["Trinket 2","Magmasworn Spearhead","Uncommon",350,0,0],["Back","Inherited Cape of the Black Baron","Heirloom",282,0,0],["Main Hand","Explorers' League Rifle","Uncommon",343,0,0]],"st":{"health":209801,"strength":1278,"agility":3991,"intellect":1712,"stamina":9713,"armor":2673,"crit":26.7,"haste":23.8,"mastery":25,"vers":4.8},"ls":{"questsCompleted":376,"totalDeaths":9,"deathsFromFalling":1,"killingBlows":460,"dungeonsEntered":8,"timesHearthed":4,"flightPaths":17,"crittersKilled":7,"creaturesKilled":623,"raidsEntered":null,"bossesDefeated":null},"bb":[526,280,1042,988,780,772]},{"id":235914619,"n":"Wetseamen","l":43,"k":3,"o":"user1"},{"id":236467773,"n":"Trashey","l":78,"k":3,"o":"user1","c":"Mage","s":"Frost","r":"Undead","i":76,"t":1790998790000,"b":61,"ap":3615,"eq":[["Head","Cinderbrew-Soaked Cowl","Rare",75,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Alighted Shoulderpads of the Fireflash","Uncommon",78,0,0],["Chest","Earthen Traveler's Vestment","Uncommon",78,0,0],["Waist","Earthen Traveler's Cord","Uncommon",76,0,0],["Legs","Earthen Traveler's Leggings","Uncommon",78,0,0],["Feet","Alighted Sandals of the Fireflash","Uncommon",78,0,0],["Wrist","Earthen Traveler's Cuffs","Uncommon",78,0,0],["Hands","Congealed Cinderbrew Gloves","Uncommon",74,0,0],["Ring 1","85-Year Tenure Ring","Rare",75,0,0],["Ring 2","Gem-Studded Signet of the Peerless","Uncommon",78,0,0],["Trinket 1","Burnished Charm","Uncommon",77,0,0],["Trinket 2","Burnished Charm","Uncommon",77,0,0],["Back","Earthen Traveler's Cloak","Uncommon",78,0,0],["Main Hand","Ancient Forged Spellstaff of the Feverflare","Uncommon",78,0,0]],"st":{"health":48203,"strength":71,"agility":105,"intellect":405,"stamina":2537,"armor":95,"crit":19.5,"haste":5.5,"mastery":34.4,"vers":5.4},"ls":{"questsCompleted":630,"totalDeaths":30,"deathsFromFalling":1,"killingBlows":1147,"dungeonsEntered":10,"timesHearthed":6,"flightPaths":24,"crittersKilled":89,"creaturesKilled":1873,"raidsEntered":null,"bossesDefeated":null},"ti":"Trashey the Kingslayer","bb":[594,430,904,978,772,815]},{"id":236493049,"n":"Blajarm","l":20,"k":5,"o":"user1"},{"id":236592074,"n":"Flachewlance","l":50,"k":2,"o":"user1","c":"Shaman","s":"Elemental","r":"Orc","i":199,"t":1760295572000,"b":202,"ap":3115,"eq":[["Head","Tarnished Raging Berserker's Helm","Heirloom",232,0,0],["Neck","Eternal Will of the Martyr","Heirloom",232,0,0],["Shoulders","Champion Herod's Shoulder","Heirloom",232,0,0],["Chest","Champion's Deathdealer Breastplate","Heirloom",232,0,0],["Waist","Gryphon Mail Belt of the Fireflash","Uncommon",170,0,0],["Legs","Tarnished Leggings of Destruction","Heirloom",232,0,0],["Feet","Translation Boots","Rare",202,0,0],["Wrist","Pit Heart Bracers","Uncommon",124,0,0],["Hands","Branded Gloves","Uncommon",86,0,0],["Ring 1","Eye of the Stars","Epic",224,0,0],["Ring 2","Discarded Wedding Band","Uncommon",59,0,0],["Trinket 1","Inherited Mark of Tyranny","Heirloom",232,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",232,0,0],["Back","Inherited Cape of the Black Baron","Heirloom",232,0,0],["Main Hand","Dignified Headmaster's Charge","Heirloom",232,1,0],["Tabard","Horde Tabard","Common",2,0,0]],"st":{"health":21637,"strength":192,"agility":436,"intellect":957,"stamina":1967,"armor":484,"crit":18.6,"haste":11.5,"mastery":15.4,"vers":0.6},"ls":{"questsCompleted":402,"totalDeaths":19,"deathsFromFalling":3,"killingBlows":1597,"dungeonsEntered":2,"timesHearthed":7,"flightPaths":18,"crittersKilled":10,"creaturesKilled":1638,"raidsEntered":null,"bossesDefeated":null},"bb":[512,328,1016,980,780,774]},{"id":244320643,"n":"Hollyballs","l":90,"k":1,"o":"user3","c":"Paladin","s":"Retribution","r":"Earthen","i":180,"t":1793789314000,"b":131,"ap":13440,"eq":[["Head","Dark Horde Helmet","Epic",196,0,0],["Neck","Nocturnal Thorncharm","Epic",159,0,1],["Shoulders","Light's Hope Epaulets","Uncommon",183,0,0],["Chest","Fungus-Infested Brigandine","Uncommon",183,0,0],["Waist","Tarnished Dawnlit Commander's Greatbelt","Uncommon",165,0,0],["Legs","Humble Servant's Pants","Rare",189,0,0],["Feet","Warboots of the Colossal Behemoths","Epic",187,0,0],["Wrist","Mar'kag's Oversized Ring","Rare",189,0,0],["Hands","Twilightbreaker's Gauntlets","Uncommon",183,0,0],["Ring 1","Band of Severed Connections","Uncommon",165,0,1],["Ring 2","Unmoved Elder's Hoop","Rare",189,0,1],["Trinket 1","Thriving Essence Sprig","Uncommon",174,0,0],["Trinket 2","Tangle of Vibrant Vines","Epic",196,0,0],["Back","Ancient Frond Cloak","Uncommon",159,0,0],["Main Hand","Stonebough Greatsword","Rare",189,0,0]],"st":{"health":229940,"strength":1090,"agility":217,"intellect":644,"stamina":11497,"armor":1122,"crit":18.6,"haste":10,"mastery":21,"vers":2.7},"ls":{"questsCompleted":1346,"totalDeaths":54,"deathsFromFalling":2,"killingBlows":5779,"dungeonsEntered":15,"timesHearthed":null,"flightPaths":20,"crittersKilled":490,"creaturesKilled":6133,"raidsEntered":null,"bossesDefeated":4},"ti":"Hollyballs the Kingslayer","mo":165,"pe":427,"bb":[494,312,1104,990,785,814]},{"id":245476957,"n":"Bbaronsamedi","l":80,"k":2,"o":"user3","c":"Mage","s":"Fire","r":"Troll","i":76,"t":1773704892000,"b":93,"ap":13440,"eq":[["Head","Sporefused Hood","Uncommon",78,0,0],["Neck","Lightbearer's Pendant","Rare",79,0,0],["Shoulders","Shoulders of Kix'arak's Bane","Uncommon",78,0,0],["Chest","Alighted Robes of the Harmonious","Uncommon",78,0,0],["Waist","Algari-weave Cord","Uncommon",79,0,0],["Legs","Cave Topographer's Leggings","Rare",77,0,0],["Feet","Rubble-Salvaged Slippers","Uncommon",78,0,0],["Wrist","Olbarig's Old Wristwraps","Uncommon",78,0,0],["Hands","Murkshade Gloves","Rare",79,0,0],["Ring 1","Skettis Deceiver's Signet","Uncommon",69,0,0],["Ring 2","Seal of Rushing Winds","Uncommon",66,0,0],["Trinket 1","Darkmoon Deck: Symbiosis","Epic",80,0,0],["Trinket 2","Imperfect Ascendancy Serum","Uncommon",78,0,0],["Back","Secret-Dredger's Cloak","Uncommon",76,0,0],["Main Hand","Luminous Lampspire","Uncommon",79,0,0],["Tabard","Illustrious Guild Tabard","Rare",1,0,0]],"st":{"health":51560,"strength":71,"agility":110,"intellect":418,"stamina":2578,"armor":97,"crit":11.5,"haste":7.5,"mastery":8.2,"vers":7.1},"ls":{"questsCompleted":1569,"totalDeaths":45,"deathsFromFalling":3,"killingBlows":8260,"dungeonsEntered":9,"timesHearthed":null,"flightPaths":30,"crittersKilled":204,"creaturesKilled":8308,"raidsEntered":14,"bossesDefeated":null},"ti":"Bbaronsamedi the Fearless","mo":161,"pe":427,"bb":[574,256,998,992,798,839]},{"id":248028851,"n":"Dendis","l":87,"k":1,"o":"user3","c":"Demon Hunter","s":"Havoc","r":"Blood Elf","i":158,"t":1773708731000,"b":179,"ap":13440,"eq":[["Head","Dark Horde Cowl","Uncommon",174,0,0],["Neck","Arboreal Vine Collar","Rare",158,0,1],["Shoulders","Osseoclad Razorspaulders","Rare",151,0,0],["Chest","On'heia's Dusty Jerkin","Uncommon",159,0,0],["Waist","Aspiring Hara'ti Defender's Cord","Rare",180,0,0],["Legs","Humble Servant's Leggings","Uncommon",174,0,0],["Feet","Lightstalker's Treads","Uncommon",139,0,0],["Wrist","Mar'kag's Anklet","Uncommon",174,0,0],["Hands","Alndust-Touched Gloves","Uncommon",159,0,0],["Ring 1","Unmoved Elder's Hoop","Uncommon",159,0,1],["Ring 2","Amarakk's Woven Signet","Uncommon",159,0,1],["Trinket 1","Tangle of Vibrant Vines","Rare",171,0,0],["Trinket 2","Demon Trophy","Uncommon",102,0,0],["Back","Rootwoven Cape","Uncommon",152,0,0],["Main Hand","Repurposed Scarlet Blade","Uncommon",165,0,0],["Off Hand","Spore-Touched Glaive","Uncommon",159,0,0]],"st":{"health":177571,"strength":345,"agility":791,"intellect":421,"stamina":8376,"armor":309,"crit":30.8,"haste":6.7,"mastery":37.8,"vers":5.5},"ls":{"questsCompleted":888,"totalDeaths":13,"deathsFromFalling":null,"killingBlows":2949,"dungeonsEntered":2,"timesHearthed":null,"flightPaths":15,"crittersKilled":167,"creaturesKilled":3033,"raidsEntered":null,"bossesDefeated":null},"ti":"Illidari Dendis","mo":161,"pe":427,"bb":[496,314,946,982,770,813]},{"id":249211611,"n":"Darthhealz","l":86,"k":5,"c":"Druid","s":"Restoration","r":"Haranir","i":143,"t":1773704180000,"b":219,"ap":13440,"eq":[["Head","Eversong Defender's Hood","Rare",151,0,0],["Neck","Sunwell Defender's Brooch","Rare",126,0,1],["Shoulders","Osseoclad Razorspaulders","Rare",151,0,0],["Chest","Snapdragon Tunic","Uncommon",139,0,0],["Waist","Aspiring Hara'ti Defender's Cord","Rare",180,0,0],["Legs","Twilight Spy's Tights","Uncommon",139,0,0],["Feet","Farstrider Recruit's Footwear","Uncommon",145,0,0],["Wrist","Reluctant Diplomat's Wraps","Uncommon",120,0,0],["Hands","Twilightbreaker's Gloves","Uncommon",159,0,0],["Ring 1","Ring of Overgrowth","Rare",139,0,1],["Ring 2","Depleted Voidshard Ring","Uncommon",139,0,1],["Trinket 1","Consecrated Chalice","Uncommon",159,0,0],["Trinket 2","Springrain Idol of Wisdom","Uncommon",102,0,0],["Back","Bloomtrimmer's Wrap","Epic",158,0,0],["Main Hand","Enchanted Crypt Stave","Uncommon",145,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":147080,"strength":158,"agility":368,"intellect":851,"stamina":7354,"armor":253,"crit":13.8,"haste":16.7,"mastery":17.1,"vers":4.2},"ls":{"questsCompleted":471,"totalDeaths":5,"deathsFromFalling":1,"killingBlows":955,"dungeonsEntered":3,"timesHearthed":3,"flightPaths":3,"crittersKilled":97,"creaturesKilled":1036,"raidsEntered":null,"bossesDefeated":null},"ti":"Darthhealz the Kingslayer","bb":[512,352,986,984,804,811]}]},"riot-act":{"name":"Riot Act","faction":"alliance","realm":"Onyxia","updatedAt":"2026-09-26T05:33:38.745Z","members":[{"id":209071233,"n":"Arkon","l":80,"k":2,"c":"Paladin","s":"Protection","r":"Human","i":80,"t":1769043112000,"b":129,"ap":8900,"eq":[["Head","Sedimentary Helm of the Aurora","Uncommon",79,0,0],["Neck","Threadmaestro's Collar","Uncommon",79,0,0],["Shoulders","General's Pungent Mantle","Uncommon",79,0,0],["Shirt","Red Linen Shirt","Uncommon",1,0,0],["Chest","Reinforced Chitin Chestpiece","Rare",104,0,0],["Waist","Lightning-Conductor's Bands","Rare",79,0,0],["Legs","Greaves of Sina's Stalwarts","Uncommon",78,0,0],["Feet","Lamplighter's Sabatons","Uncommon",78,0,0],["Wrist","Smuggled Nerubian Cuffs","Rare",79,0,0],["Hands","Caliginous Claspers","Rare",79,0,0],["Ring 1","Corrosive Blackblood Ring","Uncommon",78,0,0],["Ring 2","Flameguard's Band","Uncommon",78,0,0],["Trinket 1","Nizrek's Holographic Manipulator","Uncommon",79,0,0],["Trinket 2","Arathi Demolition Charge","Uncommon",78,0,0],["Back","Candlebearer's Shroud","Rare",79,0,0],["Main Hand","Arathi Mace of the Harmonious","Uncommon",78,0,0],["Off Hand","Kaheti Confiscated Buckler","Uncommon",79,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":72520,"strength":340,"agility":56,"intellect":159,"stamina":3626,"armor":806,"crit":13.6,"haste":12.6,"mastery":19.6,"vers":8.3},"ls":{"questsCompleted":693,"totalDeaths":2,"deathsFromFalling":null,"killingBlows":2287,"dungeonsEntered":9,"timesHearthed":8,"flightPaths":31,"crittersKilled":164,"creaturesKilled":3252,"raidsEntered":null,"bossesDefeated":null},"ti":"Arkon the Explorer","bb":[618,384,1034,980,801,798]},{"id":209071638,"n":"Corellian","l":71,"k":2,"c":"Druid","s":"Guardian","r":"Kul Tiran","i":67,"t":1769282627000,"b":22,"ap":8900,"eq":[["Head","Twisted Leather Hood","Rare",69,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Teerai Watcher Spaulders","Uncommon",62,0,0],["Shirt","Brown Linen Shirt","Uncommon",1,0,0],["Chest","Twisted Leather Vest","Uncommon",65,0,0],["Waist","Twisted Leather Belt","Uncommon",69,0,0],["Legs","Charred Nerubian Leggings","Uncommon",73,0,0],["Feet","Twisted Leather Moccasins","Uncommon",68,0,0],["Wrist","Twisted Leather Bindings","Uncommon",67,0,0],["Hands","Teerai Watcher Gloves","Uncommon",60,0,0],["Ring 1","Water-Ordained Signet","Uncommon",66,0,0],["Ring 2","Springrain Ring of Destruction","Uncommon",47,0,0],["Trinket 1","Swift Hand of Justice","Heirloom",69,0,0],["Trinket 2","Silken Chain Weaver","Uncommon",73,0,0],["Back","Tuskarr Spirit Shawl","Uncommon",67,0,0],["Main Hand","Arachnophobic Spelunker's Battlestaff","Rare",73,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":44968,"strength":64,"agility":279,"intellect":145,"stamina":2573,"armor":142,"crit":23.5,"haste":9.3,"mastery":9.2,"vers":5.6},"ls":{"questsCompleted":404,"totalDeaths":null,"deathsFromFalling":null,"killingBlows":796,"dungeonsEntered":null,"timesHearthed":2,"flightPaths":10,"crittersKilled":48,"creaturesKilled":988,"raidsEntered":null,"bossesDefeated":null},"ti":"Corellian the Explorer","bb":[454,268,998,1004,805,836]},{"id":209077334,"n":"Deathrite","l":72,"k":1,"c":"Death Knight","s":"Blood","r":"Lightforged Draenei","i":393,"t":1736743653000,"b":86,"ap":8555,"eq":[["Head","Mead-Speckled Full Helm","Rare",467,0,0],["Neck","Remembrance of the Fallen City","Uncommon",408,0,0],["Shoulders","Expedition Guard's Spaulders","Epic",364,0,0],["Shirt","Sleeveless T-Shirt","Uncommon",1,0,0],["Chest","Charred Nerubian Warplate","Uncommon",408,0,0],["Waist","Rubble-Salvaged Waistguard","Uncommon",460,0,0],["Legs","Expedition Guard's Greaves","Uncommon",363,0,0],["Feet","Congealed Cinderbrew Battleboots","Uncommon",434,0,0],["Wrist","Wristguards of the Titancap","Rare",415,0,0],["Hands","Expedition Guard's Gauntlets","Uncommon",343,0,0],["Ring 1","Carved Basalt Ring","Uncommon",350,0,0],["Ring 2","Heart-Lesion Band of Stoicism","Uncommon",327,0,0],["Trinket 1","Sigil of Algari Concordance","Rare",441,0,0],["Trinket 2","Ruby Whelp Shell","Rare",347,0,0],["Back","Drape of the Djaradin Slayer","Uncommon",360,0,0],["Main Hand","Arachnophobic Spelunker's Battleaxe","Uncommon",408,0,0],["Tabard","Tabard of the Achiever","Epic",1,0,0]],"st":{"health":817160,"strength":7731,"agility":2661,"intellect":1732,"stamina":40858,"armor":9068,"crit":13.2,"haste":7.8,"mastery":33.9,"vers":10.8},"ls":{"questsCompleted":650,"totalDeaths":4,"deathsFromFalling":1,"killingBlows":2728,"dungeonsEntered":2,"timesHearthed":8,"flightPaths":34,"crittersKilled":75,"creaturesKilled":2972,"raidsEntered":null,"bossesDefeated":null},"ti":"Deathrite the Explorer","bb":[490,268,1040,998,791,759]},{"id":234879049,"n":"Drizzlebeard","l":12,"k":1,"c":"Paladin","s":"Protection","r":"Dwarf","i":11,"t":1773706994000,"b":73,"ap":13400,"eq":[["Head","Polished Helm of Valor","Heirloom",12,0,0],["Neck","Eternal Emberfury Talisman","Heirloom",12,0,0],["Shoulders","Pristine Lightforge Spaulders","Heirloom",12,0,0],["Chest","Polished Breastplate of Valor","Heirloom",12,0,0],["Waist","Sunsoul Waistband","Uncommon",10,0,0],["Legs","Polished Legplates of Valor","Heirloom",12,0,0],["Feet","Sunsoul Greaves","Uncommon",10,0,0],["Wrist","Sunsoul Armguards","Uncommon",10,0,0],["Hands","Sunsoul Handguards","Uncommon",10,0,0],["Ring 1","Sunsoul Ring of Stoicism","Uncommon",10,0,0],["Ring 2","Sunsoul Band of Stoicism","Uncommon",10,0,0],["Trinket 1","Discerning Eye of the Beast","Heirloom",12,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",12,0,0],["Back","Ancient Bloodmoon Cloak","Heirloom",12,0,0],["Main Hand","Bloodsoaked Skullforge Reaver","Heirloom",12,0,0],["Off Hand","Flamescarred Draconian Deflector","Heirloom",12,0,0]],"st":{"health":1318,"strength":63,"agility":12,"intellect":41,"stamina":659,"armor":134,"crit":16.5,"haste":4.6,"mastery":12.4,"vers":2.1},"ls":{"questsCompleted":320,"totalDeaths":4,"deathsFromFalling":null,"killingBlows":77,"dungeonsEntered":1,"timesHearthed":1,"flightPaths":1,"crittersKilled":1,"creaturesKilled":133,"raidsEntered":null,"bossesDefeated":null},"bb":[558,406,1046,1000,811,817]},{"id":234879077,"n":"Krisis","l":80,"k":0,"o":"user3","c":"Demon Hunter","s":"Vengeance","r":"Night Elf","i":79,"t":1773704917000,"b":101,"ap":13400,"eq":[["Head","Underscout's Cap of the Peerless","Uncommon",80,0,0],["Neck","Long-Lost Choker","Uncommon",79,0,0],["Shoulders","Underscout's Shoulderguards of the Quickblade","Uncommon",79,0,0],["Chest","General's Pungent Armor","Rare",79,0,0],["Waist","Flying Kobold's Seatbelt","Rare",78,0,0],["Legs","Earthen Traveler's Breeches","Uncommon",79,0,0],["Feet","Lockstitch Waders of the Feverflare","Uncommon",79,0,0],["Wrist","Earthen Traveler's Bindings","Uncommon",79,0,0],["Hands","Rubble-Salvaged Grips","Uncommon",78,0,0],["Ring 1","Gem-Studded Band of the Feverflare","Uncommon",79,0,0],["Ring 2","Band of the Petrified Pumpkin","Epic",83,0,0],["Trinket 1","Esteemed Earthen Emblem","Rare",79,0,0],["Trinket 2","Siphoning Lightbrand","Uncommon",79,0,0],["Back","Drape of the Heritage Lord","Uncommon",79,0,0],["Main Hand","Underscout's Glaive of the Fireflash","Uncommon",79,0,0],["Off Hand","Kaheti Confiscated Blade","Uncommon",79,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":83924,"strength":130,"agility":339,"intellect":159,"stamina":4074,"armor":506,"crit":21.5,"haste":8.9,"mastery":32.1,"vers":5.6},"ls":{"questsCompleted":2354,"totalDeaths":94,"deathsFromFalling":9,"killingBlows":25058,"dungeonsEntered":90,"timesHearthed":23,"flightPaths":192,"crittersKilled":649,"creaturesKilled":23855,"raidsEntered":17,"bossesDefeated":47},"ti":"Krisis, Hellscream's Downfall","mo":162,"pe":427,"bb":[472,234,982,970,800,808]},{"id":234880225,"n":"Butternut","l":60,"k":2,"c":"Warrior","s":"Protection","r":"Dark Iron Dwarf","i":320,"t":1760242665000,"b":225,"ap":8645,"eq":[["Head","Oathsworn Faceguard","Uncommon",320,0,0],["Neck","Oathsworn Amulet","Uncommon",320,0,0],["Shoulders","Oathsworn Shoulderguards","Uncommon",320,0,0],["Shirt","Scarlet Filigreed Shirt","Uncommon",1,0,0],["Chest","Oathsworn Chestguard","Uncommon",320,0,0],["Waist","Oathsworn Waistband","Uncommon",320,0,0],["Legs","Oathsworn Legguards","Uncommon",320,0,0],["Feet","Oathsworn Greaves","Uncommon",320,0,0],["Wrist","Oathsworn Armguards","Uncommon",320,0,0],["Hands","Oathsworn Handguards","Uncommon",320,0,0],["Ring 1","Oathsworn Ring of Stoicism","Uncommon",320,0,0],["Ring 2","Oathsworn Band of Stoicism","Uncommon",320,0,0],["Trinket 1","Oathsworn Defender Idol","Uncommon",320,0,0],["Trinket 2","Oathsworn Defender Stone","Uncommon",320,0,0],["Back","Oathsworn Cloak of Stoicism","Uncommon",320,0,0],["Main Hand","Oathsworn Axe","Uncommon",320,0,0],["Off Hand","Oathsworn Bulwark","Uncommon",320,0,0],["Tabard","Tabard of the Dark Iron","Rare",1,0,0]],"st":{"health":151890,"strength":3184,"agility":846,"intellect":835,"stamina":10126,"armor":7822,"crit":23.8,"haste":0,"mastery":43.6,"vers":12.2},"ls":{"questsCompleted":482,"totalDeaths":1,"deathsFromFalling":null,"killingBlows":1902,"dungeonsEntered":4,"timesHearthed":4,"flightPaths":27,"crittersKilled":87,"creaturesKilled":1645,"raidsEntered":null,"bossesDefeated":null},"bb":[562,452,1064,996,812,821]},{"id":234886591,"n":"Terrorstorm","l":62,"k":2,"c":"Demon Hunter","s":"Vengeance","r":"Night Elf","i":291,"t":1760206341000,"b":191,"ap":8635,"eq":[["Head","Field Scout's Helmet","Rare",332,0,0],["Neck","Eternal Emberfury Talisman","Heirloom",298,0,0],["Shoulders","Field Scout's Spaulders","Rare",301,0,0],["Shirt","Ebon Filigreed Shirt","Uncommon",1,0,0],["Chest","Stained Shadowcraft Tunic","Heirloom",298,0,0],["Waist","Field Scout's Belt","Uncommon",311,0,0],["Legs","Field Scout's Pants","Uncommon",320,0,0],["Feet","Field Scout's Boots","Epic",257,0,0],["Wrist","Field Scout's Bindings","Uncommon",320,0,0],["Hands","Field Scout's Gloves","Uncommon",247,0,0],["Ring 1","Carved Basalt Ring","Rare",284,0,0],["Ring 2","Illidari Ring","Uncommon",231,0,0],["Trinket 1","Demon Trophy","Uncommon",231,0,0],["Trinket 2","Lifegift Ruby","Uncommon",327,0,0],["Back","Drape of the Djaradin Slayer","Uncommon",304,0,0],["Main Hand","Venerable Dal'Rend's Sacred Charge","Heirloom",298,0,0],["Off Hand","Venerable Dal'Rend's Sacred Charge","Heirloom",298,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":189437,"strength":1133,"agility":2703,"intellect":930,"stamina":11276,"armor":4035,"crit":23.6,"haste":3.7,"mastery":28.5,"vers":8.2},"ls":{"questsCompleted":538,"totalDeaths":4,"deathsFromFalling":null,"killingBlows":1725,"dungeonsEntered":5,"timesHearthed":3,"flightPaths":16,"crittersKilled":95,"creaturesKilled":1682,"raidsEntered":null,"bossesDefeated":null},"bb":[664,306,964,976,808,811]},{"id":235059593,"n":"Thuun","l":55,"k":2,"o":"user1","c":"Paladin","s":"Protection","r":"Draenei","i":238,"t":1744420830000,"b":137,"ap":2975,"eq":[["Head","Polished Helm of Valor","Heirloom",260,0,0],["Neck","Eternal Talisman of Evasion","Heirloom",260,0,0],["Shoulders","Polished Spaulders of Valor","Heirloom",260,0,0],["Chest","Polished Breastplate of Valor","Heirloom",260,0,0],["Waist","Sunsoul Waistband","Uncommon",203,0,0],["Legs","Burnished Legplates of Might","Heirloom",260,0,0],["Feet","Sunsoul Greaves","Uncommon",203,0,0],["Wrist","Sunsoul Armguards","Uncommon",203,0,0],["Hands","Sunsoul Handguards","Uncommon",203,0,0],["Ring 1","Sunsoul Ring of Stoicism","Uncommon",203,0,0],["Ring 2","Sunsoul Band of Stoicism","Uncommon",203,0,0],["Trinket 1","Inherited Mark of Tyranny","Heirloom",260,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",260,0,0],["Back","Ripped Sandstorm Cloak","Heirloom",260,0,0],["Main Hand","Venerable Mass of McGowan","Heirloom",260,0,0],["Off Hand","Weathered Observer's Shield","Heirloom",260,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":62907,"strength":1229,"agility":287,"intellect":757,"stamina":4839,"armor":2720,"crit":22,"haste":5.9,"mastery":11.9,"vers":4.4},"ls":{"questsCompleted":409,"totalDeaths":11,"deathsFromFalling":null,"killingBlows":1566,"dungeonsEntered":4,"timesHearthed":8,"flightPaths":25,"crittersKilled":95,"creaturesKilled":1581,"raidsEntered":null,"bossesDefeated":null},"bb":[548,250,1074,984,801,787]},{"id":235102645,"n":"Warlo","l":10,"k":1,"c":"Warlock","s":"Demonology","r":"Void Elf","i":10,"t":1773707074000,"b":181,"ap":13400,"eq":[["Head","Tattered Dreadmist Mask","Heirloom",10,0,0],["Neck","Eternal Will of the Martyr","Heirloom",10,0,0],["Shoulders","Tattered Dreadmist Mantle","Heirloom",10,0,0],["Chest","Tattered Dreadmist Robe","Heirloom",10,0,0],["Waist","Felsoul Cord","Uncommon",10,0,0],["Legs","Tattered Dreadmist Leggings","Heirloom",10,0,0],["Feet","Felsoul Sandals","Uncommon",10,0,0],["Wrist","Felsoul Wristwraps","Uncommon",10,0,0],["Hands","Felsoul Handwraps","Uncommon",10,0,0],["Ring 1","Felsoul Band of Destruction","Uncommon",10,0,0],["Ring 2","Felsoul Ring of Destruction","Uncommon",10,0,0],["Trinket 1","Felsoul Idol of Destruction","Uncommon",10,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",10,0,0],["Back","Ancient Bloodmoon Cloak","Heirloom",10,0,0],["Main Hand","Dignified Headmaster's Charge","Heirloom",10,0,0],["Tabard","Ren'dorei Tabard","Rare",1,0,0]],"st":{"health":1186,"strength":9,"agility":26,"intellect":72,"stamina":593,"armor":35,"crit":14.8,"haste":9.6,"mastery":16.3,"vers":0},"ls":{"questsCompleted":268,"totalDeaths":null,"deathsFromFalling":null,"killingBlows":null,"dungeonsEntered":null,"timesHearthed":null,"flightPaths":null,"crittersKilled":null,"creaturesKilled":null,"raidsEntered":null,"bossesDefeated":null},"bb":[508,320,922,982,777,817]},{"id":235272458,"n":"Lubu","l":17,"k":2,"c":"Warrior","s":"Protection","r":"Pandaren","i":14,"t":1773706905000,"b":10,"ap":13400,"eq":[["Head","Polished Helm of Valor","Heirloom",17,0,0],["Neck","Eternal Will of the Martyr","Heirloom",17,0,0],["Shoulders","Strengthened Stockade Pauldrons","Heirloom",17,0,0],["Chest","Polished Breastplate of Valor","Heirloom",17,0,0],["Waist","Oathsworn Waistband","Uncommon",11,0,0],["Legs","Polished Legplates of Valor","Heirloom",17,0,0],["Feet","Oathsworn Greaves","Uncommon",11,0,0],["Wrist","Oathsworn Armguards","Uncommon",11,0,0],["Hands","Oathsworn Handguards","Uncommon",11,0,0],["Ring 1","Oathsworn Ring of Stoicism","Uncommon",11,0,0],["Ring 2","Oathsworn Band of Stoicism","Uncommon",11,0,0],["Trinket 1","Swift Hand of Justice","Heirloom",17,0,0],["Trinket 2","Oathsworn Defender Stone","Uncommon",11,0,0],["Back","Ripped Sandstorm Cloak","Heirloom",17,0,0],["Main Hand","Bloodsoaked Skullforge Reaver","Heirloom",17,0,0],["Off Hand","Flamescarred Draconian Deflector","Heirloom",17,0,0]],"st":{"health":4608,"strength":91,"agility":34,"intellect":35,"stamina":1152,"armor":217,"crit":17.6,"haste":8.9,"mastery":16.5,"vers":3.2},"ls":{"questsCompleted":342,"totalDeaths":1,"deathsFromFalling":null,"killingBlows":196,"dungeonsEntered":null,"timesHearthed":null,"flightPaths":null,"crittersKilled":2,"creaturesKilled":394,"raidsEntered":null,"bossesDefeated":null},"ti":"Lubu the Explorer","bb":[568,320,1074,966,803,790]},{"id":235272488,"n":"Po","l":34,"k":2,"c":"Monk","s":"Brewmaster","r":"Pandaren","i":145,"t":1736103020000,"b":40,"ap":8465,"eq":[["Head","Stained Shadowcraft Cap","Heirloom",145,0,0],["Neck","Mistdancer Amulet","Uncommon",147,0,0],["Shoulders","Stained Shadowcraft Spaulders","Heirloom",145,0,0],["Shirt","Sleeveless T-Shirt","Uncommon",1,0,0],["Chest","Stained Shadowcraft Tunic","Heirloom",145,0,0],["Waist","Mistdancer Cord","Uncommon",147,0,0],["Legs","Stained Shadowcraft Pants","Heirloom",145,0,0],["Feet","Mistdancer Footpads","Uncommon",147,0,0],["Wrist","Mistdancer Cuffs","Uncommon",147,0,0],["Hands","Mistdancer Handguards","Uncommon",147,0,0],["Ring 1","Mistdancer Ring of Stoicism","Uncommon",147,0,0],["Ring 2","Mistdancer Band of Stoicism","Uncommon",147,0,0],["Trinket 1","Inherited Mark of Tyranny","Heirloom",145,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",145,0,0],["Back","Inherited Cape of the Black Baron","Heirloom",145,0,0],["Main Hand","Venerable Dal'Rend's Sacred Charge","Heirloom",145,0,0],["Off Hand","Venerable Dal'Rend's Sacred Charge","Heirloom",145,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":8289,"strength":52,"agility":235,"intellect":122,"stamina":921,"armor":181,"crit":27,"haste":12.5,"mastery":9.6,"vers":6},"ls":{"questsCompleted":356,"totalDeaths":1,"deathsFromFalling":null,"killingBlows":907,"dungeonsEntered":null,"timesHearthed":3,"flightPaths":8,"crittersKilled":47,"creaturesKilled":1360,"raidsEntered":null,"bossesDefeated":null},"bb":[562,350,1054,966,801,791]},{"id":235422817,"n":"Vaper","l":70,"k":2,"c":"Mage","s":"Frost","r":"Dracthyr","i":63,"t":1769282974000,"b":97,"ap":8900,"eq":[["Head","Ohn'ir Initiate Hood","Uncommon",63,0,0],["Neck","Remembrance of the Fallen City","Uncommon",73,0,0],["Shoulders","Ohn'ir Initiate Mantle","Uncommon",69,0,0],["Shirt","White Linen Shirt","Uncommon",1,0,0],["Chest","Ohn'ir Initiate Vestments","Uncommon",63,0,0],["Waist","Cobalt Watcher's Cord","Uncommon",70,0,0],["Legs","Ohn'ir Initiate Leggings","Uncommon",64,0,0],["Feet","Ohn'ir Initiate Slippers","Uncommon",62,0,0],["Wrist","Mountainsage Wristwraps","Uncommon",60,0,0],["Hands","Ohn'ir Initiate Gloves","Uncommon",67,0,0],["Ring 1","Mountainsage Band of Destruction","Uncommon",60,0,0],["Ring 2","Mountainsage Ring of Destruction","Uncommon",60,0,0],["Trinket 1","Mountainsage Stone of Destruction","Uncommon",60,0,0],["Trinket 2","Mountainsage Idol of Destruction","Uncommon",60,0,0],["Back","Mountainsage Cloak of Destruction","Uncommon",60,0,0],["Main Hand","Mountainsage Staff","Uncommon",60,0,0],["Tabard","Guild Tabard","Uncommon",1,0,0]],"st":{"health":30199,"strength":64,"agility":99,"intellect":342,"stamina":2323,"armor":77,"crit":17.5,"haste":6.4,"mastery":27.1,"vers":6.2},"ls":{"questsCompleted":198,"totalDeaths":2,"deathsFromFalling":1,"killingBlows":176,"dungeonsEntered":2,"timesHearthed":null,"flightPaths":4,"crittersKilled":39,"creaturesKilled":312,"raidsEntered":null,"bossesDefeated":null},"bb":[580,246,1044,982,808,787]},{"id":235739055,"n":"Mythic","l":65,"k":2,"c":"Hunter","s":"Beast Mastery","r":"Worgen","i":304,"t":1763176621000,"b":175,"ap":8860,"eq":[["Head","Trailseeker Helm","Uncommon",347,0,0],["Neck","Trailseeker Choker","Uncommon",347,0,0],["Shoulders","Trailseeker Spaulders","Uncommon",347,0,0],["Shirt","Green Linen Shirt","Uncommon",1,0,0],["Chest","Trailseeker Vest","Uncommon",347,0,0],["Waist","Trailseeker Belt","Uncommon",347,0,0],["Legs","Trailseeker Legguards","Uncommon",347,0,0],["Feet","Trailseeker Greaves","Uncommon",347,0,0],["Wrist","Trailseeker Bracers","Uncommon",347,0,0],["Hands","Trailseeker Gauntlets","Uncommon",347,0,0],["Ring 1","Trailseeker Ring of Onslaught","Uncommon",347,0,0],["Ring 2","Trailseeker Band of Onslaught","Uncommon",347,0,0],["Trinket 1","Trailseeker Idol of Rage","Uncommon",347,0,0],["Trinket 2","Trailseeker Stone of Rage","Uncommon",347,0,0],["Back","Trailseeker Cloak of Rage","Uncommon",347,0,0],["Main Hand","Titanstrike","Artifact",10,0,0],["Tabard","Gilneas Tabard","Uncommon",1,0,0]],"st":{"health":161127,"strength":980,"agility":4052,"intellect":1311,"stamina":8776,"armor":3183,"crit":29.6,"haste":32.7,"mastery":43,"vers":0},"ls":{"questsCompleted":591,"totalDeaths":3,"deathsFromFalling":null,"killingBlows":1787,"dungeonsEntered":19,"timesHearthed":1,"flightPaths":15,"crittersKilled":98,"creaturesKilled":2261,"raidsEntered":null,"bossesDefeated":null},"bb":[570,356,1006,986,800,859]},{"id":236195461,"n":"Mechaminime","l":54,"k":3,"o":"user3","c":"Hunter","s":"Beast Mastery","r":"Mechagnome","i":50,"t":1773706454000,"b":133,"ap":13400,"eq":[["Head","Trailseeker Helm","Uncommon",50,0,0],["Neck","Trailseeker Choker","Uncommon",50,0,0],["Shoulders","Trailseeker Spaulders","Uncommon",50,0,0],["Chest","Trailseeker Vest","Uncommon",50,0,0],["Waist","Trailseeker Belt","Uncommon",50,0,0],["Legs","Trailseeker Legguards","Uncommon",50,0,0],["Feet","Trailseeker Greaves","Uncommon",50,0,0],["Wrist","Trailseeker Bracers","Uncommon",50,0,0],["Hands","Trailseeker Gauntlets","Uncommon",50,0,0],["Ring 1","Trailseeker Ring of Onslaught","Uncommon",50,0,0],["Ring 2","Trailseeker Band of Onslaught","Uncommon",50,0,0],["Trinket 1","Trailseeker Idol of Rage","Uncommon",50,0,0],["Trinket 2","Trailseeker Stone of Rage","Uncommon",50,0,0],["Back","Trailseeker Cloak of Rage","Uncommon",50,0,0],["Main Hand","Trailseeker Shotgun","Uncommon",50,0,0],["Tabard","Illustrious Guild Tabard","Rare",1,0,0]],"st":{"health":15940,"strength":58,"agility":214,"intellect":83,"stamina":1594,"armor":133,"crit":21.5,"haste":15.8,"mastery":35.1,"vers":0},"ls":{"questsCompleted":641,"totalDeaths":18,"deathsFromFalling":4,"killingBlows":1793,"dungeonsEntered":5,"timesHearthed":6,"flightPaths":25,"crittersKilled":7,"creaturesKilled":1862,"raidsEntered":null,"bossesDefeated":null},"ti":"Tamer Mechaminime","bb":[586,484,970,974,799,800]},{"id":236195498,"n":"Grrumpy","l":80,"k":3,"o":"user3","c":"Mage","s":"Frost","r":"Dark Iron Dwarf","i":84,"t":1773704831000,"b":170,"ap":13400,"eq":[["Head","Chief Architect's Monocle","Epic",86,0,0],["Neck","Timely Tourist's Pendant","Epic",83,0,0],["Shoulders","Kentic Amice","Epic",83,0,0],["Shirt","Lucky Shirt","Uncommon",1,0,0],["Chest","Heroes' Robe of Faith","Epic",83,0,0],["Waist","Algari-weave Cord","Uncommon",79,0,0],["Legs","Earthen Scallywag's Leggings","Epic",83,0,0],["Feet","Earthen Scallywag's Sandals","Epic",83,0,0],["Wrist","Earthen Scallywag's Cuffs","Epic",83,0,0],["Hands","Timely Tourist's Handwraps","Epic",83,0,0],["Ring 1","Cyrce's Circlet","Epic",99,0,0],["Ring 2","Band of the Petrified Pumpkin","Epic",83,0,0],["Trinket 1","Shadow-Binding Ritual Knife","Epic",83,0,0],["Trinket 2","Darktide Wavebender's Orb","Epic",83,0,0],["Back","Spritecaster Cape","Epic",86,0,0],["Main Hand","Earthen Scallywag's Greatstaff","Epic",83,0,0],["Tabard","Tabard of the Dark Iron","Rare",1,0,0]],"st":{"health":55400,"strength":72,"agility":106,"intellect":426,"stamina":2770,"armor":100,"crit":20.5,"haste":10.2,"mastery":29.5,"vers":6.4},"ls":{"questsCompleted":1666,"totalDeaths":124,"deathsFromFalling":4,"killingBlows":5365,"dungeonsEntered":26,"timesHearthed":6,"flightPaths":118,"crittersKilled":267,"creaturesKilled":5955,"raidsEntered":5,"bossesDefeated":null},"ti":"Detective Grrumpy","mo":162,"pe":427,"bb":[528,444,1018,980,809,811]},{"id":236291743,"n":"Wicken","l":19,"k":3,"o":"user1"},{"id":236385023,"n":"Huejanus","l":20,"k":4,"o":"user1"},{"id":236392217,"n":"Jacoby","l":66,"k":3,"o":"user3","c":"Priest","s":"Shadow","r":"Void Elf","i":61,"t":1773705739000,"b":25,"ap":13400,"eq":[["Head","Communal Cowl","Uncommon",61,0,0],["Neck","Communal Medallion","Uncommon",61,0,0],["Shoulders","Communal Mantle","Uncommon",61,0,0],["Chest","Communal Robe","Uncommon",61,0,0],["Waist","Expedition Researcher's Sash","Uncommon",63,0,0],["Legs","Expedition Researcher's Pantaloons","Uncommon",63,0,0],["Feet","Communal Boots","Uncommon",61,0,0],["Wrist","Expedition Researcher's Wraps","Uncommon",64,0,0],["Hands","Communal Gloves","Uncommon",61,0,0],["Ring 1","Communal Ring of Destruction","Uncommon",61,0,0],["Ring 2","Communal Band of Destruction","Uncommon",61,0,0],["Trinket 1","Communal Idol of Destruction","Uncommon",61,0,0],["Trinket 2","Communal Stone of Destruction","Uncommon",61,0,0],["Back","Drape of the Djaradin Slayer","Uncommon",61,0,0],["Main Hand","Communal Stave","Uncommon",61,0,0]],"st":{"health":25200,"strength":73,"agility":110,"intellect":324,"stamina":2100,"armor":72,"crit":16.6,"haste":12.3,"mastery":9.1,"vers":1.8},"ls":{"questsCompleted":709,"totalDeaths":9,"deathsFromFalling":1,"killingBlows":1648,"dungeonsEntered":null,"timesHearthed":7,"flightPaths":16,"crittersKilled":31,"creaturesKilled":1591,"raidsEntered":null,"bossesDefeated":null},"bb":[490,362,922,982,777,816]},{"id":236467424,"n":"Ashen","l":38,"k":2,"c":"Priest","s":"Shadow","r":"Dracthyr","i":143,"t":1762915006000,"b":224,"ap":8860,"eq":[["Head","Tattered Dreadmist Mask","Heirloom",167,0,0],["Neck","Eternal Emberfury Talisman","Heirloom",167,0,0],["Shoulders","Tattered Dreadmist Mantle","Heirloom",167,0,0],["Chest","Tattered Dreadmist Robe","Heirloom",167,0,0],["Waist","Communal Sash","Uncommon",152,0,0],["Legs","Tattered Dreadmist Leggings","Heirloom",167,0,0],["Feet","Communal Boots","Uncommon",152,0,0],["Wrist","Communal Bindings","Uncommon",152,0,0],["Hands","Wickerwoven Gloves","Uncommon",181,0,0],["Ring 1","Signet of Stormwind","Rare",157,0,0],["Ring 2","Communal Band of Destruction","Uncommon",152,0,0],["Trinket 1","Discerning Eye of the Beast","Heirloom",167,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",167,0,0],["Back","Ancient Bloodmoon Cloak","Heirloom",167,0,0],["Main Hand","Xal'atath, Blade of the Black Empire","Artifact",10,0,0],["Off Hand","Secrets of the Void","Artifact",10,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":7350,"strength":93,"agility":133,"intellect":327,"stamina":735,"armor":97,"crit":19,"haste":12.5,"mastery":7.6,"vers":1.1},"ls":{"questsCompleted":343,"totalDeaths":1,"deathsFromFalling":null,"killingBlows":741,"dungeonsEntered":1,"timesHearthed":1,"flightPaths":8,"crittersKilled":30,"creaturesKilled":989,"raidsEntered":null,"bossesDefeated":3},"bb":[604,266,1044,982,814,786]},{"id":236578885,"n":"Lumian","l":15,"k":2,"o":"user1","c":"Druid","s":"Balance","r":"Night Elf","i":28,"t":1735960233000,"b":69,"ap":2345,"eq":[["Head","Stained Shadowcraft Cap","Heirloom",40,0,0],["Neck","Eternal Woven Ivy Necklace","Heirloom",40,0,0],["Shoulders","Stained Shadowcraft Spaulders","Heirloom",40,0,0],["Chest","Stained Shadowcraft Tunic","Heirloom",40,0,0],["Waist","Expeditionary Leather Belt","Uncommon",12,0,0],["Legs","Stained Shadowcraft Pants","Heirloom",40,0,0],["Feet","Freebooter Boots","Uncommon",22,0,0],["Wrist","Expeditionary Leather Bracers","Uncommon",12,0,0],["Hands","Freebooter Gloves","Uncommon",16,0,0],["Trinket 1","Inherited Mark of Tyranny","Heirloom",40,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",40,0,0],["Back","Inherited Cape of the Black Baron","Heirloom",40,0,0],["Main Hand","Dignified Headmaster's Charge","Heirloom",40,0,0],["Tabard","Alliance Tabard","Common",2,0,0]],"st":{"health":828,"strength":19,"agility":50,"intellect":89,"stamina":207,"armor":39,"crit":14.3,"haste":6.5,"mastery":4.9,"vers":1.7},"ls":{"questsCompleted":85,"totalDeaths":null,"deathsFromFalling":null,"killingBlows":256,"dungeonsEntered":1,"timesHearthed":1,"flightPaths":1,"crittersKilled":9,"creaturesKilled":367,"raidsEntered":null,"bossesDefeated":null},"bb":[460,306,944,976,804,810]},{"id":237540426,"n":"Paddingtons","l":24,"k":3},{"id":240579497,"n":"Halgrim","l":24,"k":1,"c":"Shaman","s":"Elemental","r":"Earthen","i":87,"t":1738467032000,"b":169,"ap":8605,"eq":[["Head","Mystical Coif of Elements","Heirloom",90,0,0],["Neck","Eternal Emberfury Talisman","Heirloom",90,0,0],["Shoulders","Champion Herod's Shoulder","Heirloom",90,0,0],["Shirt","Wound Dressing","Uncommon",1,0,0],["Chest","Champion's Deathdealer Breastplate","Heirloom",90,0,0],["Waist","Streamtalker Girdle","Uncommon",84,0,0],["Legs","Tarnished Leggings of Destruction","Heirloom",90,0,0],["Feet","Streamtalker Sabatons","Uncommon",84,0,0],["Wrist","Streamtalker Bracers","Uncommon",84,0,0],["Hands","Streamtalker Grips","Uncommon",84,0,0],["Ring 1","Streamtalker Ring of Wisdom","Uncommon",84,0,0],["Ring 2","Streamtalker Band of Wisdom","Uncommon",84,0,0],["Trinket 1","Swift Hand of Justice","Heirloom",90,0,0],["Trinket 2","Discerning Eye of the Beast","Heirloom",90,0,0],["Back","Ancient Bloodmoon Cloak","Heirloom",90,0,0],["Main Hand","Devout Aurastone Hammer","Heirloom",90,0,0],["Off Hand","Flamescarred Draconian Deflector","Heirloom",90,0,0],["Tabard","Alliance Tabard","Common",2,0,0]],"st":{"health":2526,"strength":30,"agility":69,"intellect":168,"stamina":328,"armor":196,"crit":20.9,"haste":16.7,"mastery":21.2,"vers":1.8},"ls":{"questsCompleted":207,"totalDeaths":null,"deathsFromFalling":null,"killingBlows":461,"dungeonsEntered":1,"timesHearthed":1,"flightPaths":5,"crittersKilled":4,"creaturesKilled":520,"raidsEntered":null,"bossesDefeated":null},"bb":[602,438,1046,984,809,821]},{"id":244665263,"n":"Wolfsbane","l":70,"k":3,"o":"user3","c":"Death Knight","s":"Blood","r":"Worgen","i":60,"t":1773705979000,"b":175,"ap":13400,"eq":[["Head","Expedition Guard's Helm","Rare",65,0,0],["Neck","Ohn'ir Pendant","Uncommon",64,0,0],["Shoulders","Expedition Guard's Spaulders","Rare",63,0,0],["Chest","Nokhud Reaver Chestplate","Uncommon",64,0,0],["Waist","Nokhud Reaver Waistguard","Uncommon",62,0,0],["Legs","Nokhud Reaver Legplates","Uncommon",65,0,0],["Feet","Nokhud Reaver Stompers","Uncommon",63,0,0],["Wrist","Wyrmforged Armplates","Uncommon",67,0,0],["Hands","Nokhud Reaver Crushers","Uncommon",66,0,0],["Ring 1","Carved Basalt Ring","Uncommon",59,0,0],["Ring 2","Heart-Lesion Band of Stoicism","Uncommon",51,0,0],["Trinket 1","Heart-Lesion Defender Stone","Uncommon",51,0,0],["Trinket 2","Heart-Lesion Defender Idol","Uncommon",51,0,0],["Back","Heart-Lesion Cloak of Stoicism","Uncommon",51,0,0],["Main Hand","Ohn'ahran Greatsword","Uncommon",62,0,0],["Tabard","Renowned Guild Tabard","Epic",1,0,0]],"st":{"health":42653,"strength":277,"agility":121,"intellect":75,"stamina":3281,"armor":362,"crit":12.4,"haste":8.4,"mastery":33.3,"vers":9.3},"ls":{"questsCompleted":725,"totalDeaths":4,"deathsFromFalling":1,"killingBlows":1233,"dungeonsEntered":3,"timesHearthed":null,"flightPaths":6,"crittersKilled":121,"creaturesKilled":1933,"raidsEntered":null,"bossesDefeated":null},"bb":[458,356,1006,986,774,859]},{"id":245609261,"n":"Chargar","l":39,"k":1,"o":"user1","c":"Monk","s":"Brewmaster","r":"Dwarf","i":162,"t":1765055573000,"b":45,"ap":3220,"eq":[["Head","Stained Shadowcraft Cap","Heirloom",172,0,0],["Neck","Eternal Talisman of Evasion","Heirloom",172,0,0],["Shoulders","Stained Shadowcraft Spaulders","Heirloom",172,0,0],["Chest","Stained Shadowcraft Tunic","Heirloom",172,0,0],["Waist","Darkwater Belt","Uncommon",147,0,0],["Legs","Stained Shadowcraft Pants","Heirloom",172,0,0],["Feet","Darkwater Boots","Uncommon",147,0,0],["Wrist","Darkwater Bindings","Rare",180,0,0],["Hands","Banisher Handwraps","Uncommon",135,0,0],["Ring 1","Rise-Breacher's Band","Uncommon",118,0,0],["Ring 2","Purified Tideblood Band","Uncommon",158,0,0],["Trinket 1","Inherited Mark of Tyranny","Heirloom",172,0,0],["Trinket 2","Swift Hand of Justice","Heirloom",172,0,0],["Back","Inherited Cape of the Black Baron","Heirloom",172,0,0],["Main Hand","Venerable Mass of McGowan","Heirloom",172,0,0],["Off Hand","Venerable Mass of McGowan","Heirloom",172,0,0]],"st":{"health":12490,"strength":76,"agility":317,"intellect":172,"stamina":1249,"armor":250,"crit":21.5,"haste":11.8,"mastery":12.1,"vers":5},"ls":{"questsCompleted":288,"totalDeaths":3,"deathsFromFalling":null,"killingBlows":982,"dungeonsEntered":1,"timesHearthed":null,"flightPaths":4,"crittersKilled":41,"creaturesKilled":740,"raidsEntered":null,"bossesDefeated":null},"bb":[620,402,1018,988,805,817]}]}},"forever":{"deaths-edge":{"name":"Deaths Edge","faction":"horde","realm":"Normal ruleset","updatedAt":null,"members":[{"id":"f-h1","n":"Grukk Ashmaw","c":"Warrior","s":null,"r":"Orc","l":60,"k":0,"i":63,"t":1794541400000,"b":38,"art":209095206,"bb":[508,268,1100,988,693,770],"eq":[["Head","Glorious Helm","Rare",63,0,0],["Neck","Jet Chain","Uncommon",63,0,0],["Shoulders","Warleader's Spaulders of Strength","Uncommon",63,0,0],["Back","Warleader's Cloak of the Tiger","Rare",64,1,0],["Chest","Templar Breastplate","Rare",63,1,0],["Wrist","Templar Vambraces","Rare",62,0,0],["Hands","Templar Gauntlets","Epic",67,1,0],["Waist","Templar Girdle","Rare",64,0,0],["Legs","Warleader's Legplates","Rare",62,0,0],["Feet","Warleader's Sabatons","Rare",63,1,0],["Ring 1","Tigerseye Band of Strength","Uncommon",63,0,0],["Ring 2","Onyx Ring of Strength","Rare",63,0,0],["Trinket 1","Insignia of the Horde","Rare",55,0,0],["Trinket 2","Royal Seal of Eldre'Thalas","Rare",63,0,0],["Main Hand","Arcanite Reaper","Epic",68,0,0],["Ranged","Blackcrow","Rare",62,0,0]],"ls":{"questsCompleted":579,"totalDeaths":55,"deathsFromFalling":0,"killingBlows":7125,"dungeonsEntered":37,"timesHearthed":85,"flightPaths":48},"o":"user1"},{"id":"f-h2","n":"Vessa Mournhollow","c":"Priest","s":null,"r":"Undead","l":60,"k":1,"i":63,"t":1794491000000,"b":61,"art":236467773,"bb":[594,430,904,978,772,815],"eq":[["Head","Greenweave Circlet","Rare",62,0,0],["Neck","Amber Hoop","Uncommon",62,0,0],["Shoulders","Greenweave Mantle","Rare",64,0,0],["Back","Duskwoven Cloak of Healing","Rare",64,1,0],["Chest","Greenweave Robe","Rare",64,0,0],["Shirt","Red Linen Shirt","Common",1,0,0],["Tabard","Guild Tabard","Common",1,0,0],["Wrist","Duskwoven Cuffs of Healing","Uncommon",62,1,0],["Hands","Duskwoven Gloves","Epic",67,0,0],["Waist","Elder's Sash of Healing","Uncommon",61,0,0],["Legs","Greenweave Leggings of Healing","Uncommon",63,0,0],["Feet","Elder's Sandals of the Whale","Uncommon",62,0,0],["Ring 1","Citrine Ring of Healing","Rare",64,0,0],["Ring 2","Jacinth Circle of the Whale","Rare",62,0,0],["Trinket 1","Insignia of the Horde","Rare",55,0,0],["Trinket 2","Hand of Justice","Rare",64,0,0],["Main Hand","Hammer of Grace","Rare",63,0,0],["Off Hand","Tome of the Lost","Rare",63,0,0],["Ranged","Wand of Biting Cold","Rare",63,0,0]],"ls":{"questsCompleted":603,"totalDeaths":61,"deathsFromFalling":2,"killingBlows":7014,"dungeonsEntered":33,"timesHearthed":95,"flightPaths":52},"o":"user2"},{"id":"f-h3","n":"Tamo Stonehoof","c":"Druid","s":null,"r":"Tauren","l":60,"k":1,"i":63,"t":1794455000000,"b":192,"art":207595200,"bb":[454,282,1110,1004,785,823],"eq":[["Head","Swashbuckler's Cap","Rare",64,0,0],["Neck","Amber Hoop","Rare",64,0,0],["Shoulders","Ranger Spaulders","Rare",64,0,0],["Back","Ranger Cloak of the Owl","Rare",64,1,0],["Chest","Wanderer's Tunic","Epic",68,0,0],["Tabard","Guild Tabard","Common",1,0,0],["Wrist","Ranger Bindings of the Owl","Uncommon",61,1,0],["Hands","Ranger Gloves of the Monkey","Uncommon",61,0,0],["Waist","Swashbuckler's Belt","Rare",63,0,0],["Legs","Wanderer's Pants","Rare",63,0,0],["Feet","Wanderer's Boots of the Monkey","Uncommon",62,0,0],["Ring 1","Citrine Ring of the Whale","Uncommon",63,0,0],["Ring 2","Emerald Ring of the Whale","Uncommon",63,0,0],["Trinket 1","Insignia of the Horde","Rare",55,0,0],["Trinket 2","Mark of Tyranny","Rare",63,0,0],["Main Hand","Manual Crowd Pummeler","Rare",63,1,0]],"ls":{"questsCompleted":577,"totalDeaths":73,"deathsFromFalling":4,"killingBlows":7108,"dungeonsEntered":37,"timesHearthed":87,"flightPaths":52},"o":"user3"},{"id":"f-h4","n":"Zul'aka Reedwater","c":"Mage","s":null,"r":"Troll","l":58,"k":2,"i":59,"t":1794552200000,"b":93,"art":245476957,"bb":[574,256,998,992,798,839],"eq":[["Head","Silksand Circlet of Frozen Wrath","Uncommon",61,0,0],["Neck","Arctic Pendant","Uncommon",56,0,0],["Shoulders","Elder's Mantle of the Eagle","Uncommon",60,0,0],["Back","Greenweave Cloak of Frozen Wrath","Rare",58,0,0],["Chest","Silksand Robe of the Owl","Uncommon",61,0,0],["Wrist","Greenweave Cuffs of the Eagle","Uncommon",59,1,0],["Hands","Elder's Gloves of the Owl","Uncommon",60,1,0],["Waist","Elder's Sash of the Owl","Uncommon",57,0,0],["Legs","Silksand Leggings of the Owl","Uncommon",57,0,0],["Feet","Greenweave Sandals","Rare",62,0,0],["Ring 1","Jet Loop of the Owl","Uncommon",59,0,0],["Ring 2","Tigerseye Band of the Eagle","Uncommon",61,0,0],["Trinket 1","Insignia of the Horde","Rare",55,0,0],["Trinket 2","Blackhand's Breadth","Rare",62,0,0],["Main Hand","Spellforce Rod","Rare",58,0,0],["Ranged","Torchlight Wand","Uncommon",60,0,0]],"ls":{"questsCompleted":559,"totalDeaths":70,"deathsFromFalling":1,"killingBlows":6632,"dungeonsEntered":31,"timesHearthed":87,"flightPaths":46},"o":"user3"},{"id":"f-h5","n":"Morgash Blackthorn","c":"Hunter","s":null,"r":"Orc","l":54,"k":2,"i":54,"t":1794386600000,"b":167,"art":208911527,"bb":[326,288,1052,990,780,773],"eq":[["Head","Champion's Coif of Agility","Uncommon",53,0,0],["Neck","Amber Hoop of Agility","Uncommon",54,0,0],["Shoulders","Chieftain's Pauldrons of Agility","Uncommon",52,0,0],["Back","Mercurial Cloak of the Falcon","Rare",53,0,0],["Chest","Champion's Hauberk of the Falcon","Uncommon",54,0,0],["Wrist","Chieftain's Bracers of the Monkey","Uncommon",53,0,0],["Hands","Chieftain's Gauntlets of the Monkey","Uncommon",52,0,0],["Waist","Mercurial Girdle of Agility","Uncommon",54,0,0],["Legs","Mercurial Legguards of the Monkey","Uncommon",54,0,0],["Feet","Champion's Greaves of Agility","Uncommon",56,0,0],["Ring 1","Onyx Ring of the Falcon","Uncommon",52,0,0],["Ring 2","Topaz Ring of the Monkey","Rare",56,0,0],["Trinket 1","Insignia of the Horde","Rare",54,0,0],["Trinket 2","Minor Recombobulator","Uncommon",52,0,0],["Main Hand","Barbarous Blade","Rare",54,1,0],["Ranged","Carapace Spine Crossbow","Rare",54,0,0]],"ls":{"questsCompleted":496,"totalDeaths":51,"deathsFromFalling":5,"killingBlows":5821,"dungeonsEntered":32,"timesHearthed":82,"flightPaths":49},"o":"user3"},{"id":"f-h6","n":"Silas Graves","c":"Warlock","s":null,"r":"Undead","l":47,"k":1,"i":48,"t":1794469400000,"b":2,"art":207704066,"bb":[460,426,942,984,757,827],"eq":[["Head","Aurora Circlet","Rare",51,0,0],["Neck","Vermilion Necklace of Stamina","Uncommon",49,0,0],["Shoulders","Vital Mantle","Rare",49,0,0],["Back","Councillor's Cloak of Stamina","Uncommon",50,0,0],["Chest","Aurora Robe","Rare",47,0,0],["Wrist","Aurora Cuffs of Stamina","Uncommon",46,0,0],["Hands","Aurora Gloves of the Eagle","Uncommon",50,0,0],["Waist","Aurora Sash of Shadow Wrath","Uncommon",47,0,0],["Legs","Aurora Leggings of Stamina","Uncommon",50,0,0],["Feet","Councillor's Sandals","Rare",51,0,0],["Ring 1","Topaz Ring of Stamina","Uncommon",47,0,0],["Ring 2","Citrine Ring of Stamina","Uncommon",50,0,0],["Trinket 1","Insignia of the Horde","Rare",47,0,0],["Trinket 2","Rune of Duty","Uncommon",46,0,0],["Main Hand","Witchfury","Rare",46,0,0],["Off Hand","Orb of the Darkmoon","Uncommon",45,0,0],["Ranged","Gravestone Scepter","Rare",51,0,0]],"ls":{"questsCompleted":378,"totalDeaths":67,"deathsFromFalling":2,"killingBlows":4361,"dungeonsEntered":27,"timesHearthed":72,"flightPaths":42},"o":"user2"},{"id":"f-h7","n":"Drogha Stormcaller","c":"Shaman","s":null,"r":"Orc","l":41,"k":1,"i":42,"t":1794293000000,"b":110,"art":208800366,"bb":[516,394,1082,982,794,777],"eq":[["Head","Raider's Coif","Rare",40,0,0],["Neck","Opal Pendant of the Eagle","Rare",44,0,0],["Shoulders","Warmonger's Pauldrons of the Eagle","Uncommon",44,0,0],["Back","Warmonger's Cloak of Intellect","Uncommon",40,0,0],["Chest","Raider's Hauberk of the Eagle","Uncommon",42,0,0],["Shirt","Lumberjack Shirt","Common",1,0,0],["Wrist","Raider's Bracers","Rare",40,0,0],["Hands","Warmonger's Gauntlets","Rare",43,0,0],["Waist","Warmonger's Girdle of the Wolf","Uncommon",40,0,0],["Legs","Lord's Legguards of the Wolf","Uncommon",42,0,0],["Feet","Raider's Greaves of the Wolf","Uncommon",42,0,0],["Ring 1","Jacinth Circle of Intellect","Uncommon",44,0,0],["Ring 2","Jacinth Circle of Intellect","Rare",41,0,0],["Trinket 1","Insignia of the Horde","Rare",41,0,0],["Main Hand","The Rockpounder","Rare",44,0,0]],"ls":{"questsCompleted":274,"totalDeaths":40,"deathsFromFalling":4,"killingBlows":3291,"dungeonsEntered":22,"timesHearthed":59,"flightPaths":32},"o":"user3"},{"id":"f-h8","n":"Edwin Thrale","c":"Rogue","s":null,"r":"Undead","l":36,"k":1,"i":35,"t":1794210200000,"b":154,"art":208900506,"bb":[458,416,918,972,759,813],"eq":[["Head","Wanderer's Cap","Common",32,0,0],["Neck","Vermilion Necklace of Agility","Uncommon",37,0,0],["Shoulders","Swashbuckler's Spaulders","Common",32,0,0],["Back","Swashbuckler's Cloak of the Monkey","Common",29,0,0],["Chest","Dervish Tunic of the Tiger","Uncommon",37,0,0],["Shirt","Lumberjack Shirt","Common",1,0,0],["Tabard","Guild Tabard","Common",1,0,0],["Wrist","Swashbuckler's Bindings of the Tiger","Uncommon",37,0,0],["Hands","Swashbuckler's Gloves of the Tiger","Uncommon",37,0,0],["Waist","Swashbuckler's Belt of the Monkey","Uncommon",35,0,0],["Legs","Swashbuckler's Pants of Agility","Uncommon",38,0,0],["Feet","Wanderer's Boots of the Monkey","Uncommon",36,0,0],["Ring 1","Emerald Ring of Agility","Uncommon",38,0,0],["Ring 2","Lodestone Hoop of Agility","Rare",35,0,0],["Trinket 1","Insignia of the Horde","Rare",36,0,0],["Main Hand","Thrash Blade","Rare",35,0,0],["Off Hand","Barman Shanker","Rare",40,0,0],["Ranged","Sharp Throwing Axe","Common",32,0,0]],"ls":{"questsCompleted":218,"totalDeaths":43,"deathsFromFalling":3,"killingBlows":2720,"dungeonsEntered":21,"timesHearthed":52,"flightPaths":33},"o":"user3"},{"id":"f-h9","n":"Gorza Redmane","c":"Hunter","s":null,"r":"Orc","l":23,"k":3,"i":24,"t":1793879000000,"b":155,"art":235901083,"bb":[526,280,1042,988,780,772],"eq":[["Shoulders","Swashbuckler's Spaulders of the Monkey","Uncommon",24,0,0],["Back","Dervish Cloak of the Falcon","Uncommon",21,0,0],["Chest","Grizzly Tunic of Agility","Uncommon",24,0,0],["Shirt","White Linen Shirt","Common",1,0,0],["Wrist","Grizzly Bindings of Agility","Uncommon",22,0,0],["Hands","Dervish Gloves of the Falcon","Uncommon",22,0,0],["Waist","Swashbuckler's Belt of the Monkey","Uncommon",23,0,0],["Legs","Grizzly Pants of the Monkey","Uncommon",26,0,0],["Feet","Grizzly Boots","Rare",26,0,0],["Ring 1","Citrine Ring of Agility","Uncommon",26,0,0],["Main Hand","Wingblade","Rare",27,0,0],["Ranged","Hickory Shortbow","Uncommon",21,0,0]],"ls":{"questsCompleted":89,"totalDeaths":42,"deathsFromFalling":0,"killingBlows":1251,"dungeonsEntered":11,"timesHearthed":33,"flightPaths":20},"o":"user1"},{"id":"f-h10","n":"Hale Skyhorn","c":"Warrior","s":null,"r":"Tauren","l":12,"k":3,"i":10,"t":1794451400000,"b":228,"art":208813540,"bb":[480,204,1208,1004,751,817],"eq":[["Back","Lord's Cloak of the Tiger","Common",5,0,0],["Chest","Raider's Hauberk of the Tiger","Uncommon",14,0,0],["Shirt","White Linen Shirt","Common",1,0,0],["Wrist","Champion's Bracers of the Tiger","Uncommon",11,0,0],["Hands","Raider's Gauntlets","Common",10,0,0],["Waist","Lord's Girdle","Common",5,0,0],["Legs","Champion's Legguards","Common",7,0,0],["Feet","Lord's Greaves of the Tiger","Uncommon",11,0,0],["Main Hand","Smite's Mighty Hammer","Rare",16,0,0]],"ls":{"questsCompleted":43,"totalDeaths":29,"deathsFromFalling":4,"killingBlows":524,"dungeonsEntered":0,"timesHearthed":25,"flightPaths":13}}]},"riot-act":{"name":"Riot Act","faction":"alliance","realm":"Normal ruleset","updatedAt":null,"members":[{"id":"f-a1","n":"Aldric Vance","c":"Paladin","s":null,"r":"Human","l":60,"k":0,"i":62,"t":1794530600000,"b":129,"art":209071233,"bb":[618,384,1034,980,801,798],"eq":[["Head","Glorious Helm","Rare",62,0,0],["Neck","Jet Chain","Uncommon",61,0,0],["Shoulders","Imperial Spaulders","Rare",63,0,0],["Back","Revenant Cloak of the Eagle","Rare",63,1,0],["Chest","Imperial Breastplate","Rare",64,0,0],["Tabard","Guild Tabard","Common",1,0,0],["Wrist","Imperial Vambraces","Rare",64,0,0],["Hands","Imperial Gauntlets of the Eagle","Uncommon",62,0,0],["Waist","Revenant Girdle","Rare",64,0,0],["Legs","Imperial Legplates","Rare",62,0,0],["Feet","Glorious Sabatons","Rare",63,0,0],["Ring 1","Emerald Ring of the Bear","Uncommon",61,0,0],["Ring 2","Topaz Ring of the Bear","Uncommon",63,0,0],["Trinket 1","Insignia of the Alliance","Rare",55,0,0],["Trinket 2","Smoking Heart of the Mountain","Rare",63,0,0],["Main Hand","The Unstoppable Force","Epic",66,1,0]],"ls":{"questsCompleted":606,"totalDeaths":64,"deathsFromFalling":5,"killingBlows":6947,"dungeonsEntered":32,"timesHearthed":92,"flightPaths":52},"o":"user1"},{"id":"f-a2","n":"Brunna Ironbraid","c":"Warrior","s":null,"r":"Dwarf","l":52,"k":1,"i":53,"t":1794462200000,"b":225,"art":234880225,"bb":[562,452,1064,996,812,821],"eq":[["Head","Imperial Helm of the Tiger","Uncommon",51,0,0],["Neck","Amber Hoop of Strength","Uncommon",52,0,0],["Shoulders","Templar Spaulders","Rare",52,0,0],["Back","Templar Cloak of the Tiger","Uncommon",53,0,0],["Chest","Hyperion Breastplate of the Bear","Uncommon",54,0,0],["Wrist","Imperial Vambraces","Rare",51,0,0],["Hands","Imperial Gauntlets of the Bear","Uncommon",53,0,0],["Waist","Imperial Girdle","Rare",56,0,0],["Legs","Templar Legplates","Rare",55,0,0],["Feet","Hyperion Sabatons of Strength","Uncommon",53,0,0],["Ring 1","Tigerseye Band of Strength","Rare",54,0,0],["Ring 2","Onyx Ring of the Bear","Uncommon",54,0,0],["Trinket 1","Insignia of the Alliance","Rare",52,0,0],["Trinket 2","Mark of the Chosen","Uncommon",51,0,0],["Main Hand","Bonebiter","Rare",56,1,0],["Off Hand","Aegis of the Scarlet Commander","Rare",53,0,0],["Ranged","Dwarven Hand Cannon","Epic",56,0,0]],"ls":{"questsCompleted":435,"totalDeaths":64,"deathsFromFalling":5,"killingBlows":5236,"dungeonsEntered":27,"timesHearthed":82,"flightPaths":45}},{"id":"f-a3","n":"Lyra Moonwhisper","c":"Druid","s":null,"r":"Night Elf","l":44,"k":1,"i":45,"t":1794368600000,"b":69,"art":236578885,"bb":[460,306,944,976,804,810],"eq":[["Head","Dervish Cap","Rare",45,0,0],["Neck","Thick Bronze Necklace of the Whale","Rare",44,0,0],["Shoulders","Dervish Spaulders of the Whale","Uncommon",47,0,0],["Back","Nocturnal Cloak of the Whale","Uncommon",46,0,0],["Chest","Dervish Tunic","Rare",43,0,0],["Tabard","Guild Tabard","Common",1,0,0],["Wrist","Dervish Bindings of the Monkey","Uncommon",47,0,0],["Hands","Nocturnal Gloves","Rare",45,0,0],["Waist","Dervish Belt of the Owl","Uncommon",43,0,0],["Legs","Dervish Pants","Rare",46,0,0],["Feet","Nocturnal Boots","Rare",43,0,0],["Ring 1","Topaz Ring of the Owl","Uncommon",43,0,0],["Ring 2","Jacinth Circle of the Owl","Uncommon",46,0,0],["Trinket 1","Insignia of the Alliance","Rare",44,0,0],["Trinket 2","Mark of the Chosen","Uncommon",47,0,0],["Main Hand","Warden Staff","Epic",52,0,0]],"ls":{"questsCompleted":329,"totalDeaths":43,"deathsFromFalling":2,"killingBlows":3766,"dungeonsEntered":27,"timesHearthed":65,"flightPaths":40},"o":"user1"},{"id":"f-a4","n":"Tobin Copperkettle","c":"Hunter","s":null,"r":"Dwarf","l":31,"k":1,"i":32,"t":1794131000000,"b":45,"art":245609261,"bb":[620,402,1018,988,805,817],"eq":[["Head","Wolf Rider's Cap of Agility","Uncommon",29,0,0],["Neck","Arctic Pendant of the Falcon","Uncommon",30,0,0],["Shoulders","Wolf Rider's Spaulders","Common",28,0,0],["Back","Pathfinder Cloak of the Falcon","Uncommon",31,0,0],["Chest","Wolf Rider's Tunic of Agility","Uncommon",31,0,0],["Wrist","Pathfinder Bindings of the Falcon","Uncommon",34,0,0],["Hands","Dervish Gloves of Agility","Uncommon",33,0,0],["Waist","Dervish Belt of the Monkey","Uncommon",30,0,0],["Legs","Dervish Pants","Common",29,0,0],["Feet","Dervish Boots of Agility","Uncommon",34,0,0],["Ring 1","Emerald Ring of the Falcon","Uncommon",31,0,0],["Trinket 1","Insignia of the Alliance","Rare",31,0,0],["Main Hand","Corpsemaker","Rare",34,0,0],["Ranged","Precisely Calibrated Boomstick","Epic",36,0,0]],"ls":{"questsCompleted":175,"totalDeaths":52,"deathsFromFalling":3,"killingBlows":1835,"dungeonsEntered":16,"timesHearthed":48,"flightPaths":30},"o":"user1"},{"id":"f-a5","n":"Odda Flintlock","c":"Priest","s":null,"r":"Dwarf","l":18,"k":2,"i":16,"t":1794404600000,"b":170,"art":236195498,"bb":[528,444,1018,980,809,811],"eq":[["Shoulders","Councillor's Mantle of the Whale","Uncommon",16,0,0],["Back","Councillor's Cloak of Healing","Common",14,0,0],["Chest","Councillor's Robe of the Owl","Uncommon",16,0,0],["Wrist","Silksand Cuffs","Common",12,0,0],["Hands","Councillor's Gloves of the Owl","Uncommon",17,0,0],["Waist","Councillor's Sash of the Whale","Uncommon",18,0,0],["Legs","Elder's Leggings of the Whale","Uncommon",16,0,0],["Feet","Silksand Sandals","Common",16,0,0],["Main Hand","Crescent Staff","Rare",22,0,0],["Ranged","Fire Wand","Common",12,0,0]],"ls":{"questsCompleted":76,"totalDeaths":32,"deathsFromFalling":1,"killingBlows":844,"dungeonsEntered":6,"timesHearthed":28,"flightPaths":14},"o":"user3"}]}},"raids":[{"name":"Midnight","bosses":["Lu'ashal","Thorm'belan","Predaxas","Cragpine"]},{"name":"The Dreamrift","bosses":["Chimaerus the Undreamt God"]},{"name":"The Voidspire","bosses":["Imperator Averzian","Vorasius","Fallen-King Salhadaar","Vaelgor & Ezzorak","Lightblinded Vanguard","Crown of the Cosmos"]},{"name":"March on Quel'Danas","bosses":["Belo'ren, Child of Al'ar","Midnight Falls"]},{"name":"Sporefall","bosses":["Rotmire"]},{"name":"The Tidebound Grotto","bosses":["Nymrissa Wavecaller"]},{"name":"The Venomous Abyss","bosses":["Nek'zali the Soulcoiler","Entombed Sentinels","The Lost Explorers","Vashnik the Malignant","Sszorak","The Twin Fangs","The Coiled Altar","Ula'tek"]},{"name":"The Unbinding of Kith'ix","bosses":["Kith'ix"]}]};
+
+/* ------------------------------------------------------------------ reference tables */
+const CDN = 'https://render.worldofwarcraft.com/us/';
+const ICON = n => `${CDN}icons/56/${n}.jpg`;
+const CLASSES = {
+  'Death Knight':{c:'#C41E3A',t:'#f0566e',i:'deathknight',a:'plate'}, 'Demon Hunter':{c:'#A330C9',t:'#cd74ee',i:'demonhunter',a:'leather'},
+  'Druid':{c:'#FF7C0A',i:'druid',a:'leather'}, 'Evoker':{c:'#33937F',t:'#49b9a1',i:'evoker',a:'mail'}, 'Hunter':{c:'#AAD372',i:'hunter',a:'mail'},
+  'Mage':{c:'#3FC7EB',i:'mage',a:'cloth'}, 'Monk':{c:'#00FF98',i:'monk',a:'leather'}, 'Paladin':{c:'#F48CBA',i:'paladin',a:'plate'},
+  'Priest':{c:'#FFFFFF',i:'priest',a:'cloth'}, 'Rogue':{c:'#FFF468',i:'rogue',a:'leather'}, 'Shaman':{c:'#0070DD',t:'#6aafff',i:'shaman',a:'mail'},
+  'Warlock':{c:'#8788EE',t:'#a9aaf7',i:'warlock',a:'cloth'}, 'Warrior':{c:'#C69B3A',t:'#d6ab4a',i:'warrior',a:'plate'}
+};
+const GAME = {
+  retail:{cap:90,target:210,label:'Retail',ench:['Back','Chest','Wrist','Legs','Feet','Ring 1','Ring 2','Main Hand']},
+  forever:{cap:60,target:null,label:'Forever',ench:['Back','Chest','Wrist','Hands','Feet','Main Hand']}
+};
+const RAID_OPEN = new Date(2026,11,9);
+const FOREVER_RAIDS = [
+  {name:'Barrow Deeps',players:10,bosses:8,icon:'inv_misc_bone_humanskull_01'},
+  {name:'Hyjal Summit',players:20,bosses:13,icon:'achievement_boss_archimonde'},
+  {name:"Onyxia's Lair",players:40,bosses:null,icon:'achievement_boss_onyxia'}
+];
+const VIEWS = [['roster','Roster'],['ready','Readiness'],['raids','Raids'],['ranks','Leaderboard'],['collections','Collections']];
+const DOCK_LABEL = {roster:'Roster',ready:'Ready',raids:'Raids',ranks:'Ranks',collections:'Collections'};
+const TAB_ICON = {
+  roster:'<path d="M12 11a3.5 3.5 0 1 0 0-7 3.500 3.500 0 0 0 0 7zM5 20c0-3.600 3.100-6 7-6s7 2.400 7 6M4.500 11.500a2.500 2.500 0 1 1 1.700-4.300M19.500 11.500a2.500 2.500 0 1 0-1.700-4.300"/>',
+  ready:'<path d="M12 3 5 5.500v6c0 4.500 3 7.800 7 9.500 4-1.700 7-5 7-9.500v-6L12 3z"/><path d="m8.800 12 2.300 2.300 4.300-4.600"/>',
+  raids:'<path d="M5 4l11 11M19 4 8 15M14.500 17.500l3-3M9.500 17.500l-3-3M17 17l3 3M7 17l-3 3"/>',
+  ranks:'<path d="M9 20V9h6v11M3.500 20v-7H9M15 20v-5h5.500v5M2.500 20h19"/>',
+  collections:'<path d="M12 20c-3 0-5.500-1.600-5.500-3.800 0-2.300 2.700-5.200 5.500-5.200s5.500 2.900 5.500 5.200c0 2.200-2.500 3.800-5.500 3.800z"/><circle cx="6" cy="10" r="1.700"/><circle cx="18" cy="10" r="1.700"/><circle cx="9.500" cy="5.800" r="1.700"/><circle cx="14.500" cy="5.800" r="1.700"/>'
+};
+const SLOT_ICONS = {
+  'Head':['inv_helmet_03','inv_helmet_06','inv_helmet_24','inv_helmet_41','inv_helmet_74','inv_crown_01','inv_helmet_29'],
+  'Neck':['inv_jewelry_necklace_01','inv_jewelry_necklace_07','inv_jewelry_necklace_12','inv_jewelry_amulet_03'],
+  'Shoulders':['inv_shoulder_01','inv_shoulder_09','inv_shoulder_14','inv_shoulder_23','inv_shoulder_25','inv_shoulder_30'],
+  'Back':['inv_misc_cape_01','inv_misc_cape_05','inv_misc_cape_11','inv_misc_cape_18','inv_misc_cape_20'],
+  'Chest':{plate:['inv_chest_plate01','inv_chest_plate03','inv_chest_plate16'],mail:['inv_chest_chain_05','inv_chest_chain_15'],leather:['inv_chest_leather_01','inv_chest_leather_08'],cloth:['inv_chest_cloth_17','inv_chest_cloth_25','inv_chest_cloth_43']},
+  'Shirt':['inv_shirt_01','inv_shirt_white_01','inv_shirt_black_01'], 'Tabard':['inv_shirt_guildtabard_01','inv_misc_tabardpvp_01'],
+  'Wrist':['inv_bracer_01','inv_bracer_02','inv_bracer_07','inv_bracer_13','inv_bracer_17'],
+  'Hands':['inv_gauntlets_04','inv_gauntlets_05','inv_gauntlets_10','inv_gauntlets_17','inv_gauntlets_29'],
+  'Waist':['inv_belt_01','inv_belt_03','inv_belt_13','inv_belt_22','inv_belt_27'],
+  'Legs':['inv_pants_01','inv_pants_03','inv_pants_04','inv_pants_06','inv_pants_08','inv_pants_plate_12'],
+  'Feet':{plate:['inv_boots_plate_01','inv_boots_plate_04'],mail:['inv_boots_chain_01'],leather:['inv_boots_05','inv_boots_08'],cloth:['inv_boots_cloth_03']},
+  'Ring':['inv_jewelry_ring_01','inv_jewelry_ring_03','inv_jewelry_ring_05','inv_jewelry_ring_14','inv_jewelry_ring_27','inv_jewelry_ring_36'],
+  'Trinket':['inv_jewelry_talisman_01','inv_jewelry_talisman_07','inv_jewelry_talisman_12','inv_misc_idol_02','inv_misc_orb_01','inv_trinket_naxxramas04']
+};
+const WEAPON_WORDS = [[/shield|aegis|bulwark|barrier|wall|guard$/i,['inv_shield_04','inv_shield_06','inv_shield_17']],[/bow|aim/i,['inv_weapon_bow_07']],
+  [/rifle|gun|cannon|boomstick|blaster/i,['inv_weapon_rifle_07']],[/wand|scepter/i,['inv_wand_07']],[/staff|rod|stave|pummeler|branch|spire/i,['inv_staff_13','inv_staff_30']],
+  [/axe|reaper|cleaver|splitter/i,['inv_axe_09','inv_axe_22']],[/hammer|mace|maul|fist|force|pounder|gavel|bonebiter/i,['inv_hammer_16','inv_mace_13']],
+  [/dagger|shiv|knife|shanker|kris|fang/i,['inv_weapon_shortblade_05']],[/tome|book|orb|grimoire|codex/i,['inv_misc_book_09','inv_offhand_stratholme_a_02']]];
+
+/* ------------------------------------------------------------------ helpers */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = n => n == null ? '—' : Number(n).toLocaleString('en-US');
+const hash = s => { let h = 2166136261; for (const ch of String(s)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+const DAY = 864e5;
+const NOW = Date.now();
+function ago(t){
+  if (!t) return '—';
+  const d = Math.floor((NOW - t) / DAY);
+  if (d <= 0) return 'today'; if (d === 1) return 'yesterday'; if (d < 14) return d + ' days ago';
+  if (d < 60) return Math.round(d / 7) + ' weeks ago'; if (d < 365) return Math.round(d / 30.4) + ' months ago';
+  return d < 550 ? 'over a year ago' : Math.round(d / 365) + ' years ago';
+}
+const isActive = m => m.t && NOW - m.t < 30 * DAY;
+const known = m => !!m.c;
+const cls = m => CLASSES[m.c] || {c:'#8d8d8d',t:'#cfcfcf'};
+const cvars = m => `--cls:${cls(m).c};--clst:${cls(m).t || cls(m).c}`;
+const artId = m => m.art || m.id;
+const avatar = m => `${CDN}character/onyxia/${m.b}/${artId(m)}-avatar.jpg`;
+const inset = m => `${CDN}character/onyxia/${m.b}/${artId(m)}-inset.jpg`;
+const mainRaw = m => `${CDN}character/onyxia/${m.b}/${artId(m)}-main-raw.png`;
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+const listNames = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+
+const state = {game:'retail',guild:'deaths-edge',view:'roster',c:null,q:'',cls:null,owner:null,sort:'ready'};
+const G = () => DATA[state.game][state.guild];
+const cfg = () => GAME[state.game];
+const atCap = m => m.l >= cfg().cap;
+const preSquish = m => state.game === 'retail' && !atCap(m) && m.i > 215;
+const isReady = m => atCap(m) && (cfg().target ? m.i >= cfg().target : true);
+function readyOrder(a, b){
+  const ca = atCap(a), cb = atCap(b);
+  if (ca !== cb) return ca ? -1 : 1;
+  if (ca && state.game === 'retail' && (a.i || 0) !== (b.i || 0)) return (b.i || 0) - (a.i || 0);
+  if (a.l !== b.l) return b.l - a.l;
+  return (b.t || 0) - (a.t || 0);
+}
+function describe(m){
+  if (!known(m)) return `Level ${m.l}`;
+  return `Level ${m.l} ${m.r} ${m.s ? m.s + ' ' : ''}${m.c}`;
+}
+function enchInfo(m){
+  if (!m.eq) return null;
+  const slots = cfg().ench, have = m.eq.filter(e => slots.includes(e[0]));
+  return {done:have.filter(e => e[4] > 0).length, of:have.length, sockets:m.eq.filter(e => e[5]).length};
+}
+function iconFor(e, m){
+  const [slot, name] = e, a = (CLASSES[m.c] || {}).a || 'plate';
+  const pick = arr => arr[hash(name) % arr.length];
+  if (/Main Hand|Off Hand|Ranged/.test(slot)) {
+    for (const [re, arr] of WEAPON_WORDS) if (re.test(name)) return pick(arr);
+    if (slot === 'Off Hand') return pick(['inv_misc_book_09','inv_offhand_stratholme_a_02']);
+    if (slot === 'Ranged') return 'inv_weapon_bow_07';
+    return pick(['inv_sword_04','inv_sword_27','inv_sword_39']);
+  }
+  const key = slot.replace(/ \d$/, ''), pool = SLOT_ICONS[key];
+  if (!pool) return 'inv_misc_questionmark';
+  return pick(Array.isArray(pool) ? pool : pool[a]);
+}
+
+/* ------------------------------------------------------------------ scene painting (inline SVG) */
+function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function ridge(r, base, amp, step, sharp){
+  let d = `M0 ${base}`, x = 0, y = base - amp * (.3 + r() * .5);
+  d += ` L0 ${y.toFixed(0)}`;
+  while (x < 1440) {
+    const nx = x + step * (.6 + r() * .9), ny = base - amp * (sharp ? r() ** 1.6 : .25 + r() * .75);
+    d += sharp ? ` L${nx.toFixed(0)} ${ny.toFixed(0)}` : ` Q${((x + nx) / 2).toFixed(0)} ${(Math.min(y, ny) - amp * .12).toFixed(0)} ${nx.toFixed(0)} ${ny.toFixed(0)}`;
+    x = nx; y = ny;
+  }
+  return d + ` L1440 ${base} L1440 640 L0 640Z`;
+}
+function pine(x, base, h, w){
+  const t = base - h; let d = `M${x} ${t}`;
+  for (let i = 1; i <= 4; i++) { const yy = t + h * .88 * i / 4, ww = w * (.32 + .68 * i / 4) / 2; d += ` L${(x + ww).toFixed(1)} ${yy.toFixed(1)} L${(x + ww * .45).toFixed(1)} ${(yy - h * .05).toFixed(1)}`; }
+  d += ` L${x + w * .06} ${base - h * .12} L${x + w * .06} ${base} L${x - w * .06} ${base} L${x - w * .06} ${base - h * .12}`;
+  for (let i = 4; i >= 1; i--) { const yy = t + h * .88 * i / 4, ww = w * (.32 + .68 * i / 4) / 2; d += ` L${(x - ww * .45).toFixed(1)} ${(yy - h * .05).toFixed(1)} L${(x - ww).toFixed(1)} ${yy.toFixed(1)}`; }
+  return d + 'Z';
+}
+function sceneSVG(game, faction, slim){
+  const r = rng(game === 'forever' ? 77 : faction === 'horde' ? 31 : 52);
+  let s = `<svg class="scene" viewBox="${slim ? '0 236 1440 230' : '0 0 1440 640'}" preserveAspectRatio="xMidYMax slice" aria-hidden="true">`;
+  if (game === 'forever') {
+    s += `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1838"/><stop offset=".42" stop-color="#123a63"/><stop offset=".68" stop-color="#1c6677"/></linearGradient>
+      <radialGradient id="glow" cx=".5" cy=".86" r=".55"><stop offset="0" stop-color="#ff9a3c" stop-opacity=".75"/><stop offset=".4" stop-color="#d9652a" stop-opacity=".28"/><stop offset="1" stop-color="#d9652a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#143a3c"/><stop offset="1" stop-color="#07191d"/></linearGradient></defs>
+      <rect width="1440" height="640" fill="url(#sky)"/>`;
+    for (let i = 0; i < 90; i++) s += `<circle cx="${(r() * 1440).toFixed(0)}" cy="${(r() * 330).toFixed(0)}" r="${(.5 + r() * 1.3).toFixed(1)}" fill="#e8f3ff" opacity="${(.25 + r() * .6).toFixed(2)}"/>`;
+    s += `<path d="${ridge(r, 432, 150, 190, false)}" fill="#11405a" opacity=".85"/>`;
+    let far = ''; for (let x = -10; x < 1460; x += 26 + r() * 22) far += pine(x, 440, 70 + r() * 80, 34 + r() * 16);
+    s += `<path d="${far}" fill="#0c3146"/>`;
+    let mid = ''; for (let x = -20; x < 1470; x += 58 + r() * 60) { if (x > 520 && x < 920) continue; mid += pine(x, 452, 170 + r() * 150, 74 + r() * 34); }
+    s += `<path d="${mid}" fill="#08232f"/><rect y="430" width="1440" height="210" fill="url(#gr)"/><rect width="1440" height="640" fill="url(#glow)"/>`;
+    s += `<path d="${pine(60, 660, 720, 250)}${pine(1390, 660, 760, 270)}${pine(230, 640, 470, 170)}${pine(1235, 640, 430, 160)}" fill="#041318"/>`;
+  } else {
+    const H = faction === 'horde';
+    const sky = H ? ['#16060c','#4a0e17','#a8371d','#f39242'] : ['#060b1f','#12265a','#3a57a4','#f1c87a'];
+    const cFar = H ? '#5a1717' : '#1d2f6b', cMid = H ? '#35090d' : '#101c46', cNear = H ? '#1c0608' : '#080f24';
+    s += `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset=".38" stop-color="${sky[1]}"/><stop offset=".58" stop-color="${sky[2]}"/><stop offset=".69" stop-color="${sky[3]}"/></linearGradient>
+      <radialGradient id="cor" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="${H ? '#ffd08a' : '#fff0c4'}" stop-opacity=".8"/><stop offset=".35" stop-color="${H ? '#ff9b4a' : '#ffe1a0'}" stop-opacity=".34"/><stop offset="1" stop-color="${H ? '#ff8a3a' : '#b7c8ff'}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${H ? '#3a0f10' : '#16234e'}"/><stop offset="1" stop-color="${cNear}"/></linearGradient></defs>
+      <rect width="1440" height="640" fill="url(#sky)"/>`;
+    if (!H) for (let i = 0; i < 70; i++) s += `<circle cx="${(r() * 1440).toFixed(0)}" cy="${(r() * 300).toFixed(0)}" r="${(.5 + r() * 1.2).toFixed(1)}" fill="#fff" opacity="${(.2 + r() * .6).toFixed(2)}"/>`;
+    s += `<circle cx="720" cy="330" r="430" fill="url(#cor)" opacity=".7"/>`;
+    s += `<path d="${ridge(r, 432, H ? 170 : 150, H ? 90 : 170, H)}" fill="${cFar}" opacity=".8"/>`;
+    let b = '';
+    if (H) for (let x = 40; x < 1440; x += 120 + r() * 150) { const h = 110 + r() * 150, w = 34 + r() * 30, y = 442;
+      b += `M${x - w} ${y} L${x - w * .5} ${y - h * .74} L${x - w * .95} ${y - h * .97} L${x - w * .22} ${y - h * .84} L${x} ${y - h * 1.08} L${x + w * .22} ${y - h * .84} L${x + w * .95} ${y - h * .97} L${x + w * .5} ${y - h * .74} L${x + w} ${y}Z`; }
+    else for (let x = 50; x < 1440; x += 130 + r() * 170) { const h = 100 + r() * 160, w = 22 + r() * 16, y = 442;
+      b += `M${x - w} ${y} V${y - h} H${x - w * 1.25} L${x} ${y - h - w * 3.2} L${x + w * 1.25} ${y - h} H${x + w} V${y}Z M${x + w} ${y} v-${(h * .45).toFixed(0)} h${(w * 3).toFixed(0)} v${(h * .45).toFixed(0)}Z`; }
+    s += `<path d="${b}" fill="${cMid}"/><path d="${ridge(r, 448, 46, 120, false)}" fill="${cMid}"/><rect y="436" width="1440" height="204" fill="url(#gr)"/>`;
+  }
+  return s + '</svg>';
+}
+const FIRE = `<svg viewBox="0 0 120 130" width="120" height="130" aria-hidden="true"><ellipse cx="60" cy="118" rx="56" ry="10" fill="rgba(0,0,0,.55)"/>
+  <g class="flame"><path d="M60 8c10 22 34 36 34 64a34 34 0 0 1-68 0c0-18 12-24 16-40 6 8 8 12 10 18 4-12 8-24 8-42z" fill="#ff7a1a"/></g>
+  <g class="flame f2"><path d="M60 44c6 12 20 20 20 36a20 20 0 0 1-40 0c0-10 7-14 9-22 4 4 5 7 6 10 2-7 5-14 5-24z" fill="#ffd257"/><path d="M60 72c3 6 9 9 9 16a9 9 0 0 1-18 0c0-6 6-9 9-16z" fill="#fff6d0"/></g>
+  <path d="M14 112l80-22 6 12-80 22zM106 112 26 90l-6 12 80 22z" fill="#2a160b"/><path d="M14 112l80-22 2 4-80 22z" fill="#5a3216"/></svg>`;
+
+/* ------------------------------------------------------------------ stage */
+function stageTier(w){
+  const forever = state.game === 'forever';
+  if (w >= 1100) return {counts:forever ? [6,6,7] : [7,8,9], s:[.44,.36,.29], bottom:[34,104,166], margin:110};
+  if (w >= 700) return {counts:forever ? [4,5,6] : [5,6,7], s:[.42,.34,.27], bottom:[30,96,154], margin:70};
+  return {counts:forever ? [2,3,4] : [3,4,5], s:[.31,.25,.2], bottom:[22,76,120], margin:34};
+}
+function centreOut(n){ const mid = (n - 1) / 2; return [...Array(n).keys()].sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid) || a - b); }
+function daysToRaid(){ return Math.max(0, Math.ceil((RAID_OPEN - NOW) / DAY)); }
+function updatedText(g){
+  if (!g.updatedAt) return null;
+  const age = NOW - Date.parse(g.updatedAt), mins = Math.max(1, Math.round(age / 6e4));
+  return {stale:age > 2 * DAY, text:'Updated ' + (mins < 60 ? mins + ' min ago' : mins < 2880 ? Math.round(mins / 60) + ' hours ago' : ago(Date.parse(g.updatedAt)))};
+}
+function stageHTML(slim){
+  const g = G(), ms = g.members, total = ms.length, c = cfg();
+  const active = ms.filter(isActive).length, caps = ms.filter(atCap), ready = ms.filter(isReady);
+  const fac = g.faction === 'horde' ? 'Horde' : 'Alliance', up = updatedText(g);
+  const sub = `<p class="gsub"><span><img src="${ICON(g.faction === 'horde' ? 'ui_hordeicon' : 'ui_allianceicon')}" alt="">${fac}</span><span>${esc(g.realm)}</span><span>${plural(total, 'member', 'members')}</span>${
+    state.game === 'forever' ? '<span style="border:0;padding-left:0"><b class="sample">Sample data</b></span>' : ''}${up ? `<span class="upd${up.stale ? ' stale' : ''}">${up.text}</span>` : ''}</p>`;
+  let caption = '';
+  if (!slim) {
+    let line, legend;
+    if (state.game === 'retail') {
+      const best = caps.slice().sort(readyOrder)[0];
+      const second = ready.length ? `${listNames(ready.map(m => esc(m.n)))} ${ready.length === 1 ? 'is' : 'are'} raid-ready.`
+        : best ? `${esc(best.n)} is ${plural(c.target - best.i, 'item level', 'item levels')} from raid-ready.`
+        : `Nobody is level ${c.cap} yet.`;
+      line = `<strong>${active} of ${total}</strong> logged in this month. ${caps.length ? `<strong>${caps.length}</strong> ${caps.length === 1 ? 'is' : 'are'} level ${c.cap}. ` : ''}${second}`;
+      legend = `Front row is closest to raid-ready.<span class="dot"></span>seen this month`;
+    } else {
+      line = `<strong>${plural(total, 'character', 'characters')}</strong> since launch on 4 November. <strong>${caps.length}</strong> ${caps.length === 1 ? 'is' : 'are'} level 60. Raids open 9 December, ${daysToRaid()} days away.`;
+      legend = `Sample data. Portraits are stand-ins borrowed from Retail characters.`;
+    }
+    caption = `<div class="wrap caption"><p class="gline">${line}</p><p class="glegend">${legend}</p></div>`;
+  }
+  const words = esc(g.name).split(' ').map(w => `<span>${w}</span>`).join(' ');
+  return `<section class="stage${slim ? ' slim' : ''}" id="stage" aria-label="${esc(g.name)}">
+    ${sceneSVG(state.game, g.faction, slim)}
+    <h1 class="gname" id="gname">${words}</h1>
+    <div class="lineup" id="lineup"></div>
+    ${sub}
+  </section>${caption}`;
+}
+function fitTitle(){
+  const h = document.getElementById('gname'), st = document.getElementById('stage'); if (!h || !st) return;
+  const W = st.clientWidth, slim = st.classList.contains('slim'), phone = W < 700, forever = state.game === 'forever';
+  const stack = phone && !slim; h.classList.toggle('stack', stack);
+  h.style.fontSize = '100px';
+  const w = stack ? Math.max(...[...h.children].map(x => x.getBoundingClientRect().width)) : [...h.children].reduce((n, x) => n + x.getBoundingClientRect().width, 0) + 26 * (h.children.length - 1);
+  const target = slim ? Math.min(W * .62, 820) : phone ? W * .9 : Math.min(W * .84, 1240);
+  const max = slim ? (phone ? 64 : 118) : phone ? (forever ? 104 : 168) : (forever ? 210 : 300);
+  h.style.fontSize = Math.min(max, 100 * target / w).toFixed(1) + 'px';
+}
+function paintLineup(){
+  fitTitle();
+  const el = document.getElementById('lineup'); if (!el) return;
+  const stage = document.getElementById('stage'); if (stage.classList.contains('slim')) { el.innerHTML = ''; return; }
+  const W = stage.clientWidth, T = stageTier(W), forever = state.game === 'forever';
+  const pool = G().members.filter(m => m.bb).sort(readyOrder);
+  let html = '', k = 0;
+  const fog = `rgba(${getComputedStyle(document.documentElement).getPropertyValue('--fog').trim()}`;
+  T.counts.forEach((cap, row) => {
+    const group = pool.slice(k, k + cap); k += cap; if (!group.length) return;
+    const s = T.s[row], bottom = T.bottom[row];
+    const gap = forever && row === 0 && group.length % 2 === 0;           // leave room for the campfire
+    const slots = group.length + (gap ? 1 : 0);
+    const spacing = (W - 2 * T.margin) / Math.max(cap + (gap ? 1 : 0), slots);
+    const order = centreOut(slots).filter(i => !(gap && i === (slots - 1) / 2));
+    group.forEach((m, i) => {
+      const x = W / 2 + (order[i] - (slots - 1) / 2) * spacing + ((hash(m.id) % 13) - 6);
+      const [x0, y0, x1, y1, hx, fx] = m.bb, bot = bottom + ((hash(m.n) % 9) - 4);
+      const act = isActive(m) && state.game === 'retail';
+      const l2 = atCap(m) && state.game === 'retail' ? `item level ${m.i}` : `level ${m.l}`;
+      html += `<button class="fig r${row}" data-open="${m.id}" style="${cvars(m)};left:${(x - (fx - x0) * s).toFixed(1)}px;bottom:${bot}px;width:${((x1 - x0) * s).toFixed(1)}px;height:${((y1 - y0) * s).toFixed(1)}px" aria-label="${esc(m.n)}, ${esc(describe(m))}">
+        <img src="${mainRaw(m)}" alt="" style="left:${(-x0 * s).toFixed(1)}px;top:${(-y0 * s).toFixed(1)}px;width:${(1600 * s).toFixed(1)}px" draggable="false">
+        ${row ? `<span class="plate" style="left:${((hx - x0) * s).toFixed(1)}px"><b>${esc(m.n)}</b><i>${l2}</i></span>` : ''}<span class="shadow"></span></button>`;
+      if (!row) html += `<span class="plate top" aria-hidden="true" style="${cvars(m)};left:${(x + (hx - fx) * s).toFixed(1)}px;bottom:${(bot + (y1 - y0) * s + 6).toFixed(1)}px"><b>${act ? '<span class="dot"></span>' : ''}${esc(m.n)}</b><i>${l2}</i></span>`;
+    });
+    if (row > 0) html += `<div class="fogl" style="z-index:${row === 1 ? 40 : 20};bottom:0;height:${bottom + 300 * s}px;background:linear-gradient(0deg,${fog},.62) 0%,${fog},.4) 50%,${fog},0) 100%)"></div>`;
+  });
+  html += `<div class="fogl" style="z-index:75;bottom:0;height:64px;background:linear-gradient(0deg,${fog},.8),${fog},0))"></div>`;
+  if (forever) html += `<div class="fire" style="bottom:${T.bottom[0] - 6}px;transform:translateX(-50%) scale(${W < 700 ? .7 : 1.2});transform-origin:50% 100%">${FIRE}</div><div class="fireglow"></div>`;
+  el.innerHTML = html;
+}
+
+/* ------------------------------------------------------------------ roster */
+function progHTML(m){
+  const c = cfg();
+  if (atCap(m) && c.target) {
+    const short = c.target - m.i, pct = Math.max(4, Math.min(100, (m.i - (c.target - 60)) / 60 * 100));
+    return `<span class="prog"><span class="num">${m.i}</span><span class="lab">item level<b class="${short <= 0 ? 'ok' : ''}">${short <= 0 ? 'raid-ready' : short + ' short'}</b></span><span class="gauge"><span style="width:${pct}%"></span></span></span>`;
+  }
+  const left = c.cap - m.l;
+  return `<span class="prog"><span class="num">${m.l}</span><span class="lab">level<b class="${left <= 0 ? 'ok' : ''}">${left <= 0 ? 'at the cap' : left + ' to go'}</b></span><span class="gauge"><span style="width:${Math.min(100, m.l / c.cap * 100)}%"></span></span></span>`;
+}
+function rowHTML(m){
+  const k = known(m), e = enchInfo(m);
+  let gear = '—';
+  if (k) {
+    if (atCap(m) && e) gear = `${e.done} of ${e.of} enchanted${state.game === 'forever' ? `<small>item level ${m.i}</small>` : e.sockets ? `<small class="flag">${plural(e.sockets, 'empty socket', 'empty sockets')}</small>` : '<small>no empty sockets</small>'}`;
+    else gear = `item level ${m.i ?? '—'}${preSquish(m) ? '<small>pre-squish scale</small>' : m.o ? `<small>played by ${esc(m.o)}</small>` : ''}`;
+  }
+  const seen = k ? `${isActive(m) ? '<span class="dot"></span>' : ''}${ago(m.t)}` : '—';
+  return `<li><button class="row${k ? '' : ' dash'}" data-open="${m.id}" style="${cvars(m)}" aria-label="${esc(m.n)}, ${esc(describe(m))}">
+    <span class="art">${k ? `<img src="${inset(m)}" alt="" loading="lazy" width="230" height="116">` : `<span class="ghost">${esc(m.n[0])}</span>`}</span>
+    <span class="who"><span class="name">${esc(m.n)}</span><span class="sub"><span class="d-full">${k ? esc(describe(m)) : `Level ${m.l}, guild rank ${m.k}`}</span><span class="d-short">${k ? esc(`Level ${m.l} ${m.s ? m.s + ' ' : ''}${m.c}`) : `Level ${m.l}, guild rank ${m.k}`}</span><span class="seenin">${k ? esc(m.r) + ', seen ' + ago(m.t) : 'No armory record'}</span></span></span>
+    <span class="seen">${seen}${k && atCap(m) && m.o ? `<small>played by ${esc(m.o)}</small>` : k ? '' : '<small>no armory record</small>'}</span>
+    <span class="gear">${gear}</span>
+    ${progHTML(m)}
+  </button></li>`;
+}
+function filtered(){
+  const q = state.q.trim().toLowerCase();
+  return G().members.filter(m => (!state.cls || m.c === state.cls) && (!state.owner || m.o === state.owner)
+    && (!q || [m.n, m.c, m.s, m.r, m.o].some(v => v && v.toLowerCase().includes(q))));
+}
+function sorter(){
+  const s = state.sort;
+  if (s === 'level') return (a, b) => b.l - a.l || readyOrder(a, b);
+  if (s === 'ilvl') return (a, b) => (b.i || 0) - (a.i || 0);
+  if (s === 'seen') return (a, b) => (b.t || 0) - (a.t || 0);
+  if (s === 'name') return (a, b) => a.n.localeCompare(b.n);
+  return readyOrder;
+}
+function listHTML(){
+  const all = filtered().sort(sorter());
+  const groups = [
+    ['Here this month', all.filter(m => known(m) && isActive(m)), state.game === 'forever' ? 'logged in since launch' : 'logged in within the last 30 days'],
+    ['AFK', all.filter(m => known(m) && !isActive(m)), 'not seen for a month or more'],
+    ['No armory record', all.filter(m => !known(m)), 'Blizzard returns only name, level and rank']
+  ];
+  if (!all.length) return `<p class="empty">Nobody matches that. <button class="linkish" data-clear>Clear the filters</button></p>`;
+  return groups.filter(g => g[1].length).map(([t, list, note]) =>
+    `<div class="sec"><h2>${t}</h2><span class="n">${list.length}</span><p>${note}</p></div><ul class="rows">${list.map(rowHTML).join('')}</ul>`).join('');
+}
+function classBar(){
+  const counts = {}; G().members.forEach(m => { if (m.c) counts[m.c] = (counts[m.c] || 0) + 1; });
+  const btns = Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b)).map(c =>
+    `<button class="cls" data-cls="${c}" aria-pressed="${state.cls === c}" style="--c:${CLASSES[c].c}" title="${c}"><img src="${ICON('classicon_' + CLASSES[c].i)}" alt="${c}">${counts[c]}</button>`).join('');
+  return btns + (state.cls || state.owner || state.q ? `<button class="clear" data-clear>Clear</button>` : '');
+}
+function railHTML(){
+  const g = G(), ms = g.members, c = cfg();
+  let next;
+  if (state.game === 'forever') {
+    const at = ms.filter(atCap).length;
+    next = `<div class="card"><h3>Raids open 9 December</h3><div class="big">${daysToRaid()}<small>days to go</small></div>
+      <div class="raidneed">${FOREVER_RAIDS.map(r => `<div><span>${r.name}, ${r.players} players</span><b>${at} of ${r.players} at 60</b></div>`).join('')}</div>
+      <p style="margin-top:12px"><button class="linkish" data-view="raids">See the raids</button></p></div>`;
+  } else {
+    next = `<div class="card"><h3>Raids this season</h3><p>No boss kills recorded yet for ${esc(g.name)}. ${ms.filter(atCap).length ? `${plural(ms.filter(atCap).length, 'character is', 'characters are')} high enough to zone in.` : `Nobody is level ${c.cap} yet.`}</p>
+      <p><button class="linkish" data-view="ready">Who is closest to ready</button></p></div>`;
+  }
+  const owners = {}; ms.forEach(m => { if (m.o) owners[m.o] = (owners[m.o] || 0) + 1; });
+  const own = Object.keys(owners).length ? `<div class="card"><h3>Who plays whom</h3><ul class="owners">${Object.keys(owners).sort().map(o =>
+    `<li><button data-owner="${o}" aria-pressed="${state.owner === o}"><span>${o}</span><span>${plural(owners[o], 'character', 'characters')}</span></button></li>`).join('')}</ul></div>` : '';
+  const unknown = ms.filter(m => !known(m)).length, squish = ms.filter(preSquish).length;
+  const notes = state.game === 'forever'
+    ? `<div class="card"><h3>About this page</h3><p>Forever launched on 4 November and has no data feed yet, so every character here is invented sample data. Forever has no realms; the guild sits on a ruleset instead.</p></div>`
+    : `<div class="card"><h3>Reading the numbers</h3><p>Raid-ready means level ${c.cap} with item level ${c.target} or better. Item level only compares between characters at ${c.cap}.</p>${squish ? `<p>${plural(squish, 'dormant character shows', 'dormant characters show')} an item level from before the stat squish. It is listed, never ranked.</p>` : ''}${unknown ? `<p>${plural(unknown, 'member has', 'members have')} no armory record. Unknown values show a dash, never a zero.</p>` : ''}</div>`;
+  return next + own + notes;
+}
+function rosterHTML(){
+  return stageHTML(false) + `<div class="wrap below"><div class="sheet">
+      <div class="toolbar">
+        <label class="sr" for="q">Search the roster</label>
+        <input class="search" id="q" type="search" placeholder="Search name, class, race or player" value="${esc(state.q)}" autocomplete="off">
+        <label class="sortwrap">Sort <select class="sort" id="sort">
+          ${[['ready','Closest to ready'],['level','Level'],['ilvl','Item level'],['seen','Last seen'],['name','Name']].map(([v, l]) => `<option value="${v}"${state.sort === v ? ' selected' : ''}>${l}</option>`).join('')}
+        </select></label>
+      </div>
+      <div class="classes" id="classes" role="group" aria-label="Filter by class">${classBar()}</div>
+      <div id="list">${listHTML()}</div>
+    </div>
+    <aside class="rail" id="rail">${railHTML()}</aside></div>`;
+}
+
+/* ------------------------------------------------------------------ character sheet */
+function slotHTML(m, slot){
+  const e = (m.eq || []).find(x => x[0] === slot);
+  if (!e) return `<div class="slot vacant"><span class="ico none"></span><span><span class="iname">Empty</span><span class="imeta">${slot}</span></span></div>`;
+  const [, name, q, il, ench, sock] = e, cosmetic = /Shirt|Tabard/.test(slot);
+  const flags = [];
+  if (cfg().ench.includes(slot)) flags.push(ench ? '<span class="has">Enchanted</span>' : '<span class="miss">No enchant</span>');
+  if (sock) flags.push('<span class="miss">Empty socket</span>');
+  return `<div class="slot" style="--q:var(--q-${q.toLowerCase()})"><span class="ico"><img src="${ICON(iconFor(e, m))}" alt="" loading="lazy"></span>
+    <span><span class="iname" title="${esc(name)}">${esc(name)}</span><span class="imeta"><span>${cosmetic ? slot : `<b>${il}</b> ${slot}`}</span>${flags.join('')}</span></span></div>`;
+}
+function detailHTML(){
+  const g = G(), m = g.members.find(x => String(x.id) === String(state.c)) || g.members.filter(known).sort(readyOrder)[0];
+  const c = cfg(), k = known(m), e = enchInfo(m);
+  const L = ['Head','Neck','Shoulders','Back','Chest','Shirt','Tabard','Wrist'], R = ['Hands','Waist','Legs','Feet','Ring 1','Ring 2','Trinket 1','Trinket 2'];
+  const Wp = state.game === 'forever' ? ['Main Hand','Off Hand','Ranged'] : ['Main Hand','Off Hand'];
+  const checks = [];
+  checks.push(atCap(m) ? ['y', 'Level', `${m.l}`, 'at the cap'] : ['n', 'Level', `${m.l}`, `${c.cap - m.l} to go`]);
+  if (c.target) {
+    if (!k) checks.push(['u', 'Item level', '—', 'no armory record']);
+    else if (atCap(m)) checks.push(m.i >= c.target ? ['y', 'Item level', m.i, 'raid-ready'] : ['n', 'Item level', m.i, `${c.target - m.i} short of ${c.target}`]);
+    else checks.push(['u', 'Item level', m.i, preSquish(m) ? 'pre-squish scale' : `counts at ${c.cap}`]);
+  } else if (k) checks.push(['u', 'Item level', m.i ?? '—', 'average of what is worn']);
+  if (e) {
+    checks.push([e.done >= e.of ? 'y' : 'n', 'Enchants', `${e.done} of ${e.of}`, e.done >= e.of ? 'all done' : `${e.of - e.done} missing`]);
+    if (state.game === 'retail') checks.push([e.sockets ? 'n' : 'y', 'Sockets', e.sockets ? `${e.sockets} empty` : 'all filled', '']);
+  }
+  const verdict = !k ? 'Blizzard has no armory record for this character.' : isReady(m) && c.target ? 'Ready to raid.' : atCap(m) && c.target ? `${c.target - m.i} item ${c.target - m.i === 1 ? 'level' : 'levels'} from raid-ready.` : atCap(m) ? 'Level 60 and waiting for the raids to open.' : `${c.cap - m.l} levels from the cap.`;
+  let model = '';
+  if (m.bb) {
+    const [x0, y0, x1, y1, hx, fx] = m.bb, phone = window.innerWidth <= 760, H = phone ? 290 : 470;
+    const s = Math.min(H / (y1 - y0), (phone ? 340 : 470) / (x1 - x0), .9);
+    model = `<div class="fig2" style="width:${(x1 - x0) * s}px;height:${(y1 - y0) * s}px;margin-left:${-(fx - x0) * s}px"><img src="${mainRaw(m)}" alt="${esc(m.n)}, ${esc(describe(m))}" style="left:${-x0 * s}px;top:${-y0 * s}px;width:${1600 * s}px"></div>`;
+  }
+  const ls = m.ls, lifeBits = [];
+  if (ls) {
+    if (ls.questsCompleted != null) lifeBits.push(`finished <b>${fmt(ls.questsCompleted)}</b> quests`);
+    if (ls.killingBlows != null) lifeBits.push(`landed <b>${fmt(ls.killingBlows)}</b> killing blows`);
+    if (ls.dungeonsEntered != null) lifeBits.push(`walked into <b>${fmt(ls.dungeonsEntered)}</b> ${ls.dungeonsEntered === 1 ? 'dungeon' : 'dungeons'}`);
+    if (ls.flightPaths != null) lifeBits.push(`found <b>${fmt(ls.flightPaths)}</b> flight paths`);
+    if (ls.timesHearthed != null) lifeBits.push(`hearthed home <b>${fmt(ls.timesHearthed)}</b> times`);
+  }
+  const first = esc(m.n.split(' ')[0]);
+  const deaths = ls && ls.totalDeaths != null ? ` ${first} has died <b>${fmt(ls.totalDeaths)}</b> ${ls.totalDeaths === 1 ? 'time' : 'times'}${ls.deathsFromFalling ? `, <b>${ls.deathsFromFalling}</b> of them from falling` : ''}.` : '';
+  const life = lifeBits.length ? `<p class="life">${first} has ${listNames(lifeBits)}.${deaths}</p>` : `<p class="life">Nothing recorded yet.</p>`;
+  const st = m.st;
+  const stats = st && st.health != null ? `<h2 class="h3">Stats</h2><dl class="stats">${[['Health', fmt(st.health)], ['Stamina', fmt(st.stamina)], ['Armor', fmt(st.armor)],
+    [(st.intellect > st.strength && st.intellect > st.agility) ? 'Intellect' : st.agility > st.strength ? 'Agility' : 'Strength', fmt(Math.max(st.strength, st.agility, st.intellect))],
+    ['Critical strike', st.crit + '%'], ['Haste', st.haste + '%'], ['Mastery', st.mastery + '%'], ['Versatility', st.vers + '%']].map(([a, b]) => `<div><dt>${a}</dt><dd>${b}</dd></div>`).join('')}</dl>` : '';
+  const coll = m.mo != null ? `<p class="note">Account collection: ${fmt(m.mo)} mounts and ${fmt(m.pe)} pets. ${m.ap != null ? fmt(m.ap) + ' achievement points.' : ''}</p>` : '';
+  const sampleNote = !k ? '' : state.game === 'forever' ? `<p class="note">Sample data. Item icons and the portrait are stand-ins.</p>` : `<p class="note">Item icons are stand-ins chosen by slot until the data feed carries the real ones.</p>`;
+  return `<section class="chero" style="${cvars(m)}">${sceneSVG(state.game, g.faction)}
+    <div class="wrap cgrid">
+      <div class="cleft">
+        <div class="cid"><button class="back" data-view="roster"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg>${esc(g.name)} roster</button>
+        <h1 class="cname">${esc(m.n)}</h1>
+        <p class="cdesc">${esc(describe(m))}${m.ti ? ', ' + esc(m.ti) : ''}</p>
+        <ul class="cmeta">
+          <li>${k ? (isActive(m) ? '<span class="dot"></span>' : '') + 'Seen ' + ago(m.t) : 'No armory record'}</li>
+          <li>${m.k === 0 ? 'Guild Master' : 'Guild rank ' + m.k}${m.o ? ', played by ' + esc(m.o) : ''}</li>
+        </ul>
+        </div><div class="cready"><p class="verdict">${verdict}</p>
+        <ul class="checks">${checks.map(([s, a, b, d]) => `<li class="${s}"><span class="ic">${s === 'y' ? '✓' : s === 'n' ? '!' : '–'}</span><b>${a}</b><span><b>${b}</b>${d ? '&ensp;' + d : ''}</span></li>`).join('')}</ul></div>
+      </div>
+      <div class="cright">
+        ${k ? `<div class="doll" aria-label="Gear">
+          <div class="slots left">${L.map(s => slotHTML(m, s)).join('')}</div>
+          <div class="model"><div class="ped"></div>${model}</div>
+          <div class="slots right">${R.map(s => slotHTML(m, s)).join('')}</div>
+          <div class="weapons">${Wp.map(s => slotHTML(m, s)).join('')}</div>
+        </div>` : `<p class="empty">Blizzard returns only this character's name, level and rank, so there is no gear to show. It usually means the character has not logged in since the armory was rebuilt.</p>`}
+      </div>
+    </div></section>
+    <div class="wrap cbelow${stats ? '' : ' one'}"><div class="sheet"><h2 class="h3">Life so far</h2>${life}${coll}${sampleNote}</div>${stats ? `<div class="sheet">${stats}</div>` : ''}</div>`;
+}
+
+/* ------------------------------------------------------------------ readiness */
+function tokenHTML(m, size, x, y, label){
+  const k = known(m);
+  return `<button class="tok${k ? '' : ' unk'}" data-open="${m.id}" data-tip="${esc(m.n)}, level ${m.l}" style="${cvars(m)};width:${size}px;height:${size}px;left:calc(${x}% - ${size / 2}px);bottom:${y}px" aria-label="${esc(m.n)}, ${esc(describe(m))}">
+    ${k ? `<img src="${avatar(m)}" alt="" loading="lazy">` : `<span class="ini">${esc(m.n[0])}</span>`}${label || ''}</button>`;
+}
+function pileHTML(list, lo, hi, width){
+  const size = width < 700 ? 24 : 34, gap = 5, placed = [], px = v => (v - lo) / (hi - lo) * width;
+  let html = '', maxRow = 0;
+  list.slice().sort((a, b) => a.l - b.l || (b.t || 0) - (a.t || 0)).forEach(m => {
+    const x = px(m.l); let row = 0;
+    while (placed.some(p => p.row === row && Math.abs(p.x - x) < size + gap)) row++;
+    placed.push({x, row}); maxRow = Math.max(maxRow, row);
+    html += tokenHTML(m, size, (m.l - lo) / (hi - lo) * 100, 40 + row * (size + gap));
+  });
+  const ticks = []; for (let v = Math.ceil(lo / 10) * 10; v <= hi; v += 10) ticks.push(v);
+  return `<div class="pile" style="height:${52 + (maxRow + 1) * (size + gap)}px;margin-left:${size / 2}px;margin-right:${size / 2}px">${html}
+    <div class="axis">${ticks.map(v => `<i class="${v === hi ? 'cap' : ''}" style="left:${(v - lo) / (hi - lo) * 100}%">${v}</i>`).join('')}</div><div class="tip" id="tip"></div></div>`;
+}
+function readyHTML(){
+  const g = G(), ms = g.members, c = cfg(), caps = ms.filter(atCap).sort(readyOrder), rest = ms.filter(m => !atCap(m));
+  const width = Math.min(window.innerWidth, 1240) - (window.innerWidth <= 760 ? 28 : 56) - (window.innerWidth < 700 ? 24 : 34);
+  const lo = Math.max(1, Math.floor((Math.min(...ms.map(m => m.l)) - 1) / 10) * 10);
+  let lead, sub, top = '';
+  if (state.game === 'retail') {
+    const ready = caps.filter(isReady), best = caps[0];
+    lead = ready.length ? `${plural(ready.length, 'character is', 'characters are')} raid-ready.` : best ? `Nobody is raid-ready yet. ${esc(best.n)} is ${plural(c.target - best.i, 'item level', 'item levels')} short.` : `Nobody is level ${c.cap} yet.`;
+    const near = rest.slice().sort(readyOrder).slice(0, 3);
+    sub = `Raid-ready means level ${c.cap} and item level ${c.target}. ${caps.length ? `${plural(caps.length, 'character has', 'characters have')} reached ${c.cap}` : `Closest are ${listNames(near.map(m => esc(m.n)))} at ${near[0] ? near[0].l : '—'}`}; ${rest.length} more are still on the road.`;
+    if (caps.length) {
+      const min = Math.min(...caps.map(m => m.i)), a = Math.min(170, Math.floor((min - 8) / 10) * 10), b = 220, pos = v => (v - a) / (b - a) * 100;
+      const ticks = []; for (let v = a; v <= b; v += 10) ticks.push(v);
+      let lastX = -99, flip = 0;
+      const toks = caps.slice().sort((p, q) => p.i - q.i).map(m => { const x = pos(m.i); flip = Math.abs(x - lastX) < (window.innerWidth <= 760 ? 24 : 9) ? flip + 1 : 0; lastX = x;
+        return tokenHTML(m, window.innerWidth <= 760 ? 42 : 52, x, 52, `<span class="tl" style="${flip % 2 ? 'bottom:calc(100% + 46px)' : ''}">${esc(m.n)}<small>item level ${m.i}</small></span>`); }).join('');
+      top = `<div class="sec"><h2>At level ${c.cap}</h2><span class="n">${caps.length}</span><p>placed by item level</p></div>
+        <div class="track"><div class="axis">${ticks.map(v => `<i style="left:${pos(v)}%">${v}</i>`).join('')}</div><div class="goal" style="left:${pos(c.target)}%"><b>${c.target}, raid-ready</b></div>${toks}</div>
+        <ul class="chk">${caps.map(m => { const e = enchInfo(m) || {done:0, of:0, sockets:0}; const short = c.target - m.i;
+          return `<li><button data-open="${m.id}" style="${cvars(m)}"><img class="av" src="${avatar(m)}" alt=""><span class="nm">${esc(m.n)}</span>
+            <span class="ck y"><b>Level ${m.l}</b>at the cap</span><span class="ck ${short <= 0 ? 'y' : 'n'}"><b>Item level ${m.i}</b>${short <= 0 ? 'raid-ready' : short + ' short'}</span>
+            <span class="ck ${e.done >= e.of ? 'y' : 'n'}"><b>${e.done} of ${e.of} enchants</b>${e.done >= e.of ? 'all done' : (e.of - e.done) + ' missing'}</span>
+            <span class="ck ${e.sockets ? 'n' : 'y'}"><b>${e.sockets ? plural(e.sockets, 'empty socket', 'empty sockets') : 'Sockets filled'}</b>${isActive(m) ? 'seen ' + ago(m.t) : 'AFK, seen ' + ago(m.t)}</span></button></li>`; }).join('')}</ul>`;
+    }
+  } else {
+    lead = `${plural(caps.length, 'character is', 'characters are')} level 60. Raids open in ${daysToRaid()} days.`;
+    sub = `Forever raids open on 9 December 2026. Until Blizzard publishes gear requirements, ready here just means level 60.`;
+    top = `<div class="needs">${FOREVER_RAIDS.map(r => `<div class="need"><h4>${r.name}</h4><p>${r.players} players${r.bosses ? ', ' + r.bosses + ' bosses' : ''}. ${caps.length} of ${r.players} at level 60.</p>
+      <div class="pips">${Array.from({length:r.players}, (_, i) => `<i class="${i < caps.length ? 'on' : ''}"></i>`).join('')}</div></div>`).join('')}</div>`;
+  }
+  return stageHTML(true) + `<div class="wrap below single"><div class="sheet"><h2 class="lead">${lead}</h2><p class="leadsub">${sub}</p>${top}
+    <div class="sec"><h2>The road to ${c.cap}</h2><span class="n">${ms.length}</span><p>everyone, placed by level</p></div>
+    ${pileHTML(ms, lo, c.cap, width)}
+    <p class="note">Each face is one character; tap one to open it. Lettered circles have no armory record.</p></div></div>`;
+}
+
+/* ------------------------------------------------------------------ raids */
+function raidsHTML(){
+  const g = G(), ms = g.members, c = cfg(), caps = ms.filter(atCap).length;
+  let body;
+  if (state.game === 'forever') {
+    body = `<div class="counthead"><div class="count">${daysToRaid()}</div><div><h2 class="lead">Days until the raids open.</h2><p class="leadsub">Forever raids unlock on 9 December 2026. Nothing can be killed before then, so there is nothing to track yet. This page fills in on the day.</p></div></div>
+      <div class="doors">${FOREVER_RAIDS.map(r => `<div class="door"><h3>${r.name}</h3><p class="dm">${r.players} players${r.bosses ? ', ' + r.bosses + ' bosses' : ''}</p>
+        <div class="pips">${Array.from({length:r.players}, (_, i) => `<i class="${i < caps ? 'on' : ''}"></i>`).join('')}</div>
+        <p class="dm" style="margin:10px 0 0">${caps} of ${r.players} are level 60 today.</p>
+        <div class="lock"><img src="${ICON(r.icon)}" alt=""><div><b>Opens 9 December</b><span>${daysToRaid()} days to go</span></div></div></div>`).join('')}</div>`;
+  } else {
+    body = `<h2 class="lead">No kills recorded this season.</h2><p class="leadsub">${caps ? `${plural(caps, 'character is', 'characters are')} level ${c.cap} and could zone in.` : `Nobody in ${esc(g.name)} is level ${c.cap} yet, so nobody can zone in.`} When a boss goes down its square lights up: N for Normal, H for Heroic, M for Mythic.</p>
+      <div class="doors">${DATA.raids.map(r => `<div class="door"><h3>${esc(r.name)}</h3><p class="dm">${plural(r.bosses.length, 'boss', 'bosses')}, 0 killed</p>
+        <ol>${r.bosses.map(b => `<li><span>${esc(b)}</span><span class="diff" aria-label="No kills on any difficulty"><i>N</i><i>H</i><i>M</i></span></li>`).join('')}</ol></div>`).join('')}</div>`;
+  }
+  return stageHTML(true) + `<div class="wrap below single"><div class="sheet">${body}</div></div>`;
+}
+function stubHTML(title, text){
+  return stageHTML(true) + `<div class="wrap below single"><div class="sheet"><div class="stub"><h2 class="lead">${title}</h2><p class="leadsub">${text}</p><p class="leadsub"><button class="linkish" data-view="roster">Back to the roster</button></p></div></div></div>`;
+}
+
+/* ------------------------------------------------------------------ render + events */
+function tabsHTML(labels){
+  return VIEWS.map(([v, l]) => `<button class="tab" data-view="${v}" ${(state.view === v || (state.view === 'detail' && v === 'roster')) ? 'aria-current="page"' : ''}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${TAB_ICON[v]}</svg>${labels ? labels[v] : l}</button>`).join('');
+}
+function syncURL(){
+  const p = new URLSearchParams(); p.set('game', state.game); p.set('guild', state.guild);
+  if (state.view !== 'roster') p.set('view', state.view);
+  if (state.view === 'detail' && state.c) p.set('c', state.c);
+  try { history.replaceState(null, '', location.pathname + '?' + p); } catch (e) {}
+}
+function render(keepScroll){
+  const g = G(), root = document.documentElement;
+  root.dataset.game = state.game; root.dataset.faction = g.faction; root.dataset.view = state.view;
+  document.title = `${g.name}, ${cfg().label}: Muster`;
+  document.querySelectorAll('.game').forEach(b => b.setAttribute('aria-pressed', b.dataset.game === state.game));
+  document.querySelectorAll('.guild').forEach(b => b.setAttribute('aria-pressed', b.dataset.guild === state.guild));
+  const other = state.guild === 'deaths-edge' ? 'Riot Act' : 'Deaths Edge';
+  document.getElementById('swap').innerHTML = `<img src="${ICON(g.faction === 'horde' ? 'ui_hordeicon' : 'ui_allianceicon')}" alt="">${esc(g.name)}<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.500h10l-2.500-2.500M13 10.500H3L5.500 13"/></svg><span class="sr">Switch to ${other}</span>`;
+  document.getElementById('tabs').innerHTML = tabsHTML();
+  document.getElementById('dock').innerHTML = tabsHTML(DOCK_LABEL);
+  const fresh = document.getElementById('fresh');
+  const up = updatedText(g);
+  fresh.className = 'fresh' + (up && up.stale ? ' stale' : '');
+  fresh.innerHTML = up ? `<b>${up.text}</b>refreshes hourly from Blizzard` : `<b>Sample data</b>no Forever feed yet`;
+  const app = document.getElementById('app');
+  app.innerHTML = state.view === 'detail' ? detailHTML() : state.view === 'ready' ? readyHTML() : state.view === 'raids' ? raidsHTML()
+    : state.view === 'ranks' ? stubHTML('Leaderboard is not drawn in this mockup.', 'It would rank the same characters by quests, deaths, killing blows and collections, using the rows and faces you see on the roster.')
+    : state.view === 'collections' ? stubHTML('Collections is not drawn in this mockup.', 'It would show mounts and pets per player, since both are shared across an account.')
+    : rosterHTML();
+  paintLineup();
+  document.getElementById('foot').innerHTML = state.game === 'forever'
+    ? 'Forever data on this page is invented sample data. Character art and icons are served by Blizzard.'
+    : `${esc(g.name)} snapshot from ${g.updatedAt ? new Date(g.updatedAt).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'}) : '—'}. Character art and icons are served by Blizzard.`;
+  syncURL();
+  if (!keepScroll) window.scrollTo(0, 0);
+}
+function refreshList(){
+  document.getElementById('list').innerHTML = listHTML();
+  document.getElementById('classes').innerHTML = classBar();
+  document.getElementById('rail').innerHTML = railHTML();
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('button'); if (!t) return;
+  if (t.dataset.game) { state.game = t.dataset.game; state.cls = state.owner = null; state.q = ''; if (state.view === 'detail') state.view = 'roster'; render(); }
+  else if (t.dataset.guild) { state.guild = t.dataset.guild; state.cls = state.owner = null; state.q = ''; if (state.view === 'detail') state.view = 'roster'; render(); }
+  else if (t.id === 'swap') { state.guild = state.guild === 'deaths-edge' ? 'riot-act' : 'deaths-edge'; state.cls = state.owner = null; state.q = ''; if (state.view === 'detail') state.view = 'roster'; render(); }
+  else if (t.dataset.view) { state.view = t.dataset.view; render(); }
+  else if (t.dataset.open) { state.c = t.dataset.open; state.view = 'detail'; render(); }
+  else if (t.dataset.cls) { state.cls = state.cls === t.dataset.cls ? null : t.dataset.cls; refreshList(); }
+  else if (t.dataset.owner) { state.owner = state.owner === t.dataset.owner ? null : t.dataset.owner; refreshList(); }
+  else if ('clear' in t.dataset) { state.cls = state.owner = null; state.q = ''; const q = document.getElementById('q'); if (q) q.value = ''; refreshList(); }
+});
+document.addEventListener('input', e => {
+  if (e.target.id === 'q') { state.q = e.target.value; document.getElementById('list').innerHTML = listHTML(); }
+  if (e.target.id === 'sort') { state.sort = e.target.value; document.getElementById('list').innerHTML = listHTML(); }
+});
+document.addEventListener('pointerover', e => {
+  const t = e.target.closest('.pile .tok'), tip = document.getElementById('tip'); if (!tip) return;
+  if (!t) { tip.style.display = 'none'; return; }
+  tip.textContent = t.dataset.tip; tip.style.display = 'block'; tip.style.left = (t.offsetLeft + t.offsetWidth / 2) + 'px'; tip.style.top = (t.offsetTop - 8) + 'px';
+});
+let lastW = window.innerWidth, rz;
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitTitle);
+window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if (window.innerWidth === lastW) return; lastW = window.innerWidth;
+  if (state.view === 'roster') paintLineup(); else render(true); }, 120); });
+(function init(){
+  const p = new URLSearchParams(location.search);
+  if (p.get('game') === 'forever' || p.get('game') === 'retail') state.game = p.get('game');
+  if (DATA.retail[p.get('guild')]) state.guild = p.get('guild');
+  if (['roster','ready','raids','ranks','collections','detail'].includes(p.get('view'))) state.view = p.get('view');
+  if (p.get('c')) state.c = p.get('c');
+  render();
+})();
+</script>
+</body>
+</html>

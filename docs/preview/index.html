@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="Three options for the new guild site">
+<meta property="og:description" content="Open each one, try it on your phone, then vote in Discord.">
+<meta property="og:image" content="https://wow.nwpremier.net/preview/img/1-retail.jpg">
+<title>Three options for the new guild site</title>
+<style>
+  :root { --bg: #15161a; --card: #1e2026; --line: #30333c; --text: #f2f0ea; --muted: #a9a79f; --link: #f5c451; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: clamp(26px, 5vw, 40px); line-height: 1.15; margin: 0 0 8px; }
+  .lead { color: var(--muted); margin: 0 0 28px; max-width: 60ch; }
+  .option { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin: 0 0 20px; }
+  .head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+  .num { flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--link); color: #15161a; font-weight: 800; font-size: 22px; display: grid; place-items: center; }
+  h2 { font-size: 22px; margin: 0; line-height: 1.2; }
+  .head p { margin: 4px 0 0; color: var(--muted); }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  figure { margin: 0; }
+  figure a { display: block; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  figure img { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 900; object-fit: cover; }
+  figcaption { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .open { display: inline-block; margin-top: 16px; padding: 12px 20px; border-radius: 8px; background: var(--link); color: #15161a; font-weight: 700; text-decoration: none; }
+  a:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .note { color: var(--muted); font-size: 14px; margin-top: 28px; }
+  .note a { color: var(--link); }
+  @media (max-width: 640px) { .shots { grid-template-columns: 1fr; } .option { padding: 16px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Three options for the new guild site</h1>
+  <p class="lead">Open each one, switch between Retail and Forever, tap into a character, and try it on your phone. Then vote 1, 2 or 3 in Discord.</p>
+
+  <section class="option">
+    <div class="head">
+      <div class="num" aria-hidden="true">1</div>
+      <div>
+        <h2>The Muster</h2>
+        <p>Your characters lined up as a group shot. Red for Horde, blue for Alliance, parchment for Forever.</p>
+      </div>
+    </div>
+    <div class="shots">
+      <figure><a href="1/?game=retail"><img src="img/1-retail.jpg" alt="Option 1, Retail home screen" loading="lazy"></a><figcaption>Retail</figcaption></figure>
+      <figure><a href="1/?game=forever"><img src="img/1-forever.jpg" alt="Option 1, Forever home screen" loading="lazy"></a><figcaption>Forever</figcaption></figure>
+    </div>
+    <a class="open" href="1/">Open option 1</a>
+  </section>
+
+  <section class="option">
+    <div class="head">
+      <div class="num" aria-hidden="true">2</div>
+      <div>
+        <h2>The Guild Hall</h2>
+        <p>Light, calm pages with a faction-coloured hall at the top. Evergreen and bronze for Forever.</p>
+      </div>
+    </div>
+    <div class="shots">
+      <figure><a href="2/?game=retail"><img src="img/2-retail.jpg" alt="Option 2, Retail home screen" loading="lazy"></a><figcaption>Retail</figcaption></figure>
+      <figure><a href="2/?game=forever"><img src="img/2-forever.jpg" alt="Option 2, Forever home screen" loading="lazy"></a><figcaption>Forever</figcaption></figure>
+    </div>
+    <a class="open" href="2/">Open option 2</a>
+  </section>
+
+  <section class="option">
+    <div class="head">
+      <div class="num" aria-hidden="true">3</div>
+      <div>
+        <h2>The Sanctum</h2>
+        <p>Dark and gold for Retail, a parchment dossier for Forever.</p>
+      </div>
+    </div>
+    <div class="shots">
+      <figure><a href="3/?game=retail"><img src="img/3-retail.jpg" alt="Option 3, Retail home screen" loading="lazy"></a><figcaption>Retail</figcaption></figure>
+      <figure><a href="3/?game=forever"><img src="img/3-forever.jpg" alt="Option 3, Forever home screen" loading="lazy"></a><figcaption>Forever</figcaption></figure>
+    </div>
+    <a class="open" href="3/">Open option 3</a>
+  </section>
+
+  <p class="note">These are previews of the look only. The roster is a frozen copy and does not update, some pages are placeholders, and the Forever characters are made up. The real site is still at <a href="/">wow.nwpremier.net</a>.</p>
+</main>
+</body>
+</html>
