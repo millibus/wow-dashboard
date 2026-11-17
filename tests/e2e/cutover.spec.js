@@ -4,8 +4,11 @@
 
 const { test, expect } = require('@playwright/test');
 
+const { stubRenders, blockFonts } = require('./helpers');
+
 test.beforeEach(async ({ page }) => {
-  await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+  await blockFonts(page);
+  await stubRenders(page);
 });
 
 test('the site root is the dashboard', async ({ page }) => {
@@ -20,6 +23,12 @@ test('old /v2/ links forward to the root and keep their deep link', async ({ pag
   await expect(page).toHaveURL(/\/\?guild=riot-act&tab=leaderboard#x$/);
   await expect(page.getByRole('tab', { name: 'Leaderboard' })).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('#guild-title')).toContainText('Riot Act');
+});
+
+test('the retired design previews forward to the site root', async ({ page }) => {
+  await page.goto('/preview/');
+  await expect(page.getByRole('tablist', { name: 'Dashboard views' })).toBeVisible();
+  expect(new URL(page.url()).pathname).toBe('/');
 });
 
 test('the previous dashboard still works at /v1/ and links back to the new one', async ({ page }) => {

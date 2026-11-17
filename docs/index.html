@@ -1,81 +1,178 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-game="retail">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Guild Dashboard</title>
-  <meta name="description" content="World of Warcraft guild dashboard — roster, readiness, raids, and collections">
-  <meta property="og:title" content="Guild Dashboard">
-  <meta property="og:description" content="Roster, raid readiness, leaderboards, raids, pets and mounts for Death's Edge and Riot Act on Onyxia-US.">
+  <title>Guild roster</title>
+  <meta name="description" content="A World of Warcraft guild's roster, leaderboard, raids and collections, refreshed hourly from Blizzard's armory.">
+  <meta property="og:title" content="Guild roster">
+  <meta property="og:description" content="Roster, leaderboard, raids, pets and mounts for Deaths Edge and Riot Act on Onyxia-US.">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <meta name="theme-color" content="#150809">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23150809'/><path d='M8 27V14a8 8 0 0 1 16 0v13z' fill='%23f3f0e8'/><path d='M12.5 27V15a3.5 3.5 0 0 1 7 0v12z' fill='%238a2c2a'/></svg>">
+  <!-- The game is known from the URL alone, so it is set before first paint:
+       a Forever deep link never flashes the Retail banner. -->
+  <script>
+    document.documentElement.dataset.game =
+      new URLSearchParams(location.search).get('game') === 'forever' ? 'forever' : 'retail';
+  </script>
   <link rel="preconnect" href="https://render.worldofwarcraft.com">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Marcellus&family=Sofia+Sans:wght@400;500;600;700&family=Sofia+Sans+Extra+Condensed:wght@600;800&display=swap">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/stage.css">
   <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
-  <header class="site-header">
-    <div class="brand">
-      <svg class="crest" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4 L15 15 M4 4 L4 8 M4 4 L8 4"></path><path d="M20 4 L9 15 M20 4 L20 8 M20 4 L16 4"></path><path d="M6.5 17.5 L9 15 M17.5 17.5 L15 15"></path><circle cx="12" cy="18.5" r="2.2"></circle></svg>
-      <div class="brand-text">
-        <h1 id="guild-title" class="wordmark">Guild Dashboard</h1>
-        <p id="guild-subtitle" class="subtitle">Loading…</p>
-      </div>
-    </div>
-    <div class="header-tools">
-      <div id="guild-switcher" class="segmented" role="group" aria-label="Guild"></div>
-      <div id="freshness" class="freshness" aria-live="polite"></div>
-      <button id="refresh" class="btn btn-quiet btn-refresh" type="button" disabled title="Check for a newer snapshot now (also checked automatically every few minutes)">
-        <svg class="refresh-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v5h-5"></path></svg>
-        <span class="btn-label">Refresh</span>
-      </button>
-      <span id="update-notice" class="update-notice" role="status" aria-live="polite"></span>
-    </div>
-  </header>
-
   <div id="stale-banner" hidden></div>
 
-  <nav class="tabs-bar" aria-label="Views">
-    <div id="tabs" class="tabs" role="tablist" aria-label="Dashboard views"></div>
-    <div class="toolbar">
-      <label class="search-box">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20 L16 16"></path></svg>
-        <span class="visually-hidden">Search roster</span>
-        <input id="search" type="search" placeholder="Search name, class, spec…" autocomplete="off">
-      </label>
-      <label class="sort-box">
-        <span class="visually-hidden">Sort by</span>
-        <select id="sort">
-          <option value="ilvl">Item level</option>
-          <option value="level">Level</option>
-          <option value="name">Name</option>
-          <option value="class">Class</option>
-        </select>
-      </label>
-      <button id="compare-toggle" class="btn btn-quiet" type="button" aria-pressed="false">Compare</button>
+  <!-- The banner is the dark half of the page: the header controls and the
+       stage share one faction-coloured scene. Everything below it is paper. -->
+  <div id="banner" class="banner">
+    <header class="site-header">
+      <div id="game-switch" class="game-switch" role="group" aria-label="Game">
+        <button type="button" class="game-btn game-btn-retail" data-game="retail" aria-pressed="true">Retail</button>
+        <button type="button" class="game-btn game-btn-forever" data-game="forever" aria-pressed="false">Forever</button>
+      </div>
+      <div id="guild-switcher" class="guild-switch" role="group" aria-label="Guild"></div>
+      <div class="header-tools">
+        <span id="update-notice" class="update-notice" role="status" aria-live="polite"></span>
+        <div id="freshness" class="freshness" aria-live="polite"></div>
+        <button id="refresh" class="btn-refresh" type="button" disabled title="Check for a newer snapshot now (also checked automatically every few minutes)">
+          <svg class="refresh-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"></path><path d="M20 4v5h-5"></path></svg>
+          <span class="btn-label">Refresh</span>
+        </button>
+      </div>
+    </header>
+
+    <section id="stage" class="stage is-slim" aria-labelledby="guild-title">
+      <div class="scene" aria-hidden="true">
+        <!-- Horde: ember dusk over a spiked ridge. -->
+        <svg class="scene-art scene-horde" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" focusable="false">
+          <defs>
+            <linearGradient id="h-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#150809"/><stop offset=".5" stop-color="#3b1110"/>
+              <stop offset=".8" stop-color="#8e2f1b"/><stop offset="1" stop-color="#d9622f"/>
+            </linearGradient>
+            <radialGradient id="h-sun" cx=".5" cy="1" r=".62">
+              <stop offset="0" stop-color="#ffb066" stop-opacity=".85"/><stop offset=".45" stop-color="#ff7a45" stop-opacity=".3"/>
+              <stop offset="1" stop-color="#ff7a45" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="1440" height="600" fill="url(#h-sky)"/>
+          <rect width="1440" height="600" fill="url(#h-sun)"/>
+          <path fill="#56180f" opacity=".85" d="M0 470 90 430l40 22 55-70 30 58 70-34 62 40 48-88 44 78 80-30 70 46 60-96 52 84 90-40 66 30 46-74 50 80 84-36 60 44 54-92 46 88 82-34 71 40H1440V600H0z"/>
+          <path fill="#2a0c0b" d="M0 520 60 500l18-70 20 62 58 12 22-110 26 104 70 10 30-54 26 60 84 8 20-128 28 122 62 14 36-48 30 54 80 4 24-98 26 96 70 12 34-60 30 62 76 6 22-120 28 116 66 12 30-44 28 50 84 6 24-104 28 100 90 16H1440V600H0z"/>
+          <rect y="540" width="1440" height="60" fill="#1b0808"/>
+        </svg>
+        <!-- Alliance: moonlit night over keep towers. -->
+        <svg class="scene-art scene-alliance" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" focusable="false">
+          <defs>
+            <linearGradient id="a-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#070c1c"/><stop offset=".55" stop-color="#11244a"/>
+              <stop offset=".85" stop-color="#274a7a"/><stop offset="1" stop-color="#5c7fa8"/>
+            </linearGradient>
+            <radialGradient id="a-moon" cx=".84" cy=".42" r=".42">
+              <stop offset="0" stop-color="#f5e3ad" stop-opacity=".5"/><stop offset=".3" stop-color="#f5c451" stop-opacity=".14"/>
+              <stop offset="1" stop-color="#f5c451" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="1440" height="600" fill="url(#a-sky)"/>
+          <rect width="1440" height="600" fill="url(#a-moon)"/>
+          <circle cx="1210" cy="252" r="30" fill="#f7ecc8" opacity=".9"/>
+          <g fill="#dfe8ff" opacity=".7"><circle cx="140" cy="80" r="1.6"/><circle cx="330" cy="150" r="1.2"/><circle cx="520" cy="60" r="1.5"/><circle cx="700" cy="130" r="1.1"/><circle cx="880" cy="70" r="1.4"/><circle cx="1010" cy="190" r="1.1"/><circle cx="1300" cy="210" r="1.5"/><circle cx="1380" cy="90" r="1.2"/><circle cx="240" cy="230" r="1.1"/><circle cx="610" cy="240" r="1.3"/></g>
+          <path fill="#1b3560" opacity=".9" d="M0 470h70v-60l22-44 22 44v60h90v-30h26v-70l30-56 30 56v70h28v30h120v-90l26-50 26 50v90h110v-40h24v-96l34-64 34 64v96h24v40h130v-70l24-46 24 46v70h100v-34h26v-80l30-58 30 58v80h26v34h120v-84l24-48 24 48v84h96v-50l22-42 22 42v50h80H1440V600H0z"/>
+          <path fill="#0b1630" d="M0 520h110v-70h16v-22h14v22h30v-22h14v22h16v70h150v-110l40-70 40 70v110h170v-60h18v-20h16v20h34v-20h16v20h18v60h160v-130l44-78 44 78v130h150v-66h18v-22h16v22h32v-22h16v22h18v66h140v-96l36-64 36 64v96h82H1440V600H0z"/>
+          <rect y="540" width="1440" height="60" fill="#080f22"/>
+        </svg>
+        <!-- Forever: an empty camp in the pines, fire lit, nobody home yet. -->
+        <svg class="scene-art scene-forever" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" focusable="false">
+          <defs>
+            <linearGradient id="f-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#051d1b"/><stop offset=".6" stop-color="#0b3632"/><stop offset="1" stop-color="#16524a"/>
+            </linearGradient>
+            <radialGradient id="f-glow" cx=".5" cy=".9" r=".42">
+              <stop offset="0" stop-color="#ffb35a" stop-opacity=".6"/><stop offset=".4" stop-color="#e58a3a" stop-opacity=".2"/>
+              <stop offset="1" stop-color="#e58a3a" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect width="1440" height="600" fill="url(#f-sky)"/>
+          <g fill="#f3e6c4" opacity=".75"><circle cx="120" cy="70" r="1.5"/><circle cx="290" cy="130" r="1.1"/><circle cx="450" cy="50" r="1.4"/><circle cx="640" cy="100" r="1.1"/><circle cx="820" cy="46" r="1.5"/><circle cx="980" cy="120" r="1.2"/><circle cx="1150" cy="64" r="1.4"/><circle cx="1320" cy="140" r="1.1"/><circle cx="1400" cy="50" r="1.3"/><circle cx="560" cy="180" r="1"/><circle cx="900" cy="190" r="1.1"/></g>
+          <g fill="#0f3e38" opacity=".9">
+            <path d="M40 520 110 300l70 220zM190 520l80-270 80 270zM360 520l60-200 60 200zM930 520l60-210 60 210zM1080 520l84-280 84 280zM1250 520l66-220 66 220z"/>
+          </g>
+          <g fill="#06211f">
+            <path d="M-30 560 60 250l90 310zM120 560l70-230 70 230zM250 560l100-340 100 340zM1010 560l96-330 96 330zM1190 560l70-240 70 240zM1300 560l90-300 90 300z"/>
+            <path d="M0 560c240-34 480-40 720-40s480 6 720 40v40H0z"/>
+          </g>
+          <rect width="1440" height="600" fill="url(#f-glow)"/>
+          <g class="camp">
+            <path fill="#03100f" d="M506 546c20-10 96-12 118-2l-6 16c-28-8-80-6-104 2zM816 544c22-10 98-8 118 2l-8 16c-24-8-76-10-104-2z"/>
+            <ellipse cx="720" cy="556" rx="92" ry="12" fill="#03100f" opacity=".7"/>
+            <path fill="#2a160b" d="m662 552 104-26 6 12-104 26zM778 552 674 526l-6 12 104 26z"/>
+            <g class="flame"><path fill="#ff7a1a" d="M720 446c11 24 37 39 37 70a37 37 0 0 1-74 0c0-20 13-26 17-44 7 9 9 13 11 20 4-13 9-26 9-46z"/></g>
+            <g class="flame flame-2"><path fill="#ffd257" d="M720 486c7 13 22 22 22 39a22 22 0 0 1-44 0c0-11 8-15 10-24 4 4 5 8 6 11 2-8 6-15 6-26z"/><path fill="#fff6d0" d="M720 516c3 7 10 10 10 18a10 10 0 0 1-20 0c0-7 7-10 10-18z"/></g>
+          </g>
+        </svg>
+      </div>
+      <p id="guild-subtitle" class="stage-sub">Loading…</p>
+      <h1 id="guild-title" class="poster">Guild roster</h1>
+      <div id="lineup" class="lineup"></div>
+    </section>
+  </div>
+
+  <div class="page">
+    <div id="stage-captions" class="stage-captions" hidden></div>
+
+    <div class="tabs-bar">
+      <div id="tabs" class="tabs" role="tablist" aria-label="Dashboard views"></div>
     </div>
-  </nav>
 
-  <div id="filters" class="filters" role="group" aria-label="Filters"></div>
-  <div id="compare-bar" class="compare-bar" role="status" aria-live="polite" hidden></div>
+    <main id="main">
+      <header id="view-head" class="view-head"></header>
+      <div id="stats" class="lead" role="group" aria-label="Guild summary"></div>
 
-  <main id="main">
-    <div id="stats" class="stat-strip" role="group" aria-label="Guild summary"></div>
-    <p id="result-count" class="result-count" aria-live="polite"></p>
-    <section id="view" class="view" role="tabpanel" aria-label="Current view"></section>
-  </main>
+      <div id="toolbar" class="toolbar">
+        <label class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20 L16 16"></path></svg>
+          <span class="visually-hidden">Search roster</span>
+          <input id="search" type="search" placeholder="Find a character" autocomplete="off">
+        </label>
+        <label class="sort-box">
+          <span class="sort-label">Sort</span>
+          <select id="sort" aria-label="Sort">
+            <option value="level">Level</option>
+            <option value="recent">Last seen</option>
+            <option value="name">Name</option>
+            <option value="class">Class</option>
+            <option value="rank">Guild rank</option>
+          </select>
+        </label>
+        <button id="compare-toggle" class="btn btn-quiet" type="button" aria-pressed="false">Compare</button>
+      </div>
+
+      <div id="filters" class="filters" role="group" aria-label="Filters"></div>
+      <div id="compare-bar" class="compare-bar" role="status" aria-live="polite" hidden></div>
+      <p id="result-count" class="result-count" aria-live="polite"></p>
+
+      <section id="view" class="view" role="tabpanel" aria-label="Current view"></section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Read from Blizzard's armory and refreshed about once an hour. A dash means the armory had nothing to report, never zero.</p>
+      <p><a href="v1/">The previous dashboard</a></p>
+    </footer>
+  </div>
 
   <nav id="bottom-nav" class="bottom-nav" aria-label="Views"></nav>
 
-  <dialog id="detail-dialog" class="detail-dialog" aria-labelledby="detail-title"></dialog>
-  <dialog id="compare-dialog" class="detail-dialog compare-dialog" aria-labelledby="compare-title"></dialog>
+  <dialog id="detail-dialog" class="sheet-dialog detail-dialog" aria-labelledby="detail-title"></dialog>
+  <dialog id="compare-dialog" class="sheet-dialog compare-dialog" aria-labelledby="compare-title"></dialog>
 
   <script type="module" src="js/main.js"></script>
 </body>

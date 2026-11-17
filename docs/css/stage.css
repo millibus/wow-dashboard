@@ -1,0 +1,461 @@
+/* The banner: header controls over the stage. This is the dark half of the
+   site. The seam with the paper below is a hard edge that the front row of
+   the group photo steps across — their feet (and their shadows) land on the
+   paper, and their names are set there as a caption. */
+
+.banner {
+  /* The banner's contents share the paper's left edge: the page container's
+     gutter, not the viewport's. */
+  --edge: max(var(--gutter), calc((100% - var(--page-max)) / 2 + var(--gutter)));
+  position: relative;
+  z-index: var(--z-banner);
+  background: var(--stage-0);
+  color: var(--on-stage);
+}
+
+/* ---------- Header (laid over the top of the scene) ---------- */
+.site-header {
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px 18px;
+  min-height: 56px;
+  padding: 8px var(--edge);
+  background: linear-gradient(180deg, rgb(var(--stage-0-rgb) / 0.92) 0%, rgb(var(--stage-0-rgb) / 0.6) 60%, rgb(var(--stage-0-rgb) / 0) 100%);
+}
+
+/* Game switch: the pressed game is a solid cream key, so which game you are
+   in is the highest-contrast thing in the header. Each game is lettered in
+   its own display face. */
+.game-switch {
+  display: flex;
+  flex: none;
+  padding: 3px;
+  border: 1px solid rgb(255 255 255 / 0.26);
+  border-radius: 7px;
+  background: rgb(0 0 0 / 0.28);
+}
+.game-btn {
+  min-width: 74px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--on-stage-2);
+  transition: background 120ms ease, color 120ms ease;
+}
+.game-btn-retail {
+  font: 800 18px/1 var(--font-poster);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.game-btn-forever {
+  font: 400 16px/1 var(--font-forever);
+  letter-spacing: 0.01em;
+}
+.game-btn:hover { color: var(--on-stage); }
+.game-btn[aria-pressed="true"] {
+  background: var(--on-stage);
+  color: var(--stage-0);
+}
+
+/* Guild switch: two names, the current one underlined in the faction's
+   bright tone. */
+/* It may shrink (names ellipsize) but never pushes the header wider than the
+   screen — which a fallback font on a 360px phone otherwise would. */
+.guild-switch {
+  display: flex;
+  flex: 0 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+.guild-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--on-stage-2);
+  font: 800 18px/1 var(--font-poster);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.guild-btn span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.guild-btn:hover { color: var(--on-stage); }
+.guild-btn[aria-pressed="true"] {
+  color: var(--on-stage);
+  border-bottom-color: var(--stage-glow);
+}
+.faction-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: #9a917f;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.5);
+}
+.guild-btn.is-horde .faction-dot { background: #c9302c; }
+.guild-btn.is-alliance .faction-dot { background: #3a78d0; }
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px 12px;
+  margin-left: auto;
+  min-width: 0;
+}
+.freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--on-stage-2);
+  white-space: nowrap;
+}
+.freshness .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #6fd598;
+}
+.freshness.is-aging .dot { background: #e9b955; }
+.freshness.is-stale .dot { background: #ff8674; }
+.freshness.is-stale { color: #ffd9d1; }
+.update-notice {
+  font-size: 13.5px;
+  color: var(--on-stage);
+  white-space: nowrap;
+}
+.update-notice:empty { display: none; }
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.28);
+  color: var(--on-stage);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.btn-refresh:hover:not(:disabled) { border-color: var(--on-stage); }
+.btn-refresh:disabled { opacity: 0.6; cursor: default; }
+.btn-refresh.is-busy .refresh-icon { animation: spin 900ms linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+:root[data-game="forever"] .header-tools { display: none; }
+
+/* ---------- Stage ---------- */
+.stage {
+  position: relative;
+  height: var(--stage-h);
+  isolation: isolate;
+  --stage-h: 150px;
+}
+.stage.is-full { --stage-h: clamp(430px, 58vh, 560px); }
+.stage.is-full.is-bare { --stage-h: 300px; }
+.stage.is-forever { --stage-h: clamp(340px, 50vh, 480px); }
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, var(--stage-0), var(--stage-1));
+}
+.scene-art {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  display: none;
+}
+:root[data-game="retail"][data-faction="horde"] .scene-horde,
+:root[data-game="retail"][data-faction="alliance"] .scene-alliance,
+:root[data-game="forever"] .scene-forever { display: block; }
+
+.flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame 1.9s ease-in-out infinite; }
+.flame-2 { animation-duration: 1.3s; animation-delay: -0.4s; }
+@keyframes flame {
+  0%, 100% { transform: scale(1, 1) skewX(0); }
+  30% { transform: scale(0.94, 1.08) skewX(-3deg); }
+  65% { transform: scale(1.05, 0.93) skewX(3deg); }
+}
+
+.stage-sub {
+  position: absolute;
+  z-index: 4;
+  left: var(--edge);
+  right: var(--edge);
+  top: 64px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--on-stage-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+/* The guild name at poster size, behind the figures. It fades toward the
+   ground so heads read against it, but never below 3:1 against the scene
+   (measured on both factions; the name is real heading text). stage.js sets the font-size to fit. */
+.poster {
+  position: absolute;
+  z-index: 1;
+  left: 0; right: 0;
+  top: 96px;
+  text-align: center;
+  white-space: nowrap;
+  font: 800 100px/0.8 var(--font-poster);
+  letter-spacing: 0.005em;
+  text-transform: uppercase;
+  color: transparent;
+  background: linear-gradient(180deg, #fff6e6 0%, #fff6e6 46%, rgb(255 246 230 / 0.6) 94%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  pointer-events: none;
+}
+.poster:not([data-text]) { visibility: hidden; }
+.poster span { display: inline-block; }
+@media (forced-colors: active) {
+  .poster { color: CanvasText; background: none; }
+}
+
+/* Slim: the same name on a short band, for every view that is not the roster. */
+.stage.is-slim .poster {
+  top: auto;
+  bottom: 14px;
+  left: var(--edge);
+  right: var(--edge);
+  text-align: left;
+  font-size: clamp(44px, 8.4vw, 76px);
+  color: var(--on-stage);
+  background: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The slim band shows the scene's skyline, not its ground: the art keeps its
+   proportions and is slid down until the ridge line sits behind the name. */
+.stage.is-slim .scene-art {
+  inset: auto 0 -8vw 0;
+  height: auto;
+  aspect-ratio: 1440 / 600;
+}
+.stage.is-slim .stage-sub { top: auto; bottom: 20px; text-align: right; }
+.stage.is-slim .scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgb(var(--stage-0-rgb) / 0.82) 0%, rgb(var(--stage-0-rgb) / 0.35) 60%, rgb(var(--stage-0-rgb) / 0) 100%);
+}
+
+/* Forever: the word itself, in the old game's voice, over an empty camp. */
+.stage.is-forever .poster {
+  top: 30%;
+  font: 400 clamp(72px, 15vw, 210px)/0.9 var(--font-forever);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  background: linear-gradient(180deg, #fbf1d8 0%, #fbf1d8 50%, rgb(251 241 216 / 0.2) 96%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+.stage.is-forever .stage-sub {
+  top: calc(30% - 34px);
+  text-align: center;
+  font: 800 15px/1.2 var(--font-poster);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--stage-glow);
+}
+:root[data-game="forever"] .banner {
+  border-bottom: 5px double #b98a4e;
+}
+
+/* ---------- The lineup ---------- */
+/* The box runs 30px past the bottom of the stage so the front row's feet and
+   shadows can land on the paper; everything else is clipped to the stage. */
+.lineup {
+  position: absolute;
+  inset: 0 0 -30px 0;
+  z-index: 3;
+  overflow: hidden;
+  pointer-events: none;
+}
+.fig {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 500ms ease, transform 180ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.fig.is-loaded { opacity: 1; }
+.fig img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.fig-r1 img { filter: brightness(0.5) saturate(0.72); transition: filter 180ms ease; }
+.fig:hover, .fig:focus-visible { transform: translateY(-4px); z-index: 70 !important; }
+.fig-r1:hover img, .fig-r1:focus-visible img { filter: none; }
+/* Two rings, light inside dark, so the focus mark holds on scene and paper. */
+.fig:focus-visible {
+  outline: 2px solid var(--on-stage);
+  outline-offset: -6px;
+  box-shadow: inset 0 0 0 2px var(--stage-0), inset 0 0 0 8px rgb(var(--stage-0-rgb) / 0.55);
+}
+.plate {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% - 6px);
+  transform: translateX(-50%);
+  padding: 5px 9px 4px;
+  border-radius: 4px;
+  background: rgb(var(--stage-0-rgb) / 0.88);
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.15;
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+.plate b { display: block; font: 400 19px/1.1 var(--font-serif); color: var(--on-stage); }
+.plate i { display: block; font-style: normal; font-size: 12px; color: var(--on-stage-2); }
+.fig:hover .plate, .fig:focus-visible .plate { opacity: 1; }
+
+.fog {
+  position: absolute;
+  left: 0; right: 0; bottom: 30px;
+  z-index: 20;
+  background: linear-gradient(0deg, rgb(var(--stage-0-rgb) / 0.94) 0%, rgb(var(--stage-0-rgb) / 0.6) 45%, rgb(var(--stage-0-rgb) / 0) 100%);
+}
+.fig-shadow {
+  position: absolute;
+  z-index: 25;
+  height: 18px;
+  transform: translateX(-50%);
+  background: radial-gradient(closest-side, rgb(38 24 14 / 0.5), rgb(38 24 14 / 0));
+}
+
+/* ---------- Captions: the front row, named on the paper ---------- */
+.stage-captions {
+  position: relative;
+  padding: 24px var(--gutter) 2px;
+  text-align: center;
+}
+.cap-row {
+  display: flex;
+  justify-content: center;
+}
+.cap {
+  flex: none;
+  padding: 0 4px;
+  cursor: pointer;
+}
+.cap-name {
+  display: block;
+  font: 400 23px/1.1 var(--font-serif);
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cap:hover .cap-name { color: var(--accent); }
+.cap-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.stage-legend {
+  margin-top: 8px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--ink-3);
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 768px) {
+  .site-header {
+    min-height: 50px;
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .game-btn { min-width: 0; min-height: 36px; padding: 0 10px; }
+  .game-btn-retail { font-size: 17px; }
+  .game-btn-forever { font-size: 15px; }
+  .guild-switch { margin-left: auto; }
+  .guild-btn { padding: 0 6px; font-size: 16.5px; letter-spacing: 0.03em; gap: 5px; }
+  .faction-dot { width: 7px; height: 7px; }
+
+  /* Freshness and refresh drop to a second line, at the right of the stage. */
+  .header-tools {
+    position: absolute;
+    top: 48px;
+    right: 2px;
+    gap: 2px;
+    margin: 0;
+    flex-direction: row;
+  }
+  .freshness { font-size: 12.5px; }
+  .btn-refresh {
+    min-width: var(--touch);
+    min-height: var(--touch);
+    padding: 0;
+    border-color: transparent;
+    background: none;
+  }
+  .btn-refresh .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .update-notice {
+    position: absolute;
+    top: 40px; right: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgb(var(--stage-0-rgb) / 0.92);
+    font-size: 12.5px;
+  }
+
+  .stage { --stage-h: 116px; }
+  .stage.is-full { --stage-h: clamp(290px, 42svh, 350px); }
+  .stage.is-full.is-bare { --stage-h: 220px; }
+  .stage.is-forever { --stage-h: clamp(280px, 40svh, 340px); }
+  .stage-sub {
+    top: 61px;
+    left: 12px;
+    right: 150px;
+    font-size: 12.5px;
+  }
+  .stage.is-slim .poster { left: 12px; right: 12px; bottom: 6px; font-size: clamp(34px, 11vw, 46px); }
+  .stage.is-slim .stage-sub { display: none; }
+  .stage.is-forever .stage-sub { right: 12px; font-size: 13px; }
+
+  .stage-captions { padding: 22px 6px 0; }
+  .cap-name { font-size: 19px; }
+  .cap-sub { font-size: 11.5px; }
+  .stage-legend { margin-top: 5px; font-size: 11.5px; }
+}
+
+@media (max-width: 359px) {
+  .game-btn { padding: 0 8px; }
+  .game-btn-retail { font-size: 15.5px; }
+  .game-btn-forever { font-size: 14px; }
+  .guild-btn { padding: 0 4px; font-size: 15px; letter-spacing: 0.02em; }
+  .faction-dot { display: none; }
+}

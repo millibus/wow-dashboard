@@ -1,16 +1,21 @@
 /* Base: reset, layout shell, typography, accessibility primitives. */
 *, *::before, *::after { box-sizing: border-box; }
 
-html { color-scheme: dark; }
+html {
+  color-scheme: light;
+  -webkit-text-size-adjust: 100%;
+  background: var(--paper);
+}
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body);
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 img { max-width: 100%; }
@@ -27,10 +32,20 @@ button, input, select {
 
 button { cursor: pointer; }
 
+h1, h2, h3, p, dl, dd, ul, ol { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+
+a { color: var(--accent); text-underline-offset: 3px; }
+
+/* One focus treatment everywhere: a 2px ring in ink on paper, in the stage's
+   bright tone on the banner. Never removed, only restyled. */
 :focus-visible {
-  outline: 2px solid var(--gold-light);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
+  border-radius: 2px;
 }
+.banner :focus-visible { outline-color: var(--on-stage); }
+#view:focus { outline: none; } /* programmatic focus target after a re-render */
 
 .visually-hidden {
   position: absolute;
@@ -44,30 +59,73 @@ button { cursor: pointer; }
 
 .skip-link {
   position: absolute;
-  left: 8px; top: -48px;
-  z-index: calc(var(--z-header) + 1);
-  background: var(--gold);
-  color: var(--bg);
+  left: 8px; top: -56px;
+  z-index: 100;
+  background: var(--ink);
+  color: var(--paper);
   font-weight: 600;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   transition: top 120ms ease;
 }
 .skip-link:focus { top: 8px; }
 
+.page {
+  position: relative;
+  background: var(--paper);
+}
+
 main {
   max-width: var(--page-max);
   margin: 0 auto;
-  padding: 0 28px 96px;
+  padding: 28px var(--gutter) 72px;
+  min-height: 40vh;
+}
+
+.eyebrow {
+  font: 800 13px/1.2 var(--font-poster);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.note {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  max-width: 68ch;
+}
+
+.linklike {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--ink);
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-strong);
+  text-underline-offset: 3px;
+}
+.linklike:hover { text-decoration-color: var(--accent); color: var(--accent); }
+
+.class-dot {
+  display: inline-block;
+  flex: none;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--class-color, var(--rule-strong));
+  box-shadow: inset 0 0 0 1px rgba(38, 35, 31, 0.28);
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
 @media (max-width: 768px) {
-  main { padding: 0 16px calc(84px + env(safe-area-inset-bottom)); }
+  main { padding: 14px var(--gutter) 40px; }
 }

@@ -4,9 +4,9 @@
 
 export const DATA_BASE = 'data/v2/';
 
-// Canonical Blizzard class colors — used for NON-TEXT accents only (card
-// rails, swatches, monogram tints, meter fills), where contrast minimums do
-// not apply and the identity should be exact.
+// Canonical Blizzard class colors. On the paper pages these are NON-TEXT
+// accents only (dots, bars, portrait tints): several of them cannot reach AA
+// contrast on ivory, so a class is always also named in ink.
 export const CLASS_COLORS = {
   'Death Knight': '#C41E3A',
   'Demon Hunter': '#A330C9',
@@ -23,44 +23,24 @@ export const CLASS_COLORS = {
   'Warrior': '#C69B3A',
 };
 
-// Same hues, lightened just far enough to clear WCAG AA (4.5:1) on the darkest
-// surface a character name sits on. Four classes needed it; the rest are the
-// canonical value unchanged. Use these wherever the color paints TEXT.
-export const CLASS_INK = {
-  ...CLASS_COLORS,
-  'Death Knight': '#D66275',
-  'Demon Hunter': '#B962D6',
-  'Evoker': '#379582',
-  'Shaman': '#2E8AE3',
-};
-
-export const OWNER_COLORS = {
-  user1: '#e8c96a',
-  user2: '#7db3e8',
-  user3: '#9ae87d',
-};
+// The two games the header switches between. Retail is the live site; Forever
+// has no guild yet and renders a designed "coming soon" state, never data.
+export const GAMES = ['retail', 'forever'];
 
 export const TABS = [
   { id: 'roster', label: 'Roster' },
-  { id: 'readiness', label: 'Readiness' },
   { id: 'leaderboard', label: 'Leaderboard' },
   { id: 'raids', label: 'Raids' },
   { id: 'collections', label: 'Collections' },
 ];
 
 // Raid difficulties, lowest first. `key` matches the kill counters in
-// raids/{slug}.json; `color` drives the tier progress meters.
+// raids/{slug}.json.
 export const DIFFICULTIES = [
-  { key: 'normal', label: 'Normal', color: 'var(--green)' },
-  { key: 'heroic', label: 'Heroic', color: 'var(--gold-light)' },
-  { key: 'mythic', label: 'Mythic', color: '#a330c9' },
+  { key: 'normal', label: 'Normal', short: 'N' },
+  { key: 'heroic', label: 'Heroic', short: 'H' },
+  { key: 'mythic', label: 'Mythic', short: 'M' },
 ];
-
-// Fallback only — manifest.config.readiness is authoritative.
-export const READINESS_DEFAULTS = {
-  minLevel: 80, ilvlFloor: 520, ilvlTarget: 610,
-  belowLevelPenalty: 25, readyScore: 80, watchScore: 60,
-};
 
 // Freshness thresholds against manifest.publishedAt.
 export const FRESHNESS = {
@@ -78,15 +58,51 @@ export const AUTO_REFRESH = {
   tickMs: 60e3,
 };
 
+// The stage ("group photo"). Each full-body render is a 1600x1200 transparent
+// PNG of roughly 300–900 KB, so the number loaded is capped per viewport:
+// about 2.5 MB on a phone and 5.5 MB on a desktop, measured on the live data.
+//
+// The render service sends no CORS header, so a figure's bounds cannot be read
+// from pixels in the browser. FOOT and HIT are one generic geometry derived
+// from bounds measured offline across 57 renders: the feet land within about
+// ±20px of y=984 and ±50px of x=808 in every one of them.
+export const STAGE = {
+  source: { w: 1600, h: 1200 },
+  foot: { x: 808, y: 984 },
+  hit: { x0: 620, y0: 330, x1: 1000, y1: 992 },
+  tiers: [
+    { minWidth: 1100, rows: [5, 6], scale: [0.43, 0.34], spacing: 196, lift: 74 },
+    { minWidth: 700, rows: [4, 4], scale: [0.4, 0.32], spacing: 172, lift: 64 },
+    { minWidth: 0, rows: [3, 2], scale: [0.3, 0.24], spacing: 118, lift: 46 },
+  ],
+};
+
+// The sheet's arch: one generic crop of the same render (source pixels).
+export const SHEET_CROP = { x: 440, y: 205, w: 690, h: 810 };
+
 export function classColor(className) {
-  return CLASS_COLORS[className] || '#c8a84b';
+  return CLASS_COLORS[className] || '#9a917f';
 }
 
-// Readable class color for text.
-export function classInk(className) {
-  return CLASS_INK[className] || '#e8c96a';
+// Owners arrive as opaque ids ("user1"). A label is shown only when the
+// manifest supplies one — as `owners: [{ id, label }]` or `ownerLabels: {id:
+// label}` — and never when it is just the id again.
+export function ownerLabel(manifest, ownerId) {
+  if (!ownerId) return null;
+  const cfg = manifest?.config || {};
+  let label = null;
+  if (cfg.ownerLabels && typeof cfg.ownerLabels === 'object') label = cfg.ownerLabels[ownerId];
+  if (!label && Array.isArray(cfg.owners)) {
+    const entry = cfg.owners.find(o => o && typeof o === 'object' && o.id === ownerId);
+    label = entry?.label || entry?.name || null;
+  }
+  if (typeof label !== 'string') return null;
+  label = label.trim();
+  if (!label || label === ownerId || /^user\d+$/i.test(label)) return null;
+  return label;
 }
 
-export function ownerColor(owner) {
-  return OWNER_COLORS[owner] || '#6b7186';
+export function levelCap(manifest) {
+  const cap = manifest?.config?.levelCap;
+  return Number.isFinite(cap) && cap > 0 ? cap : null;
 }

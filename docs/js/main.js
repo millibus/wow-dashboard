@@ -5,27 +5,36 @@
 import { el, clear, icon } from './dom.js';
 import { fetchManifest, fetchSnapshotFile, checkForUpdates, identityKey } from './api.js';
 import { getState, setState, subscribe } from './state.js';
-import { readUrl, syncUrl, onPopstate } from './router.js';
+import { readUrl, syncUrl, normalizeUrl, onPopstate } from './router.js';
 import { renderFreshness, renderStaleBanner } from './views/banner.js';
-import { renderFilters, renderStats, renderRoster, filterMembers, archiveDays } from './views/roster.js';
-import { renderReadinessFilters, renderReadiness } from './views/readiness.js';
+import { renderFilters, renderLead, renderRoster, filterMembers, activeFilterCount } from './views/roster.js';
 import { renderLeaderboardFilters, renderLeaderboard } from './views/leaderboard.js';
 import { renderRaidFilters, renderRaids } from './views/raids.js';
 import { renderCollectionFilters, renderCollections, ensureCollection } from './views/collections.js';
 import { setupDialog, openDetail } from './views/detail.js';
 import { setupCompareDialog, openCompare } from './views/compare.js';
+import { renderStage, fitPoster } from './views/stage.js';
+import { renderForever } from './views/forever.js';
 import { TABS, AUTO_REFRESH } from './config.js';
 
 const $ = id => document.getElementById(id);
 const ui = {
+  root: document.documentElement,
   title: $('guild-title'),
   subtitle: $('guild-subtitle'),
+  gameSwitch: $('game-switch'),
   switcher: $('guild-switcher'),
   freshness: $('freshness'),
   banner: $('stale-banner'),
   refresh: $('refresh'),
   updateNotice: $('update-notice'),
+  stage: $('stage'),
+  lineup: $('lineup'),
+  captions: $('stage-captions'),
+  tabsBar: document.querySelector('.tabs-bar'),
   tabs: $('tabs'),
+  viewHead: $('view-head'),
+  toolbar: $('toolbar'),
   search: $('search'),
   sort: $('sort'),
   compareToggle: $('compare-toggle'),
@@ -41,10 +50,16 @@ const ui = {
 
 const NAV_ICONS = {
   roster: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 20c0-3.3 3.6-5 8-5s8 1.7 8 5'],
-  readiness: ['M12 3l7 3v5c0 4.3-2.9 8.2-7 9.5C7.9 19.2 5 15.3 5 11V6l7-3Z', 'M9 12l2 2 4-4'],
   leaderboard: ['M5 20V10M12 20V4M19 20v-7'],
   raids: ['M4 4l16 16M20 4L4 20', 'M4 4v4M4 4h4M20 4v4M20 4h-4'],
   collections: ['M4 7h16v13H4Z', 'M8 7V4h8v3'],
+};
+
+const VIEW_TITLES = {
+  roster: 'The roster',
+  leaderboard: 'Leaderboard',
+  raids: 'Raids',
+  collections: 'Collections',
 };
 
 function guildList(manifest) {
@@ -56,6 +71,13 @@ function guildList(manifest) {
 function titleFromSlug(slug) {
   return String(slug || '').split('-').filter(Boolean)
     .map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
+}
+
+function factionOf(state, slug = state.guild) {
+  const cfgGuild = (state.manifest?.config?.guilds || []).find(g => g.slug === slug);
+  const raw = (slug === state.guild && state.roster?.faction) || cfgGuild?.faction || '';
+  const f = String(raw).toLowerCase();
+  return f === 'horde' || f === 'alliance' ? f : null;
 }
 
 // --- Data loading -----------------------------------------------------------
@@ -76,14 +98,18 @@ function loadRoster(slug) {
   // while A's first request is still running must not keep showing B's
   // roster under A's name until A resolves.
   setState({ roster: null, loadError: null });
-  return once(`roster:${slug}`, async () => {
-    const { manifest } = getState();
+  const { manifest } = getState();
+  // A response (or failure) only counts while the guild AND the snapshot it
+  // was requested under are still current: a slow first load must never
+  // overwrite the roster a refresh has since swapped in.
+  const current = () => getState().guild === slug && getState().manifest === manifest;
+  return once(`roster:${slug}:${manifest?.snapshotId}`, async () => {
     try {
       const roster = await fetchSnapshotFile(manifest, `guilds/${slug}.json`);
-      if (getState().guild !== slug) return; // superseded by another switch
+      if (!current()) return; // superseded by a guild switch or a newer snapshot
       setState({ roster });
     } catch (err) {
-      if (getState().guild !== slug) return;
+      if (!current()) return;
       setState({ roster: null, loadError: String(err?.message || err) });
     }
   });
@@ -125,7 +151,7 @@ function loadCollectionsIndex(slug) {
 
 // Kick off whatever the active tab needs; safe to call on every render.
 function ensureTabData(state) {
-  if (!state.guild || !state.manifest) return;
+  if (state.game !== 'retail' || !state.guild || !state.manifest) return;
   if (state.tab === 'raids') loadRaids(state.guild);
   if (state.tab === 'collections') {
     if (!state.collectionsIndex || state.collectionsIndex.slug !== state.guild) loadCollectionsIndex(state.guild);
@@ -133,38 +159,106 @@ function ensureTabData(state) {
   }
 }
 
+// --- Focus that survives a re-render ----------------------------------------
+
+// Views rebuild their DOM from state, which would drop keyboard focus on the
+// control that was just used. Every re-rendered control carries a stable
+// `data-fk`; after a render, focus goes back to the control with the same key
+// (or to the view itself if that control no longer exists).
+function focusToken() {
+  const active = document.activeElement;
+  if (!(active instanceof HTMLElement) || active === document.body) return null;
+  return { fk: active.dataset.fk || null, inView: ui.view.contains(active) || ui.filters.contains(active) };
+}
+
+function restoreFocus(token) {
+  if (!token) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && document.contains(active)) return; // focus survived or moved on purpose
+  if (ui.dialog.open || ui.compareDialog.open) return;
+  const target = token.fk ? document.querySelector(`[data-fk="${CSS.escape(token.fk)}"]`) : null;
+  if (target instanceof HTMLElement && !target.closest('[hidden]')) target.focus({ preventScroll: true });
+  else if (token.inView) ui.view.focus({ preventScroll: true });
+}
+
 // --- Header / nav rendering -------------------------------------------------
+
+function renderGameSwitch(state) {
+  ui.root.dataset.game = state.game;
+  for (const btn of ui.gameSwitch.querySelectorAll('button')) {
+    btn.setAttribute('aria-pressed', String(btn.dataset.game === state.game));
+  }
+}
 
 function renderSwitcher(state) {
   clear(ui.switcher);
   const slugs = guildList(state.manifest);
-  if (slugs.length < 2) { ui.switcher.hidden = slugs.length === 0; }
+  ui.switcher.hidden = slugs.length < 2 || state.game !== 'retail';
   for (const slug of slugs) {
+    const faction = factionOf(state, slug);
     ui.switcher.append(el('button', {
-      type: 'button',
+      type: 'button', class: faction ? `guild-btn is-${faction}` : 'guild-btn',
       'aria-pressed': String(slug === state.guild),
-      text: titleFromSlug(slug),
+      dataset: { fk: `guild:${slug}` },
       onclick: () => switchGuild(slug),
-    }));
+    }, el('span', { class: 'faction-dot', 'aria-hidden': 'true' }), el('span', { text: titleFromSlug(slug) })));
   }
+}
+
+// The poster is one <span> per word so the stage can stack and scale it; the
+// heading's text content stays the plain guild name.
+function setPoster(text) {
+  if (ui.title.dataset.text === text) return;
+  ui.title.dataset.text = text;
+  clear(ui.title);
+  text.split(/\s+/).filter(Boolean).forEach((word, i) => {
+    if (i) ui.title.append(' ');
+    ui.title.append(el('span', { text: word }));
+  });
 }
 
 // Guild name, realm, and region all come from the data — nothing here is a
 // constant that would go stale on a transfer or a second region.
 function renderHeaderText(state) {
+  if (state.game === 'forever') {
+    delete ui.root.dataset.faction;
+    setPoster('Forever');
+    ui.subtitle.textContent = 'World of Warcraft: Forever';
+    document.title = 'Forever — coming soon';
+    return;
+  }
   const name = state.roster?.guild || titleFromSlug(state.guild || '');
-  if (name) ui.title.textContent = name;
+  if (name) setPoster(name);
+  const faction = factionOf(state);
+  if (faction) ui.root.dataset.faction = faction; else delete ui.root.dataset.faction;
   const cfgGuild = (state.manifest?.config?.guilds || []).find(g => g.slug === state.guild);
   const realm = state.roster?.realm || (cfgGuild?.realm ? titleFromSlug(cfgGuild.realm) : null);
   const region = (state.manifest?.config?.region || state.manifest?.region || '').toUpperCase();
   const where = [realm, region].filter(Boolean).join('-');
-  ui.subtitle.textContent = where ? `${where} · Guild Dashboard` : 'Guild Dashboard';
-  document.title = `${name || 'Guild'} — Guild Dashboard`;
+  const count = state.roster?.members?.length;
+  ui.subtitle.textContent = [
+    faction ? faction[0].toUpperCase() + faction.slice(1) : null,
+    where || null,
+    count ? `${count} ${count === 1 ? 'member' : 'members'}` : null,
+  ].filter(Boolean).join(' · ') || 'Loading…';
+  document.title = `${name || 'Guild'} — guild roster`;
+}
+
+// The browser chrome on a phone takes the banner's colour, so the page reads
+// as one piece from the status bar down.
+function syncThemeColor() {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const color = getComputedStyle(ui.root).getPropertyValue('--stage-0').trim();
+  if (meta && color) meta.setAttribute('content', color);
 }
 
 function renderTabs(state) {
   clear(ui.tabs);
   clear(ui.bottomNav);
+  const retail = state.game === 'retail';
+  ui.tabsBar.hidden = !retail;
+  ui.bottomNav.hidden = !retail;
+  if (!retail) return;
   TABS.forEach((tab, i) => {
     const selected = state.tab === tab.id;
     ui.tabs.append(el('button', {
@@ -172,12 +266,14 @@ function renderTabs(state) {
       'aria-selected': String(selected),
       'aria-controls': 'view',
       tabindex: selected ? '0' : '-1',
+      dataset: { fk: `tab:${tab.id}` },
       text: tab.label,
       onclick: () => setState({ tab: tab.id }),
       onkeydown: e => tabKeydown(e, i),
     }));
     const btn = el('button', {
       type: 'button', 'aria-current': selected ? 'true' : null,
+      dataset: { fk: `nav:${tab.id}` },
       onclick: () => setState({ tab: tab.id }),
     }, icon(NAV_ICONS[tab.id] || [], { size: 20 }), el('span', { text: tab.label }));
     ui.bottomNav.append(btn);
@@ -195,8 +291,10 @@ function tabKeydown(e, index) {
 
 // --- Views ------------------------------------------------------------------
 
-// A roster card click opens the detail — or, in compare mode, toggles the
-// card's selection; the comparison opens itself at two.
+const openSheet = member => setState({ detailKey: identityKey(member) });
+
+// A roster row click opens the sheet — or, in compare mode, toggles the row's
+// selection; the comparison opens itself at two.
 const openMember = member => {
   const state = getState();
   if (state.tab === 'roster' && state.compareMode) {
@@ -207,18 +305,17 @@ const openMember = member => {
     setState({ compareKeys: keys });
     return;
   }
-  setState({ detailKey: identityKey(member) });
+  openSheet(member);
 };
 
 const actions = {
   // Roster
   setScope: scope => setState({ scope }),
+  setFiltersOpen: filtersOpen => setState({ filtersOpen }),
   toggleOwner: owner => setState({ owners: toggled(getState().owners, owner) }),
   toggleClass: cls => setState({ classes: toggled(getState().classes, cls) }),
   toggleRace: race => setState({ races: toggled(getState().races, race) }),
   setMinLevel: minLevel => setState({ minLevel }),
-  // Readiness
-  setRisk: risk => setState({ risk }),
   // Leaderboard
   setCategory: category => setState({ category }),
   // Raids
@@ -236,7 +333,7 @@ const actions = {
 };
 
 function hasRosterFilters(state) {
-  return !!(state.search.trim() || state.owners.size || state.classes.size || state.races.size || state.minLevel);
+  return !!(state.search.trim() || activeFilterCount(state));
 }
 
 function toggled(set, value) {
@@ -246,7 +343,7 @@ function toggled(set, value) {
 }
 
 function renderCompareBar(state) {
-  const active = state.tab === 'roster' && state.compareMode;
+  const active = state.game === 'retail' && state.tab === 'roster' && state.compareMode;
   ui.compareToggle.setAttribute('aria-pressed', String(!!state.compareMode));
   ui.compareBar.hidden = !active;
   clear(ui.compareBar);
@@ -266,10 +363,34 @@ function renderCompareBar(state) {
   );
 }
 
+function setViewHead(title) {
+  clear(ui.viewHead);
+  ui.viewHead.hidden = !title;
+  if (title) ui.viewHead.append(el('h2', { class: 'view-title', text: title }));
+}
+
+function emptyBox(...children) {
+  return el('div', { class: 'empty-state' }, ...children);
+}
+
+function renderUnavailable() {
+  clear(ui.filters);
+  clear(ui.view);
+  ui.view.append(emptyBox(
+    el('p', { class: 'empty-title', text: 'Dashboard data is unavailable right now.' }),
+    el('p', { class: 'empty-hint', text: 'The previous dashboard may still load the last published data.' }),
+    el('div', { class: 'empty-actions' },
+      el('button', { class: 'btn', type: 'button', text: 'Retry', onclick: () => location.reload() }),
+      el('a', { class: 'btn btn-quiet', href: 'v1/', text: 'Open the previous dashboard' }),
+    ),
+  ));
+}
+
 function renderView(state) {
-  // The search/sort toolbar and the summary strip belong to the roster only.
-  const isRoster = state.tab === 'roster';
-  document.querySelector('.tabs-bar .toolbar').hidden = !isRoster;
+  const retail = state.game === 'retail';
+  // The search/sort toolbar and the lead sentence belong to the roster only.
+  const isRoster = retail && state.tab === 'roster';
+  ui.toolbar.hidden = !isRoster;
   ui.stats.hidden = !isRoster;
   ui.resultCount.hidden = !isRoster;
   if (!isRoster) {
@@ -277,13 +398,28 @@ function renderView(state) {
     ui.resultCount.textContent = '';
   }
   renderCompareBar(state);
+  ui.view.dataset.tab = retail ? state.tab : 'forever';
+  ui.filters.dataset.tab = ui.view.dataset.tab;
+
+  if (!retail) {
+    setViewHead(null);
+    clear(ui.filters);
+    const names = guildList(state.manifest).map(titleFromSlug);
+    renderForever(ui.view, { guildNames: names, onRetail: () => switchGame('retail') });
+    return;
+  }
+
+  setViewHead(VIEW_TITLES[state.tab] || VIEW_TITLES.roster);
+
+  if (state.bootError) { renderUnavailable(); return; }
 
   // Every view is a projection of the roster, so its load state gates them all.
   if (state.loadError) {
     clear(ui.filters);
     clear(ui.view);
-    ui.view.append(el('div', { class: 'empty-state' },
-      el('p', { text: 'The roster could not be loaded.' }),
+    clear(ui.stats);
+    ui.view.append(emptyBox(
+      el('p', { class: 'empty-title', text: 'The roster could not be loaded.' }),
       el('button', { class: 'btn', type: 'button', text: 'Try again', onclick: () => loadRoster(state.guild) }),
     ));
     return;
@@ -291,22 +427,19 @@ function renderView(state) {
   if (!state.roster) {
     clear(ui.filters);
     clear(ui.view);
-    ui.view.append(el('div', { class: 'empty-state' }, el('p', { text: 'Loading roster…' })));
+    clear(ui.stats);
+    ui.view.append(emptyBox(el('p', { class: 'empty-title', text: 'Loading roster…' })));
     return;
   }
 
   switch (state.tab) {
-    case 'readiness':
-      renderReadinessFilters(ui.filters, state, actions);
-      renderReadiness(ui.view, state, openMember);
-      break;
     case 'leaderboard':
       renderLeaderboardFilters(ui.filters, state, actions);
-      renderLeaderboard(ui.view, state, openMember);
+      renderLeaderboard(ui.view, state, openSheet, actions);
       break;
     case 'raids':
       renderRaidFilters(ui.filters, state, actions);
-      renderRaids(ui.view, state, openMember);
+      renderRaids(ui.view, state, openSheet);
       break;
     case 'collections':
       renderCollectionFilters(ui.filters, state, actions);
@@ -314,48 +447,57 @@ function renderView(state) {
       break;
     default: {
       const filtered = filterMembers(state);
+      const total = (state.roster.members || []).length;
+      renderLead(ui.stats, state);
       renderFilters(ui.filters, state, actions);
-      renderStats(ui.stats, filtered);
-      const scoped = (state.roster.members || []).filter(m => m.owner).length;
-      ui.resultCount.textContent = `Showing ${filtered.length} of ${scoped} characters`;
-      renderRoster(ui.view, filtered, openMember, {
+      const narrowed = filtered.length !== total;
+      ui.resultCount.textContent = narrowed ? `Showing ${filtered.length} of ${total} characters` : '';
+      ui.resultCount.classList.toggle('is-empty', !narrowed);
+      renderRoster(ui.view, filtered, state, openMember, {
         active: state.compareMode, selected: new Set(state.compareKeys),
       }, {
         hasFilters: hasRosterFilters(state),
         onClearFilters: actions.clearFilters,
-        scopeLabel: state.scope === 'all' ? null : state.scope === 'active' ? 'active' : 'archived',
-        scopeHint: state.scope === 'active'
-          ? `Nobody has logged in within ${archiveDays(state.manifest)} days of this snapshot.`
-          : `Everyone has logged in within ${archiveDays(state.manifest)} days of this snapshot.`,
-        totalOwned: scoped,
+        scope: state.scope,
+        total,
         onShowAll: () => actions.setScope('all'),
       });
     }
   }
 }
 
+const stageUi = {
+  stage: ui.stage, title: ui.title, lineup: ui.lineup, captions: ui.captions,
+  rerenderStage: () => renderStage(stageUi, getState(), openSheet),
+};
+
 // --- Dialogs ----------------------------------------------------------------
 
 function syncDialog(state) {
-  if (!state.detailKey) {
+  if (!state.detailKey || state.game !== 'retail') {
     if (ui.dialog.open) ui.dialog.close();
     return;
   }
   const member = (state.roster?.members || []).find(m => identityKey(m) === state.detailKey);
   if (!member) return; // roster still loading; re-checked on the roster update
-  if (ui.dialog.dataset.key === state.detailKey && ui.dialog.open) return;
-  openDetail(ui.dialog, member, state);
+  // Same sheet AND same snapshot: nothing to do. A refresh that swapped in a
+  // newer snapshot re-renders the open sheet in place.
+  const snap = state.manifest?.snapshotId || '';
+  if (ui.dialog.dataset.key === state.detailKey && ui.dialog.open && ui.dialog.dataset.snap === snap) return;
+  openDetail(ui.dialog, member, state, { onOpen: openSheet });
 }
 
 function syncCompareDialog(state) {
-  const keys = state.tab === 'roster' && state.compareMode ? state.compareKeys : [];
+  const keys = state.game === 'retail' && state.tab === 'roster' && state.compareMode ? state.compareKeys : [];
   if (keys.length < 2) {
     if (ui.compareDialog.open) ui.compareDialog.close();
     return;
   }
   const members = keys.map(k => (state.roster?.members || []).find(m => identityKey(m) === k));
   if (members.some(m => !m)) return;
-  if (ui.compareDialog.open && ui.compareDialog.dataset.keys === keys.join(',')) return;
+  const snap = state.manifest?.snapshotId || '';
+  if (ui.compareDialog.open && ui.compareDialog.dataset.keys === keys.join(',')
+    && ui.compareDialog.dataset.snap === snap) return;
   openCompare(ui.compareDialog, members, state);
 }
 
@@ -435,11 +577,17 @@ function refresh({ manual = false } = {}) {
   return refreshing;
 }
 
+function renderBanners(state) {
+  renderFreshness(ui.freshness, state.manifest);
+  // The stale banner is about Retail's data; Forever has none to be stale.
+  if (state.game === 'retail') renderStaleBanner(ui.banner, state.manifest, state.guild);
+  else { clear(ui.banner); ui.banner.hidden = true; }
+}
+
 function tickFreshness() {
-  const { manifest, guild } = getState();
-  if (!manifest) return;
-  renderFreshness(ui.freshness, manifest);
-  renderStaleBanner(ui.banner, manifest, guild);
+  const state = getState();
+  if (!state.manifest) return;
+  renderBanners(state);
 }
 
 // Poll only while the tab is visible — a background tab costs nothing — and
@@ -477,25 +625,35 @@ function switchGuild(slug) {
   loadRoster(slug);
 }
 
+function switchGame(game) {
+  if (game === getState().game) return;
+  // An open sheet belongs to Retail; it does not follow the reader to Forever.
+  setState({ game, detailKey: null });
+  window.scrollTo({ top: 0 });
+}
+
 function applyUrl(urlState, { load = false } = {}) {
   const slugs = guildList(getState().manifest);
   const guild = slugs.includes(urlState.guild) ? urlState.guild : slugs[0] || null;
   const guildChanged = guild !== getState().guild;
+  const hasDrawerFilter = urlState.classes.size || urlState.races.size || urlState.owners.size || urlState.minLevel;
   setState({
     ...(guildChanged ? guildScopedReset() : {}),
+    game: urlState.game,
     guild,
+    // Retired and unknown tabs (old ?tab=readiness links) land on the roster.
     tab: TABS.some(t => t.id === urlState.tab) ? urlState.tab : 'roster',
     detailKey: urlState.detailKey,
     search: urlState.search,
     sort: urlState.sort,
-    scope: ['active', 'archive', 'all'].includes(urlState.scope) ? urlState.scope : 'active',
+    scope: urlState.scope,
     owners: urlState.owners,
     classes: urlState.classes,
     races: urlState.races,
     minLevel: urlState.minLevel,
+    ...(hasDrawerFilter ? { filtersOpen: true } : {}),
     compareMode: urlState.compareMode,
     compareKeys: urlState.compareKeys,
-    risk: urlState.risk,
     category: urlState.category,
     tierId: urlState.tierId,
     difficulty: ['normal', 'heroic', 'mythic'].includes(urlState.difficulty) ? urlState.difficulty : 'normal',
@@ -506,7 +664,7 @@ function applyUrl(urlState, { load = false } = {}) {
   });
   ui.search.value = urlState.search;
   ui.sort.value = getState().sort;
-  if (load || guildChanged) loadRoster(guild);
+  if (guild && (load || guildChanged)) loadRoster(guild);
 }
 
 async function boot() {
@@ -526,6 +684,10 @@ async function boot() {
     setState({ compareMode: on, compareKeys: [] });
   });
   ui.refresh.addEventListener('click', () => refresh({ manual: true }));
+  for (const btn of ui.gameSwitch.querySelectorAll('button')) {
+    btn.addEventListener('click', () => switchGame(btn.dataset.game));
+  }
+  ui.view.tabIndex = -1;
   onPopstate(urlState => applyUrl(urlState));
 
   // The initial URL must be read and applied to state BEFORE any state
@@ -533,60 +695,78 @@ async function boot() {
   let urlReady = false;
 
   subscribe((state, changed) => {
+    const has = (...keys) => keys.some(k => changed.includes(k));
+    const focus = focusToken();
     if (urlReady) syncUrl(state, changed);
-    if (changed.includes('manifest') || changed.includes('guild')) {
+    if (has('game')) renderGameSwitch(state);
+    if (has('manifest', 'guild', 'game')) {
       renderSwitcher(state);
-      renderFreshness(ui.freshness, state.manifest);
-      renderStaleBanner(ui.banner, state.manifest, state.guild);
+      renderBanners(state);
     }
-    if (changed.includes('roster') || changed.includes('guild') || changed.includes('manifest')) renderHeaderText(state);
-    if (changed.includes('tab')) renderTabs(state);
+    if (has('roster', 'guild', 'manifest', 'game')) { renderHeaderText(state); syncThemeColor(); }
+    if (has('tab', 'game')) renderTabs(state);
     // Re-render the view only when its inputs changed — a dialog open/close
-    // must not rebuild it (that would detach the card focus returns to).
+    // must not rebuild it (that would detach the row focus returns to).
     const viewKeys = [
-      'manifest', 'guild', 'roster', 'tab', 'loadError',
-      'search', 'sort', 'scope', 'owners', 'classes', 'races', 'minLevel',
+      'manifest', 'game', 'guild', 'roster', 'tab', 'loadError', 'bootError',
+      'search', 'sort', 'scope', 'owners', 'classes', 'races', 'minLevel', 'filtersOpen',
       'compareMode', 'compareKeys',
-      'risk', 'category',
+      'category',
       'catalog', 'raids', 'tierId', 'difficulty',
       'collectionsIndex', 'collectionKey', 'collectionKind', 'rarity', 'favoritesOnly', 'collections',
     ];
     if (changed.some(k => viewKeys.includes(k))) renderView(state);
+    if (has('manifest', 'game', 'guild', 'roster', 'tab')) renderStage(stageUi, state, openSheet);
+    restoreFocus(focus);
     ensureTabData(state);
     syncDialog(state);
     syncCompareDialog(state);
   });
+
+  // The game is readable from the URL alone, so Forever renders at once —
+  // it shows no data and must not wait for (or fail with) the manifest.
+  const initialUrl = readUrl();
+  setState({ game: initialUrl.game });
+  renderGameSwitch(getState());
+  renderHeaderText(getState());
+  syncThemeColor();
+  renderTabs(getState());
+  renderView(getState());
+  renderStage(stageUi, getState(), openSheet);
 
   let manifest = null;
   try {
     manifest = await fetchManifest();
   } catch (_) {
     renderStaleBanner(ui.banner, null, null);
+    if (getState().game !== 'retail') ui.banner.hidden = true;
     // The header button becomes a retry; the page reloads on its own too.
     ui.refresh.disabled = false;
     setTimeout(() => location.reload(), AUTO_REFRESH.pollMs);
-    clear(ui.view);
-    ui.view.append(el('div', { class: 'empty-state' },
-      el('p', { class: 'empty-title', text: 'Dashboard data is unavailable right now.' }),
-      el('p', { class: 'empty-hint', text: 'The previous dashboard may still load the last published data.' }),
-      el('div', { class: 'empty-actions' },
-        el('button', { class: 'btn', type: 'button', text: 'Retry', onclick: () => location.reload() }),
-        el('a', { class: 'btn btn-quiet', href: 'v1/', text: 'Open the previous dashboard' }),
-      ),
-    ));
+    // urlReady stays false: with no manifest the state is all defaults, and
+    // mirroring that into the address bar would wipe the reader's deep link.
+    setState({ bootError: true });
     return;
   }
 
-  const initialUrl = readUrl();
   setState({ manifest });
   // Only meaningful once there is a manifest to compare against; the button
   // ships disabled in the markup for exactly that reason.
   ui.refresh.disabled = false;
   lastCheckAt = Date.now();
   startAutoRefresh();
-  renderTabs(getState());
-  applyUrl(initialUrl, { load: true });
+  // The reader may have used the game switch while the manifest was loading;
+  // that choice wins over the URL captured at boot (and an open sheet, which
+  // belongs to Retail, does not follow them to Forever).
+  const pickedGame = getState().game;
+  const gameChanged = pickedGame !== initialUrl.game;
+  applyUrl({
+    ...initialUrl, game: pickedGame,
+    detailKey: gameChanged ? null : initialUrl.detailKey,
+  }, { load: true });
   urlReady = true;
+  if (gameChanged || !TABS.some(t => t.id === initialUrl.tab)) normalizeUrl(getState());
+  document.fonts?.ready?.then(() => fitPoster(ui.stage, ui.title));
 }
 
 boot();

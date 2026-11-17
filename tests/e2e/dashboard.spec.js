@@ -1,40 +1,60 @@
 'use strict';
-// Functional browser coverage for the V2 dashboard, against a snapshot built
-// by the real pipeline from fixtures.
+// Functional browser coverage for the dashboard, against a snapshot built by
+// the real pipeline from fixtures.
 //
-// Fixture roster (deaths-edge): Decillin (user1, 90, ilvl 209), Revän (user3,
-// 80, ilvl 95), Kel'thar (UNOWNED — must never appear), plus a level-5 member
-// the pipeline filters out entirely. Logins are old, so `scope=all` is the
-// default entry point for roster assertions.
+// Fixture roster (deaths-edge): Decillin (90, ilvl 209), Farshore (85, ilvl
+// 150, another realm), Revän (80, ilvl 95), Kel'thar (75, ilvl 98), plus a
+// level-5 member the pipeline filters out entirely. Every guild member is
+// listed by default; logins are old, so the "seen lately" scope is empty.
 
 const { test, expect } = require('@playwright/test');
+const { stubRenders } = require('./helpers');
 
 const ALL = '/?guild=deaths-edge&scope=all';
 
+test.beforeEach(async ({ page }) => { await stubRenders(page); });
+
 test.describe('roster', () => {
-  test('shows owned characters only, sorted by item level', async ({ page }) => {
-    await page.goto(ALL);
-    await expect(page.locator('.char-card')).toHaveCount(2);
-    const names = await page.locator('.char-name').allTextContents();
-    expect(names).toEqual(['Decillin', 'Revän']);
-    // The guild roster contains Kel'thar, but no owner maps to them.
-    expect(names).not.toContain("Kel'thar");
-  });
-
-  test('active scope hides characters past the archive threshold', async ({ page }) => {
+  test('lists every guild member, highest level first', async ({ page }) => {
     await page.goto('/?guild=deaths-edge');
-    await expect(page.locator('.empty-state')).toContainText('No active characters');
-    await expect(page.locator('.char-card')).toHaveCount(0);
+    await expect(page.locator('.char-card')).toHaveCount(4);
+    const names = await page.locator('.char-name').allTextContents();
+    // Level, then item level within a level. Kel'thar's item level (98) is
+    // higher than Revän's (95), but Revän is the higher level: item level is
+    // never compared across levels.
+    expect(names).toEqual(['Decillin', 'Farshore', 'Revän', "Kel'thar"]);
   });
 
-  test('search and class filters narrow the grid', async ({ page }) => {
+  test('the seen-lately scope is a filter, never the default', async ({ page }) => {
+    await page.goto('/?guild=deaths-edge&scope=active');
+    await expect(page.locator('.empty-state')).toContainText('Nobody has been on lately');
+    await expect(page.locator('.char-card')).toHaveCount(0);
+    await page.getByRole('button', { name: /^Everyone/ }).click();
+    await expect(page.locator('.char-card')).toHaveCount(4);
+    await expect(page).not.toHaveURL(/scope=/);
+  });
+
+  test('search and class filters narrow the list', async ({ page }) => {
     await page.goto(ALL);
     await page.fill('#search', 'warlock');
     await expect(page.locator('.char-card')).toHaveCount(1);
     await expect(page.locator('.char-name')).toHaveText('Revän');
     await page.fill('#search', '');
+    await page.getByRole('button', { name: 'Class, race, level' }).click();
     await page.getByRole('button', { name: 'Death Knight', exact: true }).click();
     await expect(page.locator('.char-name')).toHaveText('Decillin');
+  });
+
+  test('sorting by name reorders the list and round-trips through the URL', async ({ page }) => {
+    await page.goto(ALL);
+    await page.selectOption('#sort', 'name');
+    await expect(page).toHaveURL(/sort=name/);
+    expect(await page.locator('.char-name').allTextContents())
+      .toEqual(['Decillin', 'Farshore', "Kel'thar", 'Revän']);
+    // An old link's sort=ilvl is the level sort now, not an error.
+    await page.goto(`${ALL}&sort=ilvl`);
+    await expect(page.locator('.char-name').first()).toHaveText('Decillin');
+    await expect(page.locator('#sort')).toHaveValue('level');
   });
 
   test('freshness pill reports a fresh snapshot and no stale banner', async ({ page }) => {
@@ -53,6 +73,7 @@ test.describe('character detail', () => {
     await expect(page.locator('.detail-title')).toHaveText('Decillin');
     // equipped_item_level is authoritative — cosmetic slots never drag it down.
     await expect(page.locator('.detail-ilvl b')).toHaveText('209');
+    await expect(page.locator('.gear-table tbody tr').nth(2)).toBeVisible();
     expect(await page.locator('.gear-table tbody tr').count()).toBeGreaterThanOrEqual(3);
 
     // Focus must stay inside the dialog after the async detail load re-renders it.
@@ -73,76 +94,22 @@ test.describe('character detail', () => {
   });
 });
 
-test.describe('readiness', () => {
-  test('scores from config thresholds and lists concrete actions', async ({ page }) => {
-    await page.goto(`${ALL}&tab=readiness`);
-    await expect(page.locator('.readiness-card')).toHaveCount(2);
-    const card = page.locator('.readiness-card', { hasText: 'Decillin' });
-    // ilvl 209 is far below the configured 610 target, so it must not read "ready".
-    await expect(card).toHaveClass(/risk-risk/);
-    await expect(card.locator('.readiness-actions')).toContainText('610');
-  });
-
-  test('status filter narrows the grid', async ({ page }) => {
-    await page.goto(`${ALL}&tab=readiness`);
-    await page.getByRole('button', { name: /^At risk \(/ }).click();
-    await expect(page.locator('.readiness-card')).toHaveCount(2);
-    await expect(page).toHaveURL(/risk=risk/);
-  });
-
-  // Scoring semantics, exercised directly: a failed upstream fetch must never
-  // cost a character points, and must never be scored as a real zero.
-  test('unavailable components are never scored as zeros', async ({ page }) => {
-    await page.goto(`${ALL}&tab=readiness`);
-    const results = await page.evaluate(async () => {
-      const { readinessOf } = await import('/js/views/readiness.js');
-      const manifest = { config: { readiness: {
-        minLevel: 80, ilvlFloor: 520, ilvlTarget: 610,
-        belowLevelPenalty: 25, readyScore: 80, watchScore: 60,
-      } } };
-      const base = {
-        level: 80, ilvl: 640,
-        equipmentSummary: { count: 16, emptySockets: 0, unenchanted: 0 },
-        lifeStats: { dungeonsEntered: 800, raidsEntered: 100, delvesCompleted: 100, bossesDefeated: 300 },
-        components: { equipment: 'fresh', achievements: 'fresh' },
-      };
-      const withActivity = readinessOf(base, manifest);
-      const noActivity = readinessOf({
-        ...base, lifeStats: null,
-        components: { equipment: 'fresh', achievements: 'unavailable' },
-      }, manifest);
-      const noGear = readinessOf({
-        ...base, ilvl: null, equipmentSummary: null,
-        components: { equipment: 'unavailable', achievements: 'fresh' },
-      }, manifest);
-      const noIlvl = readinessOf({ ...base, ilvl: null }, manifest);
-      return { withActivity, noActivity, noGear, noIlvl };
-    });
-
-    // A well-geared character stays ready when only the activity feed is gone.
-    expect(results.withActivity.risk).toBe('ready');
-    expect(results.noActivity.risk).toBe('ready');
-    expect(results.noActivity.score).toBeGreaterThanOrEqual(results.withActivity.score - 2);
-    expect(results.noActivity.note).toContain('Activity data unavailable');
-
-    // Missing gear or item level is unknown, never a bad score.
-    expect(results.noGear.risk).toBe('unknown');
-    expect(results.noGear.score).toBeNull();
-    expect(results.noIlvl.risk).toBe('unknown');
-    expect(results.noIlvl.score).toBeNull();
-  });
-});
-
 test.describe('leaderboard', () => {
-  test('ranks by item level and switches metric', async ({ page }) => {
+  test('ranks item level only among characters at the level cap, and switches metric', async ({ page }) => {
     await page.goto(`${ALL}&tab=leaderboard`);
     const firstRow = page.locator('.lb-table tbody tr').first();
     await expect(firstRow).toContainText('Decillin');
     await expect(firstRow.locator('.num')).toHaveText('209');
+    // Only Decillin is level 90 (the cap comes from the manifest). The other
+    // three have item levels too, but on other scales: counted, not ranked.
+    await expect(page.locator('.lb-table tbody tr')).toHaveCount(1);
+    await expect(page.locator('#view')).toContainText('3 characters are below level 90 and not ranked');
 
     await page.getByRole('button', { name: 'Deaths', exact: true }).click();
     await expect(page).toHaveURL(/metric=deaths/);
     await expect(page.locator('.lb-table tbody tr').first()).toContainText('123');
+    // Every member is eligible for a lifetime metric, whatever their level.
+    expect(await page.locator('.lb-table tbody tr').count()).toBeGreaterThan(1);
   });
 
   test('renders unknown values as an em dash, never zero', async ({ page }) => {
@@ -155,13 +122,28 @@ test.describe('leaderboard', () => {
 test.describe('raids', () => {
   test('builds the boss matrix from the discovered catalog', async ({ page }) => {
     await page.goto(`${ALL}&tab=raids`);
-    await expect(page.locator('.tier-title h2')).toHaveText('Liberation of Undermine');
+    await expect(page.locator('.tier-title h3')).toHaveText('Liberation of Undermine');
     // Two encounters discovered via the journal API in the fixtures.
     await expect(page.locator('.matrix thead th')).toHaveCount(3); // corner + 2 bosses
     await expect(page.locator('.matrix tbody tr')).toHaveCount(2);
     const vexieCell = page.locator('.matrix tbody tr').first().locator('.matrix-cell').first();
     await expect(vexieCell).toHaveText('4');
     await expect(vexieCell).toHaveClass(/is-killed/);
+  });
+
+  test('a raid nobody has a kill in shows its encounters, not a grid of dashes', async ({ page }) => {
+    await page.route('**/data/v2/raids/deaths-edge.json*', async route => {
+      const res = await route.fetch();
+      const data = JSON.parse(await res.text());
+      for (const m of data.members) m.tiers = [];
+      await route.fulfill({ response: res, body: JSON.stringify(data) });
+    });
+    await page.goto(`${ALL}&tab=raids`);
+    await expect(page.locator('.unopened')).toContainText('Nobody has a kill in here yet');
+    await expect(page.locator('.boss-list .boss')).toHaveCount(2);
+    await expect(page.locator('.boss-name').first()).toHaveText('Vexie and the Geargrinders');
+    await expect(page.locator('.matrix')).toHaveCount(0);
+    await expect(page.locator('.tier-meter-value b')).toHaveText(['0', '0', '0']);
   });
 
   test('difficulty switch changes the kill counts shown', async ({ page }) => {
@@ -217,7 +199,8 @@ test.describe('navigation', () => {
     await page.goto(ALL);
     await page.getByRole('tab', { name: 'Roster' }).focus();
     await page.keyboard.press('ArrowRight');
-    await expect(page.getByRole('tab', { name: 'Readiness' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Leaderboard' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('tab', { name: 'Leaderboard' })).toBeFocused();
   });
 
   test('switching guild clears the previous guild data', async ({ page }) => {

@@ -1,41 +1,50 @@
 'use strict';
-// V1 → V2 feature parity: race and level filters, compare mode, full
-// portrait, refresh (manual and automatic), and the header reading realm/region from
-// the data rather than constants.
+// Feature parity with the previous dashboards: race and level filters,
+// compare mode, the full-body render, refresh (manual and automatic), and the
+// header reading realm/region from the data rather than constants.
 
 const { test, expect } = require('@playwright/test');
+const { stubRenders, blockFonts } = require('./helpers');
 
 const ALL = '/?guild=deaths-edge&scope=all';
 
-// The page's Google Fonts stylesheet is render-blocking, and Chrome holds
-// script execution on it. Tests here gate on network timing, so a slow or
-// sandboxed font CDN must not be able to delay the app's own boot: fail the
-// font requests instantly and let the fallback stack render.
+// Tests here gate on network timing, so neither the font CDN nor the render
+// service may be able to delay the app's own boot (see helpers.js).
 test.beforeEach(async ({ page }) => {
-  await page.route(/^https:\/\/fonts\.(googleapis|gstatic)\.com\//, route => route.abort());
+  await blockFonts(page);
+  await stubRenders(page);
 });
 
 test.describe('roster filters', () => {
   test('race pills narrow the grid and round-trip through the URL', async ({ page }) => {
     await page.goto(ALL);
-    await expect(page.locator('.char-card')).toHaveCount(2);
+    await expect(page.locator('.char-card')).toHaveCount(4);
+    // Class, race and level live in a drawer so the list starts higher.
+    const drawer = page.getByRole('button', { name: 'Class, race, level' });
+    await expect(drawer).toHaveAttribute('aria-expanded', 'false');
+    await drawer.click();
+    await expect(drawer).toHaveAttribute('aria-expanded', 'true');
     await page.getByRole('button', { name: 'Undead', exact: true }).click();
     await expect(page.locator('.char-card')).toHaveCount(1);
     await expect(page.locator('.char-name')).toHaveText('Decillin');
     await expect(page).toHaveURL(/races=Undead/);
     await page.reload();
     await expect(page.locator('.char-card')).toHaveCount(1);
+    // A deep link with a drawer filter opens the drawer, so the filter in
+    // force is on screen and can be undone.
+    await expect(page.getByRole('button', { name: 'Undead', exact: true })).toHaveAttribute('aria-pressed', 'true');
   });
 
   test('level pills come from config and filter by minimum level', async ({ page }) => {
     await page.goto(ALL);
-    // levelCap 90 → "90 (cap)"; only Decillin (90) qualifies. Revän is 80.
+    await page.getByRole('button', { name: 'Class, race, level' }).click();
+    // levelCap 90 → "90 (cap)"; only Decillin (90) qualifies.
     await page.getByRole('button', { name: '90 (cap)' }).click();
     await expect(page.locator('.char-card')).toHaveCount(1);
     await expect(page.locator('.char-name')).toHaveText('Decillin');
     await expect(page).toHaveURL(/minlvl=90/);
     await page.getByRole('button', { name: 'Any', exact: true }).click();
-    await expect(page.locator('.char-card')).toHaveCount(2);
+    await expect(page.locator('.char-card')).toHaveCount(4);
   });
 });
 
@@ -56,10 +65,15 @@ test.describe('compare mode', () => {
     // URLSearchParams percent-encodes the comma; accept either form.
     await expect(page).toHaveURL(/compare=us-onyxia-207690001(,|%2C)us-onyxia-207690003/);
 
-    // Item level row: 209 vs 95 — the higher known value is marked best.
+    // Level 90 vs 80: the higher known value is marked.
+    const levelRow = dialog.locator('tbody tr', { hasText: /^Level/ });
+    await expect(levelRow.locator('td').nth(0)).toHaveClass(/is-best/);
+    // Item level 209 vs 95 is shown but NOT marked: Revän is below the level
+    // cap, and item level does not compare across levels.
     const ilvlRow = dialog.locator('tbody tr', { hasText: 'Item level' });
-    await expect(ilvlRow.locator('td').nth(0)).toHaveClass(/is-best/);
     await expect(ilvlRow.locator('td').nth(0)).toHaveText('209');
+    await expect(ilvlRow.locator('td').nth(1)).toHaveText('95');
+    await expect(ilvlRow.locator('td.is-best')).toHaveCount(0);
 
     // Escape closes and keeps compare mode on for the next pair.
     await page.keyboard.press('Escape');
@@ -91,18 +105,37 @@ test.describe('compare mode', () => {
   });
 });
 
-test.describe('character detail', () => {
-  test('full portrait loads only when asked for', async ({ page }) => {
+test.describe('character sheet', () => {
+  test('shows the full-body render, with the character named in its alt text', async ({ page }) => {
     await page.goto(ALL);
     await page.locator('.char-card', { hasText: 'Decillin' }).click();
     await page.waitForSelector('#detail-dialog[open] .gear-table');
-    const toggle = page.locator('.portrait-toggle');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('.portrait-frame img')).toHaveCount(0);
-    await toggle.click();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.portrait-frame img')).toHaveCount(1);
-    await expect(page.locator('.portrait-frame img')).toHaveAttribute('alt', /Decillin/);
+    const render = page.locator('#detail-dialog .sheet-art img');
+    await expect(render).toHaveCount(1);
+    await expect(render).toHaveAttribute('alt', /Decillin/);
+    await expect(render).toHaveAttribute('src', /207690001-main-raw\.png$/);
+    // Explicit dimensions: the frame never jumps when the image arrives.
+    await expect(render).toHaveAttribute('width', '1600');
+    await expect(render).toHaveAttribute('height', '1200');
+  });
+
+  test('a render that fails to load falls back to the initial, never a broken image', async ({ page }) => {
+    await page.unroute(/^https:\/\/render\.worldofwarcraft\.com\//);
+    await stubRenders(page, { fail: /main-raw/ });
+    await page.goto(ALL);
+    await page.locator('.char-card', { hasText: 'Decillin' }).click();
+    await page.waitForSelector('#detail-dialog[open] .gear-table');
+    await expect(page.locator('#detail-dialog .arch-frame.is-empty .arch-initial')).toHaveText('D');
+    await expect(page.locator('#detail-dialog .sheet-art img')).toHaveCount(0);
+  });
+
+  test('states gear facts plainly, without a verdict', async ({ page }) => {
+    await page.goto(ALL);
+    await page.locator('.char-card', { hasText: 'Decillin' }).click();
+    await page.waitForSelector('#detail-dialog[open] .gear-table');
+    const dialog = page.locator('#detail-dialog');
+    await expect(dialog.locator('.section-aside').first()).toContainText(/empty socket|no empty sockets/);
+    await expect(dialog).not.toContainText(/ready|at risk|watch/i);
   });
 });
 
@@ -220,17 +253,17 @@ test.describe('empty roster', () => {
     await page.goto(`${ALL}&q=zzzz`);
     await expect(page.locator('.empty-state')).toContainText('No characters match these filters');
     await page.getByRole('button', { name: 'Clear filters' }).click();
-    await expect(page.locator('.char-card')).toHaveCount(2);
+    await expect(page.locator('.char-card')).toHaveCount(4);
     await expect(page.locator('#search')).toHaveValue('');
     await expect(page).not.toHaveURL(/q=/);
   });
 
-  test('an empty active scope offers to show every character', async ({ page }) => {
+  test('an empty seen-lately scope offers to show every character', async ({ page }) => {
     // The fixture's logins are all older than the archive threshold.
-    await page.goto('/?guild=deaths-edge');
-    await expect(page.locator('.empty-state')).toContainText('No active characters');
-    await page.getByRole('button', { name: /Show all 2 characters/ }).click();
-    await expect(page.locator('.char-card')).toHaveCount(2);
+    await page.goto('/?guild=deaths-edge&scope=active');
+    await expect(page.locator('.empty-state')).toContainText('Nobody has been on lately');
+    await page.getByRole('button', { name: /Show all 4 characters/ }).click();
+    await expect(page.locator('.char-card')).toHaveCount(4);
   });
 });
 
@@ -264,12 +297,12 @@ test('switching back to a guild whose first load is still in flight never shows 
   await expect(page.locator('.char-card')).toHaveCount(0);
   await expect(page.locator('.empty-state')).toContainText('Loading roster');
   release();
-  await expect(page.locator('.char-card')).toHaveCount(2);
+  await expect(page.locator('.char-card')).toHaveCount(4);
   await expect(page.locator('.char-name').first()).toHaveText('Decillin');
 });
 
 test('header realm and region come from the snapshot, not constants', async ({ page }) => {
   await page.goto(ALL);
-  await expect(page.locator('#guild-subtitle')).toHaveText('Onyxia-US · Guild Dashboard');
+  await expect(page.locator('#guild-subtitle')).toHaveText('Horde · Onyxia-US · 4 members');
   await expect(page.locator('#guild-title')).toHaveText("Death's Edge");
 });

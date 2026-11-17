@@ -3,28 +3,24 @@
 
 const state = {
   manifest: null,
+  game: 'retail',       // retail | forever (Forever is a coming-soon state)
   guild: null,          // active guild slug
   roster: null,         // loaded guilds/{slug}.json
   tab: 'roster',
   search: '',
-  sort: 'ilvl',
-  scope: 'active',      // active | archive | all (owned-character scoping)
+  sort: 'level',
+  scope: 'all',         // all | active | archive (by last login)
   owners: new Set(),    // empty = all
   classes: new Set(),   // empty = all
   races: new Set(),     // empty = all
   minLevel: 0,          // 0 = any
-  detailKey: null,      // identity key of the open character dialog
+  filtersOpen: false,   // the class / race / level drawer
+  detailKey: null,      // identity key of the open character sheet
   loadError: null,
 
-  // Compare mode: pick two roster cards, see them side by side.
+  // Compare mode: pick two roster rows, see them side by side.
   compareMode: false,
   compareKeys: [],      // 0–2 identity keys; the dialog opens at 2
-
-  // "Check for updates" result, shown briefly next to the button.
-  updateNotice: null,
-
-  // Readiness
-  risk: null,           // null = all
 
   // Leaderboard
   category: 'ilvl',

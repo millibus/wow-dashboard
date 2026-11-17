@@ -1,50 +1,94 @@
-/* Design tokens — from the approved redesign mockups (dark armory, editorial
-   gold). One source of truth for color, type, spacing, and layering. */
+/* Design tokens. Two materials, one site:
+     the BANNER — a dark, faction-coloured scene (header + stage), and
+     the PAGE   — warm ivory paper with ink, serif headings and quiet rules.
+   The faction (Horde ember, Alliance night) and the game (Retail, Forever)
+   only ever change the --stage-* and --accent tokens; nothing else moves. */
 :root {
-  --bg: #0b0c10;
-  --bg-header: #0e0f14;
-  --surface: #14161d;
-  --raised: #1a1d26;
+  /* Paper */
+  --paper: #f3f0e8;
+  --paper-2: #ebe6da;     /* tinted panels, pressed states */
+  --paper-3: #e2dccd;     /* wells, arch backs */
+  --rule: #d8d1c1;        /* hairlines (non-text) */
+  --rule-strong: #b3aa97; /* control borders (3:1 on paper) */
 
-  --border: rgba(255, 255, 255, 0.07);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-gold: rgba(200, 168, 75, 0.18);
+  /* Ink — every one of these clears AA (4.5:1) on --paper and --paper-2. */
+  --ink: #26231f;
+  --ink-2: #4f4a43;
+  --ink-3: #645e55;
 
-  --gold: #c8a84b;
-  --gold-light: #e8c96a;
-  --gold-dim: rgba(200, 168, 75, 0.14);
+  /* Accent on paper: links, the active tab, marks. Set per faction below. */
+  --accent: #6b4a2b;
+  --accent-ink: #fff9ef;  /* text on an --accent fill */
 
-  --ink: #eef0f6;
-  --ink-2: #a9afc3;
-  /* --ink-3 carries real content (metric labels, counts, meta), so it clears
-     WCAG AA 4.5:1 on every surface token below — not just "looks dim enough". */
-  --ink-3: #868da3;
-  /* Non-text only: hairlines, dividers, decorative glyphs. */
-  --ink-faint: #6b7186;
+  /* The stage. */
+  --stage-0: #17130f;     /* deepest tone: header bar, ground */
+  --stage-0-rgb: 23 19 15;
+  --stage-1: #2b241c;
+  --stage-glow: #d9a25f;  /* the one bright tone: switch, focus, dots */
+  --on-stage: #fbf3e4;
+  --on-stage-2: #dccfbd;  /* secondary text on the stage (AA on --stage-0) */
 
-  --green: #4ade80;
-  --green-ink: #86efac;
-  --green-dim: rgba(74, 222, 128, 0.08);
-  --green-border: rgba(74, 222, 128, 0.25);
-  --amber: #f0b34e;
-  --amber-ink: #f6cd85;
-  --amber-dim: rgba(240, 179, 78, 0.1);
-  --amber-border: rgba(240, 179, 78, 0.35);
-  --red: #ff6b5c;
-  --red-dim: rgba(231, 76, 60, 0.12);
-  --red-border: rgba(231, 76, 60, 0.4);
+  /* States */
+  --good: #226b3a;
+  --warn-bg: #f0deb0;
+  --warn-ink: #4a3300;
+  --alert-bg: #7a1f1c;
+  --alert-ink: #fff4ee;
 
-  --font-display: 'Cinzel', Georgia, 'Times New Roman', serif;
-  --font-body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+  /* Item quality as text on paper (darkened from the game's hues to AA). */
+  --q-poor: #5c5c59;
+  --q-common: var(--ink);
+  --q-uncommon: #196b10;
+  --q-rare: #0a5aa8;
+  --q-epic: #7b2cbf;
+  --q-legendary: #9c4700;
+  --q-artifact: #735a10;
+  --q-heirloom: #06677e;
 
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 12px;
+  /* Type */
+  --font-poster: 'Sofia Sans Extra Condensed', 'Arial Narrow', 'Helvetica Neue Condensed', Impact, sans-serif;
+  --font-serif: 'Instrument Serif', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-body: 'Sofia Sans', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --font-forever: 'Marcellus', 'Iowan Old Style', Georgia, serif;
 
-  --z-header: 100;
-  --z-banner: 150;
-  --z-bottom-nav: 200;
+  --radius-sm: 4px;
+  --radius: 8px;
+  --arch: 999px 999px 6px 6px;
 
-  --page-max: 1440px;
+  --z-banner: 2;
+  --z-tabs: 40;
+  --z-bottom-nav: 60;
+
+  --page-max: 1240px;
+  --gutter: clamp(16px, 4vw, 48px);
   --touch: 44px;
+}
+
+:root[data-faction="horde"] {
+  --accent: #8a2c2a;
+  --stage-0: #150809;
+  --stage-0-rgb: 21 8 9;
+  --stage-1: #3b1110;
+  --stage-glow: #ff8a4f;
+}
+
+:root[data-faction="alliance"] {
+  --accent: #1f4b73;
+  --stage-0: #070c1c;
+  --stage-0-rgb: 7 12 28;
+  --stage-1: #11244a;
+  --stage-glow: #f5c451;
+}
+
+/* Forever: evergreen and bronze, and a slightly warmer sheet of paper. */
+:root[data-game="forever"] {
+  --accent: #175a4c;
+  --stage-0: #051d1b;
+  --stage-0-rgb: 5 29 27;
+  --stage-1: #0b3632;
+  --stage-glow: #d9a25f;
+  --paper: #f2ecdc;
+  --paper-2: #e9e1cc;
+  --paper-3: #dfd5bc;
+  --rule: #d3c8ab;
 }
