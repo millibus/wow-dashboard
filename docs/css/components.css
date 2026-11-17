@@ -1026,7 +1026,25 @@ select {
   .sort-box { margin-left: 0; }
   #sort { padding: 0 6px; font-size: 14px; }
   #compare-toggle { padding: 0 11px; }
-  .scope-tabs { gap: 0 16px; }
+  /* One line, always: with a wide fallback font the scope tabs scroll inside
+     their own strip instead of pushing the filter button (and the roster)
+     down a line. The strip overlaps the rule so the pressed underline still
+     sits on it. */
+  .filters-bar { flex-wrap: nowrap; }
+  .scope-tabs {
+    gap: 0 16px;
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    margin-bottom: -1px;
+  }
+  .scope-tabs::-webkit-scrollbar { display: none; }
+  .scope-tabs .scope-tab { flex: none; margin-bottom: 0; }
+  .scope-tabs .scope-tab:focus-visible { outline-offset: -3px; }
+  .filters-toggle { flex: none; }
   .long { display: none; }
   .short { display: inline; }
   .scope-tab { font-size: 14px; }

@@ -115,11 +115,17 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  /* The one header item allowed to give way: with a wide fallback font the
+     row must clip this label, never push the page sideways. */
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: 13.5px;
   font-weight: 500;
   color: var(--on-stage-2);
   white-space: nowrap;
 }
+.btn-refresh { flex: none; }
 .freshness .dot {
   width: 8px; height: 8px;
   border-radius: 50%;
@@ -389,6 +395,12 @@
   font-size: 12.5px;
   font-style: italic;
   color: var(--ink-3);
+}
+
+/* ---------- Tablets: the refresh button is icon-only, like on phones ---------- */
+@media (max-width: 1023px) {
+  .btn-refresh { min-width: 36px; padding: 0 9px; }
+  .btn-refresh .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 
 /* ---------- Phones ---------- */

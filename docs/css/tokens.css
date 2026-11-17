@@ -46,9 +46,9 @@
   --q-heirloom: #06677e;
 
   /* Type */
-  --font-poster: 'Sofia Sans Extra Condensed', 'Arial Narrow', 'Helvetica Neue Condensed', Impact, sans-serif;
-  --font-serif: 'Instrument Serif', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  --font-body: 'Sofia Sans', 'Avenir Next', 'Segoe UI', system-ui, sans-serif;
+  --font-poster: 'Sofia Sans Extra Condensed', 'Arial Narrow', 'Helvetica Neue Condensed', 'Roboto Condensed', 'Liberation Sans Narrow', Impact, sans-serif;
+  --font-serif: 'Instrument Serif', 'Iowan Old Style', 'Times New Roman', 'Liberation Serif', 'Nimbus Roman', Times, serif;
+  --font-body: 'Sofia Sans', 'Avenir Next', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Liberation Sans', system-ui, sans-serif;
   --font-forever: 'Marcellus', 'Iowan Old Style', Georgia, serif;
 
   --radius-sm: 4px;
